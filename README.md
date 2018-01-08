@@ -9,3 +9,4 @@ Weiv is the reverse of View.
 
 - [virtual dom](https://github.com/Matt-Esch/virtual-dom)
 - [mustache](https://github.com/janl/mustache.js)
+- [mobx](https://github.com/mobxjs/mobx)
