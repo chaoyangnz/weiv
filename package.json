@@ -1,0 +1,52 @@
+{
+  "name": "weiv",
+  "version": "1.0.0",
+  "description": "Modern reactive component library for web, mobile and more",
+  "main": "lib/weiv.js",
+  "scripts": {
+    "build": "webpack --env dev && webpack --env build && npm run test",
+    "dev": "webpack --progress --colors --watch --env dev",
+    "test": "mocha --require babel-core/register --colors ./test/*.spec.js",
+    "test:watch": "mocha --require babel-core/register --colors -w ./test/*.spec.js",
+    "upgrade": "ncu -a && npm i"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/richdyang/weiv.git"
+  },
+  "keywords": [
+    "weiv",
+    "component",
+    "frontend",
+    "framework",
+    "reactive"
+  ],
+  "author": "Chao Yang",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/richdyang/weiv/issues"
+  },
+  "homepage": "https://github.com/richdyang/weiv",
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.0",
+    "babel-eslint": "^8.1.2",
+    "babel-loader": "^7.1.2",
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-flow": "^6.23.0",
+    "chai": "^4.1.2",
+    "eslint": "^4.15.0",
+    "eslint-loader": "^1.9.0",
+    "flow-bin": "^0.63.1",
+    "mocha": "^4.1.0",
+    "webpack": "^3.10.0",
+    "yargs": "^10.0.3"
+  },
+  "dependencies": {
+    "lodash": "^4.17.4",
+    "mobx": "^3.4.1",
+    "mustache": "^2.3.0",
+    "virtual-dom": "^2.1.1"
+  }
+}
