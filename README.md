@@ -1,7 +1,7 @@
 # What is `weiv`
 
 weiv.js - A home-brew UI view library for modern component web development.
-`Weiv` is the reverse of View.
+`Weiv` is the reverse of the word `View`.
 
 # Why `weiv`?
 
