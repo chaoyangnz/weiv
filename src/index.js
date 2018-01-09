@@ -13,10 +13,10 @@ import Weiv from './weiv';
 export class App {
   firstName = 'Christophe'
   lastName = 'Coenraets'
-  blogURL = 'http://coenraets.org'
+  blogURL = 'http://yangchao.me'
   manager = {
-    firstName: 'John',
-    lastName: 'Smith'
+    firstName: 'Chao',
+    lastName: 'Yang'
   }
 }
 
