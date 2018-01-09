@@ -1,6 +1,10 @@
 // @flow
-import { VNode as VirtualNode, diff, createElement, patch } from 'virtual-dom'
+import { VNode, VText, h } from 'virtual-dom'
 import _ from 'lodash'
+import Hogan from 'hogan.js'
+import html2Vdom from 'html-to-vdom'
+
+const convertHtml = html2Vdom({VNode, VText})
 
 export type Prop = {
   type: Function,
@@ -15,39 +19,54 @@ export type Options = {
   props?: {[string]: Prop}
 }
 
-export class ComponentMeta {
-  name: string
-  target: string
-  template: string
-  props: {[string]: Prop}
+export type Meta = {
+  $name: ?string,
+  $target: ?string,
+  $template: ?any,
+  $props: {[string]: Prop},
+  $render: () => VNode,
+  $isRoot: () => boolean,
+}
 
-  constructor(options: Options) {
-    if (options.target) {
-      this.target = options.target
+function createMeta(options: Options) {
+  const meta: any = {}
+  if (options.target) {
+    meta.$target = options.target
+  }
+  if (options.template) {
+    // this.$template = options.template
+    meta.$template = Hogan.compile(options.template.trim())
+  }
+  if (options.props) {
+    meta.$props = _.cloneDeep(options.props)
+  }
+  meta.$render = function () {
+    if (this.$template) {
+      const html = this.$template.render(this) // render Mustache template to HTML
+      console.log('%o %s', this, html)
+      const vdom = convertHtml(html) // convert HTML to VDOM
+      if (Array.isArray(vdom)) {
+        throw new Error('Template only supports single root.')
+      }
+      return vdom
     }
-    if (options.template) {
-      this.template = options.template
-    }
-    if (options.props) {
-      this.props = _.cloneDeep(options.props)
-    }
+    return h('div', {}, [])
   }
 
-  isRoot() {
-    return !!this.target
+  meta.$isRoot = function () {
+    return !!this.$target
   }
+
+  return meta
 }
 
 export class WeivComponent {
-  $meta: ComponentMeta
   // only mounted component has a root tree
-  $tree: VirtualNode
-  $dom: Element
+  $tree: ?VNode = null
+  $dom: ?HTMLElement = null
   // parent component
-  $parent: WeivComponent
-  $root: WeivComponent
-  // generate after compile the template
-  $render: () => VirtualNode
+  $parent: ?WeivComponent = null
+  $root: ?WeivComponent = null
 
   constructor() {
     // init instance from meta
@@ -55,44 +74,20 @@ export class WeivComponent {
   }
 
   // create component props properties as per $props declaration
-  $initProps() {
+  initProps() {
     // TODO
-  }
-
-  $mount() {
-    if (!this.$meta.isRoot()) return
-    const tree = this.$render()
-    this.$tree = tree
-    const dom: any = createElement(tree)
-    this.$dom = dom
-    const mountNode = document.getElementById(this.$meta.target.substr(1))
-    if (!mountNode) {
-      throw new Error('Cannot find DOM element: ' + this.$meta.target)
-    }
-    mountNode.appendChild(dom)
   }
 }
 
 export function Component(options: Options) {
-  return function (componentClass: any) {
-    componentClass.prototype = new WeivComponent()
-    componentClass.prototype.$meta = new ComponentMeta(options)
+  return function decorator(ComponentClass: any) {
+    Object.assign(ComponentClass.prototype, createMeta(options)) // share meta to all component instances
+    const constructor = () => {
+      const component = new ComponentClass()
+      Object.assign(component, new WeivComponent()) // inject internal properties
+      return component
+    }
+    constructor.prototype.constructor = ComponentClass
+    return constructor
   }
-}
-
-export class Weiv {
-  static components: Map<string, Component> = new Map()
-  static component(tag: string, component: Component) {
-    this.components.set(tag, component)
-  }
-
-  static patch(componentInstance: Component) {
-    if (!componentInstance.$isRoot()) return
-    const tree = componentInstance.$render()
-    const patches = diff(componentInstance.$tree, tree)
-    componentInstance.$dom = patch(componentInstance.$dom, patches)
-    componentInstance.$tree = tree
-  }
-
-  static startup() {}
 }
