@@ -1,25 +1,37 @@
 import { Component } from './component';
 import Weiv from './weiv';
+import { observable, action } from 'mobx';
 
 @Component({
   target: '#app',
   template: `
   <div>
     <h1>{{firstName}} {{lastName}}</h1><p>{{blogURL}}</p>
-    {{#manager}}Manager: {{firstName}} {{lastName}}{{/manager}}
+    {{#location}}Manager: {{city}} {{country}}{{/location}}
+    <p>Countdown: {{counter}}</p>
   </div>
   `
 })
 export class App {
-  firstName = 'Christophe'
-  lastName = 'Coenraets'
+  firstName = 'Chao'
+  lastName = 'Yang'
   blogURL = 'http://yangchao.me'
-  manager = {
-    firstName: 'Chao',
-    lastName: 'Yang'
+  location = {
+    city: 'Auckland',
+    country: 'New Zealand'
+  }
+
+  @observable counter = 10
+  @action countdown() {
+    if (this.counter === 0) return
+    this.counter -= 1
   }
 }
 
-Weiv.mount(new App())
+const app = new App()
+Weiv.mount(app)
+
+// change data
+setInterval(() => app.countdown(), 1000)
 
 Weiv.startup()

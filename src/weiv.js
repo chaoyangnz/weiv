@@ -1,5 +1,6 @@
 
 import vdom from 'virtual-dom'
+import { autorun } from 'mobx'
 
 const Weiv = {
   components: new Map(),
@@ -8,25 +9,25 @@ const Weiv = {
     this.components.set(tag, component)
   },
 
-  patch(component: any) {
-    if (!component.$isRoot()) return
-    const tree = component.$render()
-    const patches = vdom.diff(component.$tree, tree)
-    component.$dom = vdom.patch(component.$dom, patches)
-    component.$tree = tree
-  },
-
   mount(component: any) {
     if (!component.$isRoot()) return
-    const tree = component.$render()
-    component.$tree = tree
-    const dom: any = vdom.create(tree)
-    component.$dom = dom
-    const mountNode = document.getElementById(component.$target.substr(1))
-    if (!mountNode) {
-      throw new Error('Cannot find DOM element: ' + component.$target)
-    }
-    mountNode.appendChild(dom)
+    autorun(() => {
+      const tree = component.$tree // old tree
+      component.$render()
+      if (tree) {
+        const patches = vdom.diff(tree, component.$tree)
+        console.log('%o', patches)
+        component.$dom = vdom.patch(component.$dom, patches)
+      } else {
+        const dom: any = vdom.create(component.$tree)
+        component.$dom = dom
+        const mountNode = document.getElementById(component.$target.substr(1))
+        if (!mountNode) {
+          throw new Error('Cannot find DOM element: ' + component.$target)
+        }
+        mountNode.appendChild(dom)
+      }
+    })
   },
 
   startup() {}

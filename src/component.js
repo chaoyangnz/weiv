@@ -43,14 +43,15 @@ function createMeta(options: Options) {
   meta.$render = function () {
     if (this.$template) {
       const html = this.$template.render(this) // render Mustache template to HTML
-      console.log('%o %s', this, html)
-      const vdom = convertHtml(html) // convert HTML to VDOM
-      if (Array.isArray(vdom)) {
+      console.log('Rendered: %o', html)
+      const tree = convertHtml(html) // convert HTML to VDOM
+      if (Array.isArray(tree)) {
         throw new Error('Template only supports single root.')
       }
-      return vdom
+      this.$tree = tree
+    } else {
+      this.tree = h('div', {}, [])
     }
-    return h('div', {}, [])
   }
 
   meta.$isRoot = function () {
