@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "hogan.js": "^3.0.2",
+    "htmlparser2": "^3.9.2",
     "lodash": "^4.17.4",
     "main-loop": "^3.4.0",
     "mobx": "^3.4.1",

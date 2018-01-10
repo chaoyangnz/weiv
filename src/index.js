@@ -7,7 +7,7 @@ import { observable, action } from 'mobx';
   template: `
   <div>
     <h1>{{firstName}} {{lastName}}</h1><p>{{blogURL}}</p>
-    {{#location}}Manager: {{city}} {{country}}{{/location}}
+    Manager: {{location.city}} {{location.country}}
     <p>Countdown: {{counter}}</p>
   </div>
   `

@@ -1,8 +1,9 @@
 // @flow
 import { VNode, h } from 'virtual-dom'
 import _ from 'lodash'
-import Hogan from 'hogan.js'
-import parser from 'vdom-parser'
+// import Hogan from 'hogan.js'
+// import parser from 'vdom-parser'
+import { compile } from './template'
 
 export type Prop = {
   type: Function,
@@ -33,16 +34,17 @@ function createMeta(options: Options) {
   }
   if (options.template) {
     // this.$template = options.template
-    meta.$template = Hogan.compile(options.template.trim())
+    meta.$template = /* Hogan. */compile(options.template.trim())
   }
   if (options.props) {
     meta.$props = _.cloneDeep(options.props)
   }
   meta.$render = function () {
     if (this.$template) {
-      const html = this.$template.render(this) // render Mustache template to HTML
-      console.log('Rendered: %o', html)
-      const vdom = parser(html) // convert HTML to VDOM
+      // const html = this.$template.render(this) // render Mustache template to HTML
+      // console.log('Rendered: %o', html)
+      // const vdom = parser(html) // convert HTML to VDOM
+      const vdom = this.$template(this)
       if (Array.isArray(vdom)) {
         throw new Error('Template only supports single root.')
       }

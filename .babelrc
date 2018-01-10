@@ -1,8 +1,11 @@
 {
-  "presets": ["es2015", "flow"],
+  "presets": [["es2015", {"loose": false}], "flow"],
   "plugins": [
     "babel-plugin-add-module-exports",
     "transform-decorators-legacy",
-    "transform-class-properties"
+    "transform-class-properties",
+    ["transform-strict-mode", {
+      "strict": false
+    }]
   ]
 }
