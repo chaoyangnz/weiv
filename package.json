@@ -47,11 +47,10 @@
   },
   "dependencies": {
     "hogan.js": "^3.0.2",
-    "html-to-vdom": "^0.7.0",
     "lodash": "^4.17.4",
     "main-loop": "^3.4.0",
     "mobx": "^3.4.1",
-    "mustache": "^2.3.0",
+    "vdom-parser": "^1.4.1",
     "virtual-dom": "^2.1.1"
   }
 }

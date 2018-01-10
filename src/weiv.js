@@ -1,5 +1,5 @@
 
-import vdom from 'virtual-dom'
+import VDOM from 'virtual-dom'
 import { autorun } from 'mobx'
 
 const Weiv = {
@@ -12,14 +12,14 @@ const Weiv = {
   mount(component: any) {
     if (!component.$isRoot()) return
     autorun(() => {
-      const tree = component.$tree // old tree
+      const vdom = component.$vdom // old vdom tree
       component.$render()
-      if (tree) {
-        const patches = vdom.diff(tree, component.$tree)
+      if (vdom) {
+        const patches = VDOM.diff(vdom, component.$vdom)
         console.log('%o', patches)
-        component.$dom = vdom.patch(component.$dom, patches)
+        component.$dom = VDOM.patch(component.$dom, patches)
       } else {
-        const dom: any = vdom.create(component.$tree)
+        const dom: any = VDOM.create(component.$vdom)
         component.$dom = dom
         const mountNode = document.getElementById(component.$target.substr(1))
         if (!mountNode) {

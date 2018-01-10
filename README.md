@@ -9,7 +9,7 @@ This is an era of evolution with tons of front-end frameworks: React, Angular, V
 
 ## How it's like
 
-<img src="https://i.imgur.com/SP735AA.gif" width="300">
+<img src="https://i.imgur.com/SP735AA.gif" width="400">
 
 ```javascript
 import { Component } from './component';
@@ -55,4 +55,5 @@ setInterval(() => app.countdown(), 1000)
 - [Hogan](https://github.com/twitter/hogan.js/)
 - [mustache](https://github.com/janl/mustache.js)
 - [mobx](https://github.com/mobxjs/mobx)
-- [html-to-vdom](https://github.com/TimBeyer/html-to-vdom) 
+- [vdom-parser](https://github.com/bitinn/vdom-parser)
+- ~~[html-to-vdom](https://github.com/TimBeyer/html-to-vdom) ~~

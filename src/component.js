@@ -1,10 +1,8 @@
 // @flow
-import { VNode, VText, h } from 'virtual-dom'
+import { VNode, h } from 'virtual-dom'
 import _ from 'lodash'
 import Hogan from 'hogan.js'
-import html2Vdom from 'html-to-vdom'
-
-const convertHtml = html2Vdom({VNode, VText})
+import parser from 'vdom-parser'
 
 export type Prop = {
   type: Function,
@@ -44,13 +42,13 @@ function createMeta(options: Options) {
     if (this.$template) {
       const html = this.$template.render(this) // render Mustache template to HTML
       console.log('Rendered: %o', html)
-      const tree = convertHtml(html) // convert HTML to VDOM
-      if (Array.isArray(tree)) {
+      const vdom = parser(html) // convert HTML to VDOM
+      if (Array.isArray(vdom)) {
         throw new Error('Template only supports single root.')
       }
-      this.$tree = tree
+      this.$vdom = vdom
     } else {
-      this.tree = h('div', {}, [])
+      this.vdom = h('div', {}, [])
     }
   }
 
@@ -62,8 +60,8 @@ function createMeta(options: Options) {
 }
 
 export class WeivComponent {
-  // only mounted component has a root tree
-  $tree: ?VNode = null
+  // only mounted component has a root vdom tree
+  $vdom: ?VNode = null
   $dom: ?HTMLElement = null
   // parent component
   $parent: ?WeivComponent = null
