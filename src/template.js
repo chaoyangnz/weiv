@@ -1,32 +1,61 @@
 import htmlparser from 'htmlparser2'
 import vdom from 'virtual-dom'
 
+class Expression {
+  constructor(value) {
+    this.value = value
+  }
+
+  evaluate(data) {
+    let result = null
+    /* eslint no-eval: 0 */
+    eval(`with (data) { result = ( ${this.value} ) }`)
+    return result
+  }
+
+  render(data) {
+    const etext = this.evaluate(data)
+    console.log('etext: %o', etext)
+    const text = (etext !== null && etext !== undefined) ? String(etext) : ''
+    return new vdom.VText(text)
+  }
+}
+
+class Directive {
+  constructor(command, target, params, value) {
+    this.command = command
+    this.target = target
+    this.params = params
+    this.value = new Expression(value)
+  }
+}
+
+class Text {
+  constructor(text) {
+    this.text = text
+  }
+
+  render(data) {
+    return new vdom.VText(this.text)
+  }
+}
+class Node {
+  constructor(tagName, attributes, directives, children) {
+    this.tagName = tagName.toUpperCase()
+    this.attributes = attributes || {}
+    this.directives = directives || []
+    this.children = children || []
+  }
+
+  render(data) {
+    return vdom.h(this.tagName, this.attributes, this.children.map(child => child.render(data)))
+  }
+}
+
 export function compile(template) {
   const stack = []
   /* eslint no-unused-vars: 0 */
   let root = null
-
-  class Expression {
-    constructor(value) {
-      this.value = value
-    }
-
-    evaluate(data) {
-      let result = null
-      /* eslint no-eval: 0 */
-      eval(`with (data) { result = ( ${this.value} ) }`)
-      return result
-    }
-  }
-
-  class Directive {
-    constructor(command, target, params, value) {
-      this.command = command
-      this.target = target
-      this.params = params
-      this.value = new Expression(value)
-    }
-  }
 
   function parseDirective(name, value) {
     const pattern = /@(\w+)(:(\w+)(\.\w+)?)?/
@@ -45,17 +74,15 @@ export function compile(template) {
     for (let i = 0; i < segs.length - 1; i += 1) {
       const m = segs[i].match(pattern)
       if (m) {
-        arr.push(new vdom.VText(m[1].trim()))
+        arr.push(new Text(m[1].trim()))
         if (m[3]) {
-          const textNode = new vdom.VText('')
-          textNode.expression = new Expression(m[3].trim())
-          arr.push(textNode)
+          arr.push(new Expression(m[3].trim()))
         }
       } else {
-        arr.push(new vdom.VText(segs[i].trim()))
+        arr.push(new Text(segs[i].trim()))
       }
     }
-    arr.push(segs[segs.length - 1])
+    arr.push(new Text(segs[segs.length - 1]))
     return arr
   }
 
@@ -72,10 +99,9 @@ export function compile(template) {
         attrs[name] = attributes[name]
       }
     }
-    const node = vdom.h(tagName, attrs, [])
-    node.directives = directives
+    const node = new Node(tagName, attrs, directives, [])
     stack.push(node)
-  // console.log(stack)
+    console.log(stack)
   }
 
   function onText(text) {
@@ -90,12 +116,12 @@ export function compile(template) {
     }
     const node = stack.splice(-1)[0]
     // console.log(node)
-    // console.log(stack)
+    console.log(stack)
     if (node.tagName !== tagName.toUpperCase()) {
       throw new Error('Tags are not closed correctly: ' + tagName)
     }
     stack[stack.length - 1].children.push(node)
-  // console.log(stack)
+    console.log(stack)
   }
   const parser = new htmlparser.Parser({
     onopentag: onOpenTag,
@@ -106,22 +132,5 @@ export function compile(template) {
   parser.write(template)
   parser.done()
 
-  function render(node, data) {
-    if (node instanceof vdom.VText && node.expression) {
-      const etext = node.expression.evaluate(data)
-      console.log('etext: %o', etext)
-      const text = etext ? String(etext) : ''
-      node.text = text
-      return node
-    }
-    if (node.children && node.children.length > 0) {
-      node.children = node.children.map(child => render(child, data))
-    }
-    return node
-  }
-
-  return function (data) {
-    return render(root, data)
-  }
+  return root
 }
-

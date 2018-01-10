@@ -44,7 +44,7 @@ function createMeta(options: Options) {
       // const html = this.$template.render(this) // render Mustache template to HTML
       // console.log('Rendered: %o', html)
       // const vdom = parser(html) // convert HTML to VDOM
-      const vdom = this.$template(this)
+      const vdom = this.$template.render(this)
       if (Array.isArray(vdom)) {
         throw new Error('Template only supports single root.')
       }
