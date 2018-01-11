@@ -1,32 +1,51 @@
 import htmlparser from 'htmlparser2'
 import vdom from 'virtual-dom'
+import _ from 'lodash'
+import Jexl from 'jexl-sync'
 
 class Expression {
-  constructor(value) {
-    this.value = value
+  constructor(exp) {
+    this.exp = exp
+    this.ast = Jexl.parse(exp)
   }
 
-  evaluate(data) {
-    let result = null
-    /* eslint no-eval: 0 */
-    eval(`with (data) { result = ( ${this.value} ) }`)
-    return result
+  eval(data) {
+    return Jexl.evaluate(this.ast, data)
   }
 
   render(data) {
-    const etext = this.evaluate(data)
-    console.log('etext: %o', etext)
-    const text = (etext !== null && etext !== undefined) ? String(etext) : ''
+    const val = this.eval(data)
+    console.debug('Evaluate expression `%s`: %o', this.exp, val)
+    const text = (val !== null && val !== undefined) ? String(val) : ''
     return new vdom.VText(text)
   }
 }
 
 class Directive {
-  constructor(command, target, params, value) {
+  constructor(command, target, params, exp) {
     this.command = command
     this.target = target
     this.params = params
-    this.value = new Expression(value)
+    this.expression = new Expression(exp)
+  }
+
+  static isTrue(val) {
+    if (val === false || val === null || val === undefined) return false
+    return true
+  }
+
+  process(vnode, data) {
+    if (this.command === 'if') {
+      const val = this.expression.eval(data)
+      return Directive.isTrue(val) ? vnode : null
+    }
+    if (this.command === 'bind') {
+      const val = this.expression.eval(data)
+      vnode.properties[this.target] = val
+      return vnode
+    }
+    console.error('Illegal directive: %o', this)
+    return vnode
   }
 }
 
@@ -48,7 +67,14 @@ class Node {
   }
 
   render(data) {
-    return vdom.h(this.tagName, this.attributes, this.children.map(child => child.render(data)))
+    const attributes = _.cloneDeep(this.attributes)
+    const children = _.remove(this.children.map(child => child.render(data)), null)
+    let vnode = vdom.h(this.tagName, attributes, children)
+    for (let directive of this.directives) {
+      vnode = directive.process(vnode, data)
+      if (vnode === null) break
+    }
+    return vnode
   }
 }
 
@@ -57,11 +83,11 @@ export function compile(template) {
   /* eslint no-unused-vars: 0 */
   let root = null
 
-  function parseDirective(name, value) {
+  function parseDirective(name, exp) {
     const pattern = /@(\w+)(:(\w+)(\.\w+)?)?/
     const m = name.match(pattern)
     if (m) {
-      return new Directive(m[1], m[3], m[5], value)
+      return new Directive(m[1], m[3], m[5], exp)
     }
     console.warn('Illagal directive attribute: %s', name)
     return null
@@ -87,8 +113,8 @@ export function compile(template) {
   }
 
   function onOpenTag(tagName, attributes) {
-    console.log(`<${tagName}>`)
-    console.log(attributes)
+    console.debug(`<${tagName}>`)
+    console.debug(attributes)
     const attrs = {}
     const directives = []
     for (const name of Object.keys(attributes)) {
@@ -101,7 +127,7 @@ export function compile(template) {
     }
     const node = new Node(tagName, attrs, directives, [])
     stack.push(node)
-    console.log(stack)
+    console.debug(stack)
   }
 
   function onText(text) {
@@ -109,19 +135,19 @@ export function compile(template) {
   }
 
   function onCloseTag(tagName) {
-    console.log(`</${tagName}>`)
+    console.debug(`</${tagName}>`)
     if (stack.length === 1) {
       root = stack[0]
       return;
     }
     const node = stack.splice(-1)[0]
     // console.log(node)
-    console.log(stack)
+    console.debug(stack)
     if (node.tagName !== tagName.toUpperCase()) {
       throw new Error('Tags are not closed correctly: ' + tagName)
     }
     stack[stack.length - 1].children.push(node)
-    console.log(stack)
+    console.debug(stack)
   }
   const parser = new htmlparser.Parser({
     onopentag: onOpenTag,

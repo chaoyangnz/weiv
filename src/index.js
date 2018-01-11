@@ -6,8 +6,8 @@ import { observable, action } from 'mobx';
   target: '#app',
   template: `
   <div>
-    <h1>{{firstName}} {{lastName}}</h1><p>{{blogURL}}</p>
-    Manager: {{location.city}} {{location.country}}
+    <h1 @bind:title="counter">{{firstName}} {{lastName}}</h1><p>{{blogURL}}</p>
+    <div @if="counter < 5">Location: {{location.city}} - {{location.country}}</div>
     <p>Countdown: {{counter}}</p>
   </div>
   `

@@ -9,7 +9,7 @@ This is an era of evolution with tons of front-end frameworks: React, Angular, V
 
 ## How it's like
 
-<img src="https://i.imgur.com/SP735AA.gif" width="400">
+<img src="https://i.imgur.com/cCcygyA.gif" width="500">
 
 ```javascript
 import { Component } from './component';
@@ -20,8 +20,8 @@ import { observable, action } from 'mobx';
   target: '#app',
   template: `
   <div>
-    <h1>{{firstName}} {{lastName}}</h1><p>{{blogURL}}</p>
-    {{#location}}Manager: {{city}} {{country}}{{/location}}
+    <h1 @bind:title="counter">{{firstName}} {{lastName}}</h1><p>{{blogURL}}</p>
+    <div @if="counter < 5">Location: {{location.city}} - {{location.country}}</div>
     <p>Countdown: {{counter}}</p>
   </div>
   `
@@ -52,8 +52,4 @@ setInterval(() => app.countdown(), 1000)
 ## Building blocks & Credits
 
 - [virtual dom](https://github.com/Matt-Esch/virtual-dom)
-- [Hogan](https://github.com/twitter/hogan.js/)
-- [mustache](https://github.com/janl/mustache.js)
 - [mobx](https://github.com/mobxjs/mobx)
-- [vdom-parser](https://github.com/bitinn/vdom-parser)
-- ~~[html-to-vdom](https://github.com/TimBeyer/html-to-vdom) ~~
