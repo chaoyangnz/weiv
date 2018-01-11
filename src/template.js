@@ -100,12 +100,12 @@ export function compile(template) {
     for (let i = 0; i < segs.length - 1; i += 1) {
       const m = segs[i].match(pattern)
       if (m) {
-        arr.push(new Text(m[1].trim()))
+        arr.push(new Text(m[1]))
         if (m[3]) {
-          arr.push(new Expression(m[3].trim()))
+          arr.push(new Expression(m[3]))
         }
       } else {
-        arr.push(new Text(segs[i].trim()))
+        arr.push(new Text(segs[i]))
       }
     }
     arr.push(new Text(segs[segs.length - 1]))

@@ -1,6 +1,6 @@
 ## What is `weiv`
 
-weiv.js - A home-brew UI view library for modern component-based web development.
+<img src='./weiv.svg' width="80" /> weiv.js - A home-brew UI view library for modern component-based web development.
 `Weiv` is the reverse of the word `View`.
 
 ## Why `weiv`?
@@ -53,3 +53,4 @@ setInterval(() => app.countdown(), 1000)
 
 - [virtual dom](https://github.com/Matt-Esch/virtual-dom)
 - [mobx](https://github.com/mobxjs/mobx)
+- [jexl-sync](https://github.com/richdyang/jexl-sync)
