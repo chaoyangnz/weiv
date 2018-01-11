@@ -30,7 +30,7 @@
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.0",
-    "babel-eslint": "^8.1.2",
+    "babel-eslint": "^8.2.1",
     "babel-loader": "^7.1.2",
     "babel-plugin-add-module-exports": "^0.2.1",
     "babel-plugin-transform-class-properties": "^6.24.1",
@@ -43,11 +43,11 @@
     "flow-bin": "^0.63.1",
     "mocha": "^4.1.0",
     "webpack": "^3.10.0",
-    "yargs": "^10.0.3"
+    "yargs": "^10.1.1"
   },
   "dependencies": {
     "htmlparser2": "^3.9.2",
-    "jexl-sync": "^1.1.4",
+    "jexl-sync": "^1.0.1",
     "lodash": "^4.17.4",
     "main-loop": "^3.4.0",
     "mobx": "^3.4.1",
