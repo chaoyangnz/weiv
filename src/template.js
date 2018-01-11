@@ -3,19 +3,59 @@ import vdom from 'virtual-dom'
 import _ from 'lodash'
 import Jexl from 'jexl-sync'
 
+const NATIVE_EVENTS = [
+  'onblur',
+  'onchange',
+  'oncontextmenu',
+  'onfocus',
+  'oninput',
+  'oninvalid',
+  'onreset',
+  'onsearch',
+  'onselect',
+  'onsubmit',
+  'onkeydown',
+  'onkeypress',
+  'onkeyup',
+  'onclick',
+  'ondblclick',
+  'onmousedown',
+  'onmousemove',
+  'onmouseout',
+  'onmouseover',
+  'onmouseup',
+  'onwheel',
+  'ondrag',
+  'ondragend',
+  'ondragenter',
+  'ondragleave',
+  'ondragover',
+  'ondragstart',
+  'ondrop',
+  'onscroll',
+  'oncopy',
+  'oncut',
+  'onpaste'
+]
+
 class Expression {
   constructor(exp) {
     this.exp = exp
     this.ast = Jexl.parse(exp)
   }
 
-  eval(data) {
-    return Jexl.evaluate(this.ast, data)
+  eval(context) {
+    let val = Jexl.evaluate(this.ast, context)
+    console.debug('Evaluate expression `%s`: %o', this.exp, val)
+    // autobind functions
+    if (val && typeof val === 'function') {
+      val = val.bind(context)
+    }
+    return val
   }
 
-  render(data) {
-    const val = this.eval(data)
-    console.debug('Evaluate expression `%s`: %o', this.exp, val)
+  render(context) {
+    const val = this.eval(context)
     const text = (val !== null && val !== undefined) ? String(val) : ''
     return new vdom.VText(text)
   }
@@ -34,14 +74,21 @@ class Directive {
     return true
   }
 
-  process(vnode, data) {
+  process(vnode, context) {
     if (this.command === 'if') {
-      const val = this.expression.eval(data)
+      const val = this.expression.eval(context)
       return Directive.isTrue(val) ? vnode : null
     }
     if (this.command === 'bind') {
-      const val = this.expression.eval(data)
+      const val = this.expression.eval(context)
       vnode.properties[this.target] = val
+      return vnode
+    }
+    if (this.command === 'on') {
+      let val = this.expression.eval(context)
+      if (val && typeof val === 'function') {
+        vnode.properties[`on${this.target}`] = val
+      }
       return vnode
     }
     console.error('Illegal directive: %o', this)
@@ -54,7 +101,7 @@ class Text {
     this.text = text
   }
 
-  render(data) {
+  render(context) {
     return new vdom.VText(this.text)
   }
 }
@@ -66,12 +113,15 @@ class Node {
     this.children = children || []
   }
 
-  render(data) {
-    const attributes = _.cloneDeep(this.attributes)
-    const children = _.remove(this.children.map(child => child.render(data)), null)
+  render(context) {
+    let attributes = _.cloneDeep(this.attributes)
+    // only `onclick..` attributes is expression
+    attributes = _.mapValues(attributes, attr => attr instanceof Expression ? attr.eval(context) : attr)
+    const children = _.remove(this.children.map(child => child.render(context)), null)
     let vnode = vdom.h(this.tagName, attributes, children)
+    // start directiv processing
     for (let directive of this.directives) {
-      vnode = directive.process(vnode, data)
+      vnode = directive.process(vnode, context)
       if (vnode === null) break
     }
     return vnode
@@ -121,6 +171,8 @@ export function compile(template) {
       if (name.match(/@[^@]+/)) {
         const directive = parseDirective(name, attributes[name])
         if (directive) directives.push(directive)
+      } else if (_.includes(NATIVE_EVENTS, name.toLowerCase())) {
+        attrs[name] = new Expression(attributes[name])
       } else {
         attrs[name] = attributes[name]
       }

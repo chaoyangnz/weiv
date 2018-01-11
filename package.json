@@ -46,6 +46,7 @@
     "yargs": "^10.1.1"
   },
   "dependencies": {
+    "dom-delegator": "^13.1.0",
     "htmlparser2": "^3.9.2",
     "jexl-sync": "^1.0.1",
     "lodash": "^4.17.4",
