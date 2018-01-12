@@ -1,7 +1,7 @@
 ## What is `weiv`
 
 <img src='./weiv.svg' width="80" /> weiv.js - A home-brew UI view library for modern component-based web development.
-`Weiv` is the reverse of the word `View`.
+`Weiv` is the reverse of the word `View` or `微V` in Chinese which means micro-view literally.
 
 ## Why `weiv`?
 

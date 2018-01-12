@@ -3,7 +3,126 @@ import vdom from 'virtual-dom'
 import _ from 'lodash'
 import Jexl from 'jexl-sync'
 
-const NATIVE_EVENTS = [
+const HTML_TAGS = [
+  'a',
+  'abbr',
+  'acronym',
+  'address',
+  'applet',
+  'area',
+  'article',
+  'aside',
+  'audio',
+  'b',
+  'base',
+  'basefont',
+  'bdi',
+  'bdo',
+  'big',
+  'blockquote',
+  'body',
+  'br',
+  'button',
+  'canvas',
+  'caption',
+  'center',
+  'cite',
+  'code',
+  'col',
+  'colgroup',
+  'datalist',
+  'dd',
+  'del',
+  'details',
+  'dfn',
+  'dialog',
+  'dir',
+  'div',
+  'dl',
+  'dt',
+  'em',
+  'embed',
+  'fieldset',
+  'figcaption',
+  'figure',
+  'font',
+  'footer',
+  'form',
+  'frame',
+  'frameset',
+  'h1',
+  'head',
+  'header',
+  'hr',
+  'html',
+  'i',
+  'iframe',
+  'img',
+  'input',
+  'ins',
+  'kbd',
+  'label',
+  'legend',
+  'li',
+  'link',
+  'main',
+  'map',
+  'mark',
+  'menu',
+  'menuitem',
+  'meta',
+  'meter',
+  'nav',
+  'noframes',
+  'noscript',
+  'object',
+  'ol',
+  'optgroup',
+  'option',
+  'output',
+  'p',
+  'param',
+  'picture',
+  'pre',
+  'progress',
+  'q',
+  'rp',
+  'rt',
+  'ruby',
+  's',
+  'samp',
+  'script',
+  'section',
+  'select',
+  'small',
+  'source',
+  'span',
+  'strike',
+  'strong',
+  'style',
+  'sub',
+  'summary',
+  'sup',
+  'table',
+  'tbody',
+  'td',
+  'textarea',
+  'tfoot',
+  'th',
+  'thead',
+  'time',
+  'title',
+  'tr',
+  'track',
+  'tt',
+  'u',
+  'ul',
+  'var',
+  'video',
+  'wbr'
+]
+
+const HTML_EVENT_ATTRIBUTES = [
   'onblur',
   'onchange',
   'oncontextmenu',
@@ -87,7 +206,9 @@ class Directive {
     if (this.command === 'on') {
       let val = this.expression.eval(context)
       if (val && typeof val === 'function') {
-        vnode.properties[`on${this.target}`] = val
+        if (_.includes(this.params, 'native')) {
+          vnode.properties[`on${this.target}`] = val
+        }
       }
       return vnode
     }
@@ -106,78 +227,116 @@ class Text {
   }
 }
 class Node {
-  constructor(tagName, attributes, directives, children) {
-    this.tagName = tagName.toUpperCase()
-    this.attributes = attributes || {}
+  constructor(tagName, properties, directives, children, componentClass) {
+    this.tagName = tagName.toLowerCase()
+    this.properties = properties || {}
     this.directives = directives || []
     this.children = children || []
+    this.componentClass = componentClass
   }
 
   render(context) {
-    let attributes = _.cloneDeep(this.attributes)
+    let properties = _.cloneDeep(this.properties)
     // only `onclick..` attributes is expression
-    attributes = _.mapValues(attributes, attr => attr instanceof Expression ? attr.eval(context) : attr)
+    properties = _.mapValues(properties, attr => attr instanceof Expression ? attr.eval(context) : attr)
     const children = _.remove(this.children.map(child => child.render(context)), null)
-    let vnode = vdom.h(this.tagName, attributes, children)
-    // start directiv processing
-    for (let directive of this.directives) {
-      vnode = directive.process(vnode, context)
-      if (vnode === null) break
+    if (!this.componentClass) {
+      let vnode = vdom.h(this.tagName, properties, children)
+      // start directiv processing
+      for (let directive of this.directives) {
+        vnode = directive.process(vnode, context)
+        if (vnode === null) break
+      }
+      return vnode
     }
-    return vnode
+    /* eslint new-cap: 0 */
+    const component = new this['componentClass'](properties)
+    component.$render()
+    return component.$vdom
   }
 }
 
-export function compile(template) {
-  const stack = []
-  /* eslint no-unused-vars: 0 */
-  let root = null
-
-  function parseDirective(name, exp) {
-    const pattern = /@(\w+)(:(\w+)(\.\w+)?)?/
-    const m = name.match(pattern)
-    if (m) {
-      return new Directive(m[1], m[3], m[5], exp)
+function parseDirective(name, exp) {
+  const pattern = /@(\w+)(:(\w+)((\.\w+)*))?/
+  const m = name.match(pattern)
+  if (m) {
+    let params = []
+    if (m[4]) {
+      params = _.remove(m[4].split('.'), null)
     }
-    console.warn('Illagal directive attribute: %s', name)
-    return null
+    return new Directive(m[1], m[3], params, exp)
   }
+  console.warn('Illagal directive attribute: %s', name)
+  return null
+}
 
-  function parseText(text) {
-    const arr = []
-    const pattern = /(.*)({{([^{}]+))+$/
-    const segs = text.split('}}')
-    for (let i = 0; i < segs.length - 1; i += 1) {
-      const m = segs[i].match(pattern)
-      if (m) {
-        arr.push(new Text(m[1]))
-        if (m[3]) {
-          arr.push(new Expression(m[3]))
-        }
+function parseText(text) {
+  const arr = []
+  const pattern = /(.*)({{([^{}]+))+$/
+  const segs = text.split('}}')
+  for (let i = 0; i < segs.length - 1; i += 1) {
+    const m = segs[i].match(pattern)
+    if (m) {
+      arr.push(new Text(m[1]))
+      if (m[3]) {
+        arr.push(new Expression(m[3]))
+      }
+    } else {
+      arr.push(new Text(segs[i]))
+    }
+  }
+  arr.push(new Text(segs[segs.length - 1]))
+  return arr
+}
+
+function parseTag(tagName, attributes, meta) {
+  const tag = tagName.toLowerCase()
+  const properties = {}
+  const directives = []
+  if (_.includes(HTML_TAGS, tag)) { // HTML tags
+    for (let name of Object.keys(attributes)) {
+      if (name.match(/@[^@]+/)) { // directive prefix: @
+        const directive = parseDirective(name, attributes[name])
+        if (directive) directives.push(directive)
+      } else if (_.includes(HTML_EVENT_ATTRIBUTES, name.toLowerCase())) {
+        properties[name] = new Expression(attributes[name])
       } else {
-        arr.push(new Text(segs[i]))
+        properties[name] = attributes[name]
       }
     }
-    arr.push(new Text(segs[segs.length - 1]))
-    return arr
+
+    return new Node(tag, properties, directives, [])
   }
+  const componentClass = meta.lookupComponent(tag)
+  if (componentClass) {
+    for (let name of Object.keys(attributes)) {
+      if (name.match(/@[^@]+/)) { // directive prefix: @
+        const directive = parseDirective(name, attributes[name])
+        if (directive) directives.push(directive)
+      } else {
+        // validate component props
+        if (_.includes(Object.keys(meta.props), name)) {
+          properties[name] = attributes[name]
+        } else {
+          console.warn('Illegal commponent props for %s: %s', componentClass.name, name)
+        }
+      }
+    }
+    return new Node(tag, properties, directives, [], componentClass)
+  }
+  throw Error('Cannot find component for custom tag: ' + tag)
+}
+
+export function compile(template, meta) {
+  const roots = []
+  const stack = []
+  /* eslint no-unused-vars: 0 */
+  let ast = null
 
   function onOpenTag(tagName, attributes) {
     console.debug(`<${tagName}>`)
     console.debug(attributes)
-    const attrs = {}
-    const directives = []
-    for (const name of Object.keys(attributes)) {
-      if (name.match(/@[^@]+/)) {
-        const directive = parseDirective(name, attributes[name])
-        if (directive) directives.push(directive)
-      } else if (_.includes(NATIVE_EVENTS, name.toLowerCase())) {
-        attrs[name] = new Expression(attributes[name])
-      } else {
-        attrs[name] = attributes[name]
-      }
-    }
-    const node = new Node(tagName, attrs, directives, [])
+    const node = parseTag(tagName, attributes, meta)
     stack.push(node)
     console.debug(stack)
   }
@@ -188,27 +347,37 @@ export function compile(template) {
 
   function onCloseTag(tagName) {
     console.debug(`</${tagName}>`)
-    if (stack.length === 1) {
-      root = stack[0]
-      return;
-    }
     const node = stack.splice(-1)[0]
     // console.log(node)
     console.debug(stack)
-    if (node.tagName !== tagName.toUpperCase()) {
+    if (node.tagName !== tagName.toLowerCase()) {
       throw new Error('Tags are not closed correctly: ' + tagName)
     }
-    stack[stack.length - 1].children.push(node)
+    if (stack.length === 0) {
+      roots.push(node)
+    } else {
+      stack[stack.length - 1].children.push(node)
+    }
     console.debug(stack)
   }
+
+  function onEnd() {
+    if (roots.length === 1) {
+      ast = roots[0]
+      return;
+    }
+    throw new Error('Template only supports single root.')
+  }
+
   const parser = new htmlparser.Parser({
     onopentag: onOpenTag,
     ontext: onText,
-    onclosetag: onCloseTag
+    onclosetag: onCloseTag,
+    onend: onEnd
   }, {decodeEntities: true});
 
   parser.write(template)
   parser.done()
 
-  return root
+  return ast
 }

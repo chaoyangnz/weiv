@@ -4,6 +4,8 @@ import _ from 'lodash'
 // import Hogan from 'hogan.js'
 // import parser from 'vdom-parser'
 import { compile } from './template'
+import { EventEmitter } from 'fbemitter'
+import Weiv from './weiv'
 
 export type Prop = {
   type: Function,
@@ -18,56 +20,60 @@ export type Options = {
   props?: {[string]: Prop}
 }
 
-export type Meta = {
+export type ComponentMeta = {
   $name: ?string,
   $target: ?string,
   $template: ?any,
   $props: {[string]: Prop},
+  $components: {[string]: any},
   $render: () => VNode,
   $isRoot: () => boolean,
 }
 
-function createMeta(options: Options) {
+function createComponentMeta(options: Options) {
   const meta: any = {}
   if (options.target) {
     meta.$target = options.target
   }
-  if (options.template) {
-    // this.$template = options.template
-    meta.$template = /* Hogan. */compile(options.template.trim())
-  }
   if (options.props) {
     meta.$props = _.cloneDeep(options.props)
   }
+  if (options.components) {
+    meta.$components = _.cloneDeep(options.components)
+  }
   meta.$render = function () {
     if (this.$template) {
-      // const html = this.$template.render(this) // render Mustache template to HTML
-      // console.log('Rendered: %o', html)
-      // const vdom = parser(html) // convert HTML to VDOM
       const vdom = this.$template.render(this)
-      if (Array.isArray(vdom)) {
-        throw new Error('Template only supports single root.')
-      }
       this.$vdom = vdom
     } else {
-      this.vdom = h('div', {}, [])
+      this.$vdom = h('div', {}, [])
     }
   }
 
   meta.$isRoot = function () {
     return !!this.$target
   }
+  meta.$lookupComponent = function (tag) {
+    let componentClass = this.$components[tag]
+    if (componentClass) return componentClass
+    return Weiv.$components[tag]
+  }
+  if (options.template) {
+    meta.$template = compile(options.template.trim(), meta)
+  }
 
   return meta
 }
 
-export class WeivComponent {
+export class ComponentMixin {
   // only mounted component has a root vdom tree
   $vdom: ?VNode = null
   $dom: ?HTMLElement = null
   // parent component
-  $parent: ?WeivComponent = null
-  $root: ?WeivComponent = null
+  $parent: ?ComponentMixin = null
+  $root: ?ComponentMixin = null
+  // event emitter
+  $emitter: EventEmitter = new EventEmitter()
 
   constructor() {
     // init instance from meta
@@ -82,10 +88,15 @@ export class WeivComponent {
 
 export function Component(options: Options) {
   return function decorator(ComponentClass: any) {
-    Object.assign(ComponentClass.prototype, createMeta(options)) // share meta to all component instances
-    const constructor = () => {
+    Object.assign(ComponentClass.prototype, createComponentMeta(options)) // share meta to all component instances
+    const constructor = (props) => {
       const component = new ComponentClass()
-      Object.assign(component, new WeivComponent()) // inject internal properties
+      Object.assign(component, new ComponentMixin()) // inject internal properties
+      Object.keys(props).forEach(prop => {
+        if (_.includes(Object.keys(component.props), prop)) { // TODO validate props type
+          component[prop] = props[prop] // observable ???
+        }
+      })
       return component
     }
     constructor.prototype.constructor = ComponentClass

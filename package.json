@@ -6,8 +6,8 @@
   "scripts": {
     "build": "webpack --env dev && webpack --env build && npm run test",
     "dev": "webpack --progress --colors --watch --env dev",
-    "test": "mocha --require babel-core/register --colors ./test/*.spec.js",
-    "test:watch": "mocha --require babel-core/register --colors -w ./test/*.spec.js",
+    "test": "jest ./test/*.test.js",
+    "test:watch": "jest --watch ./test/*.test.js",
     "upgrade": "ncu -a && npm i"
   },
   "repository": {
@@ -31,6 +31,7 @@
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.0",
     "babel-eslint": "^8.2.1",
+    "babel-jest": "^22.0.6",
     "babel-loader": "^7.1.2",
     "babel-plugin-add-module-exports": "^0.2.1",
     "babel-plugin-transform-class-properties": "^6.24.1",
@@ -41,17 +42,23 @@
     "eslint": "^4.15.0",
     "eslint-loader": "^1.9.0",
     "flow-bin": "^0.63.1",
+    "jest": "^22.0.6",
     "mocha": "^4.1.0",
     "webpack": "^3.10.0",
     "yargs": "^10.1.1"
   },
   "dependencies": {
     "dom-delegator": "^13.1.0",
+    "fbemitter": "^2.1.1",
     "htmlparser2": "^3.9.2",
     "jexl-sync": "^1.0.1",
     "lodash": "^4.17.4",
     "main-loop": "^3.4.0",
     "mobx": "^3.4.1",
     "virtual-dom": "^2.1.1"
+  },
+  "jest": {
+    "moduleFileExtensions": ["js", "jsx"],
+    "moduleDirectories": ["node_modules", "src"]
   }
 }
