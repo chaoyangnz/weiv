@@ -28,6 +28,7 @@ export class Todo {
 
 }
 
+// register component globally
 Weiv.component('todo', Todo)
 
 @Component({
@@ -64,7 +65,10 @@ export class App {
   }
 }
 
+// root component
 const app = new App()
+
+// mount and go!
 Weiv.mount(app)
 ```
 
