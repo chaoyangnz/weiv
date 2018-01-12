@@ -15,7 +15,8 @@ export type Options = {
   name: string,
   target?: string,
   template?: string,
-  props?: {[string]: Prop}
+  props?: {[string]: Prop},
+  components: any
 }
 
 export type ComponentPrototype = {
@@ -28,45 +29,31 @@ export type ComponentPrototype = {
   $isRoot: () => boolean,
 }
 
-function injectPrototype(componentClass, options: Options) {
-  const prototype: any = {
-    $name: null,
-    $target: null,
-    $template: null,
-    $props: {},
-    $components: {},
-    $render: function () {
-      if (this.$template) {
-        const vdom = this.$template.render(this)
-        this.$vdom = vdom
-      } else {
-        this.$vdom = h('div', {}, [])
-      }
-    },
-    $isRoot: function () {
-      return !!this.$target
-    },
-    $lookupComponent: function (tag) {
-      let componentClass = this.$components[tag]
-      if (componentClass) return componentClass
-      return Weiv.$components.get(tag)
+function mixinPrototype(componentClass, options: Options) {
+  Object.defineProperty(componentClass.prototype, '$name', { value: _.cloneDeep(options.name || null) })
+  Object.defineProperty(componentClass.prototype, '$target', { value: options.target || null})
+  Object.defineProperty(componentClass.prototype, '$props', { value: _.cloneDeep(options.props || {}) })
+  Object.defineProperty(componentClass.prototype, '$components', { value: _.cloneDeep(options.components || []) })
+  Object.defineProperty(componentClass.prototype, '$render', { value: function () {
+    if (this.$template) {
+      const vdom = this.$template.render(this)
+      this.$vdom = vdom
+    } else {
+      this.$vdom = h('div', {}, [])
     }
-  }
-  if (options.target) {
-    prototype.$target = options.target
-  }
-  if (options.props) {
-    prototype.$props = _.cloneDeep(options.props)
-  }
-  if (options.components) {
-    prototype.$components = _.cloneDeep(options.components)
-  }
-
-  Object.assign(componentClass.prototype, prototype) // share meta to all component instances
-
+  }})
+  Object.defineProperty(componentClass.prototype, '$isRoot', { value: function () {
+    return !!this.$target
+  }})
+  Object.defineProperty(componentClass.prototype, '$lookupComponent', { value: function (tag) {
+    let componentClass = this.$components[tag]
+    if (componentClass) return componentClass
+    return Weiv.$components.get(tag)
+  }})
   if (options.template) {
     parse(options.template.trim(), componentClass)
   }
+  Object.freeze(componentClass.prototype)
 }
 
 export type ComponentMixin = {
@@ -82,33 +69,32 @@ export type ComponentMixin = {
   $emitter: EventEmitter
 }
 
-function injectComponent(id, parent, component) {
-  component.$id = id
-  component.$children = []
+function mixinComponent(component, id, parent) {
+  Object.defineProperty(component, '$id', { value: id })
+  Object.defineProperty(component, '$children', { value: [] })
   if (parent) {
-    component.$parent = parent
-    component.$root = parent.$root
     parent.$children[id] = component
+    Object.defineProperty(component, '$parent', { value: parent })
+    Object.defineProperty(component, '$root', { value: parent.$root })
   } else {
-    component.$root = component
+    Object.defineProperty(component, '$parent', { value: null })
+    Object.defineProperty(component, '$root', { value: component })
   }
-  component.$vdom = null
-  component.$dom = null
-  component.$emitter = new EventEmitter()
+  Object.defineProperty(component, '$emitter', { value: new EventEmitter() })
+  Object.defineProperty(component, '$vdom', { value: null, writable: true })
+  Object.defineProperty(component, '$dom', { value: null, writable: true })
 }
 
 export function Component(options: Options) {
   return function decorator(ComponentClass: any) {
-    injectPrototype(ComponentClass, options)
+    mixinPrototype(ComponentClass, options)
 
-    // const constructor =
-    // constructor.prototype = ComponentClass.prototype
     const constructor = (id: string, parent: any, props: any = {}) => {
       const component = new ComponentClass()
-      injectComponent(id, parent, component) // inject internal component properties
+      mixinComponent(component, id, parent) // inject internal component properties
       Object.keys(props).forEach(prop => {
         if (_.includes(Object.keys(component.$props), prop)) { // TODO validate props type
-          component[prop] = props[prop] // observable ???
+          Object.defineProperty(component, prop, { value: props[prop] })
         }
       })
       console.info('%cComponent: %o', 'color: red', component)

@@ -384,5 +384,5 @@ export function parse(template, componentClass) {
   parser.done()
 
   // attach parsed ast to component prototype
-  componentClass.prototype.$template = ast
+  Object.defineProperty(componentClass.prototype, '$template', {value: ast})
 }
