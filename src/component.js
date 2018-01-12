@@ -19,16 +19,6 @@ export type Options = {
   components: any
 }
 
-export type ComponentPrototype = {
-  $name: ?string,
-  $target: ?string,
-  $template: ?any,
-  $props: {[string]: Prop},
-  $components: {[string]: any},
-  $render: () => VNode,
-  $isRoot: () => boolean,
-}
-
 function mixinPrototype(componentClass, options: Options) {
   Object.defineProperty(componentClass.prototype, '$name', { value: _.cloneDeep(options.name || null) })
   Object.defineProperty(componentClass.prototype, '$target', { value: options.target || null})
@@ -54,19 +44,6 @@ function mixinPrototype(componentClass, options: Options) {
     parse(options.template.trim(), componentClass)
   }
   Object.freeze(componentClass.prototype)
-}
-
-export type ComponentMixin = {
-  $id: string,
-  // only mounted component has a root vdom tree
-  $vdom: ?VNode,
-  $dom: ?HTMLElement,
-  // parent component
-  $parent: ?any,
-  $children: {[string]: any},
-  $root: ?any,
-  // event emitter
-  $emitter: EventEmitter
 }
 
 function mixinComponent(component, id, parent) {
