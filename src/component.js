@@ -1,10 +1,8 @@
 // @flow
 import { VNode, h } from 'virtual-dom'
-import _ from 'lodash'
-// import Hogan from 'hogan.js'
-// import parser from 'vdom-parser'
-import { parse } from './template'
 import { EventEmitter } from 'fbemitter'
+import _ from 'lodash'
+import { parse } from './template'
 import Weiv from './weiv'
 
 export type Prop = {
@@ -72,20 +70,25 @@ function injectPrototype(componentClass, options: Options) {
 }
 
 export type ComponentMixin = {
+  $id: string,
   // only mounted component has a root vdom tree
   $vdom: ?VNode,
   $dom: ?HTMLElement,
   // parent component
   $parent: ?any,
+  $children: {[string]: any},
   $root: ?any,
   // event emitter
   $emitter: EventEmitter
 }
 
-function injectComponent(parent, component) {
+function injectComponent(id, parent, component) {
+  component.$id = id
+  component.$children = []
   if (parent) {
     component.$parent = parent
     component.$root = parent.$root
+    parent.$children[id] = component
   } else {
     component.$root = component
   }
@@ -100,9 +103,9 @@ export function Component(options: Options) {
 
     // const constructor =
     // constructor.prototype = ComponentClass.prototype
-    return (parent: any, props: any = {}) => {
+    const constructor = (id: string, parent: any, props: any = {}) => {
       const component = new ComponentClass()
-      injectComponent(parent, component) // inject internal component properties
+      injectComponent(id, parent, component) // inject internal component properties
       Object.keys(props).forEach(prop => {
         if (_.includes(Object.keys(component.$props), prop)) { // TODO validate props type
           component[prop] = props[prop] // observable ???
@@ -111,5 +114,8 @@ export function Component(options: Options) {
       console.info('%cComponent: %o', 'color: red', component)
       return component
     }
+
+    constructor.origin = ComponentClass
+    return constructor
   }
 }

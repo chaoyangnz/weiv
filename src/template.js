@@ -233,6 +233,9 @@ class Node {
     this.directives = directives || []
     this.children = children || []
     this.componentClass = componentClass
+    if (componentClass) {
+      this.componentId = `${componentClass.origin.name}_${Math.random().toString(36).substr(2, 9)}`
+    }
   }
 
   render(component) {
@@ -248,7 +251,10 @@ class Node {
       return vdom.h(this.tagName, properties, children)
     }
     /* eslint new-cap: 0 */
-    const childComponent = new this['componentClass'](component, properties)
+    let childComponent = component.$children[this.componentId]
+    if (!childComponent) {
+      childComponent = new this['componentClass'](this.componentId, component, properties)
+    }
     childComponent.$render()
     return childComponent.$vdom
   }

@@ -5,8 +5,8 @@ import { autorun } from 'mobx'
 const Weiv = {
   $components: new Map(),
 
-  component(tag: string, component: any) {
-    this.$components.set(tag, component)
+  component(tag: string, componentClass: any) {
+    this.$components.set(tag, componentClass)
   },
 
   mount(component: any) {
