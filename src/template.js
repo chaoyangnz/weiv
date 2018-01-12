@@ -163,18 +163,18 @@ class Expression {
     this.ast = Jexl.parse(exp)
   }
 
-  eval(context) {
-    let val = Jexl.evaluate(this.ast, context)
+  eval(component) {
+    let val = Jexl.evaluate(this.ast, component)
     console.debug('Evaluate expression `%s`: %o', this.exp, val)
     // autobind functions
     if (val && typeof val === 'function') {
-      val = val.bind(context)
+      val = val.bind(component)
     }
     return val
   }
 
-  render(context) {
-    const val = this.eval(context)
+  render(component) {
+    const val = this.eval(component)
     const text = (val !== null && val !== undefined) ? String(val) : ''
     return new vdom.VText(text)
   }
@@ -193,27 +193,27 @@ class Directive {
     return true
   }
 
-  process(vnode, context) {
+  process(properties, children, component) {
     if (this.command === 'if') {
-      const val = this.expression.eval(context)
-      return Directive.isTrue(val) ? vnode : null
+      const val = this.expression.eval(component)
+      return Directive.isTrue(val)
     }
     if (this.command === 'bind') {
-      const val = this.expression.eval(context)
-      vnode.properties[this.target] = val
-      return vnode
+      const val = this.expression.eval(component)
+      properties[this.target] = val
+      return true
     }
     if (this.command === 'on') {
-      let val = this.expression.eval(context)
+      let val = this.expression.eval(component)
       if (val && typeof val === 'function') {
         if (_.includes(this.params, 'native')) {
-          vnode.properties[`on${this.target}`] = val
+          properties[`on${this.target}`] = val
         }
       }
-      return vnode
+      return true
     }
     console.error('Illegal directive: %o', this)
-    return vnode
+    return true
   }
 }
 
@@ -222,7 +222,7 @@ class Text {
     this.text = text
   }
 
-  render(context) {
+  render(component) {
     return new vdom.VText(this.text)
   }
 }
@@ -235,24 +235,22 @@ class Node {
     this.componentClass = componentClass
   }
 
-  render(context) {
+  render(component) {
     let properties = _.cloneDeep(this.properties)
     // only `onclick..` attributes is expression
-    properties = _.mapValues(properties, attr => attr instanceof Expression ? attr.eval(context) : attr)
-    const children = _.remove(this.children.map(child => child.render(context)), null)
+    properties = _.mapValues(properties, attr => attr instanceof Expression ? attr.eval(component) : attr)
+    const children = _.remove(this.children.map(child => child.render(component)), null)
+    // start directiv processing
+    for (let directive of this.directives) {
+      if (!directive.process(properties, children, component)) return null
+    }
     if (!this.componentClass) {
-      let vnode = vdom.h(this.tagName, properties, children)
-      // start directiv processing
-      for (let directive of this.directives) {
-        vnode = directive.process(vnode, context)
-        if (vnode === null) break
-      }
-      return vnode
+      return vdom.h(this.tagName, properties, children)
     }
     /* eslint new-cap: 0 */
-    const component = new this['componentClass'](properties)
-    component.$render()
-    return component.$vdom
+    const childComponent = new this['componentClass'](component, properties)
+    childComponent.$render()
+    return childComponent.$vdom
   }
 }
 
@@ -289,7 +287,7 @@ function parseText(text) {
   return arr
 }
 
-function parseTag(tagName, attributes, meta) {
+function parseTag(tagName, attributes, componentClass) {
   const tag = tagName.toLowerCase()
   const properties = {}
   const directives = []
@@ -307,27 +305,27 @@ function parseTag(tagName, attributes, meta) {
 
     return new Node(tag, properties, directives, [])
   }
-  const componentClass = meta.lookupComponent(tag)
-  if (componentClass) {
+  const childComponentClass = componentClass.prototype.$lookupComponent(tag)
+  if (childComponentClass) {
     for (let name of Object.keys(attributes)) {
       if (name.match(/@[^@]+/)) { // directive prefix: @
         const directive = parseDirective(name, attributes[name])
         if (directive) directives.push(directive)
       } else {
         // validate component props
-        if (_.includes(Object.keys(meta.props), name)) {
+        if (_.includes(Object.keys(childComponentClass.prototype.$props), name)) {
           properties[name] = attributes[name]
         } else {
-          console.warn('Illegal commponent props for %s: %s', componentClass.name, name)
+          console.warn('Illegal commponent props %s in %s', name, childComponentClass.name)
         }
       }
     }
-    return new Node(tag, properties, directives, [], componentClass)
+    return new Node(tag, properties, directives, [], childComponentClass)
   }
   throw Error('Cannot find component for custom tag: ' + tag)
 }
 
-export function compile(template, meta) {
+export function parse(template, componentClass) {
   const roots = []
   const stack = []
   /* eslint no-unused-vars: 0 */
@@ -336,7 +334,7 @@ export function compile(template, meta) {
   function onOpenTag(tagName, attributes) {
     console.debug(`<${tagName}>`)
     console.debug(attributes)
-    const node = parseTag(tagName, attributes, meta)
+    const node = parseTag(tagName, attributes, componentClass)
     stack.push(node)
     console.debug(stack)
   }
@@ -379,5 +377,6 @@ export function compile(template, meta) {
   parser.write(template)
   parser.done()
 
-  return ast
+  // attach parsed ast to component prototype
+  componentClass.prototype.$template = ast
 }

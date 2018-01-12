@@ -3,15 +3,15 @@ import VDOM from 'virtual-dom'
 import { autorun } from 'mobx'
 
 const Weiv = {
-  components: new Map(),
+  $components: new Map(),
 
   component(tag: string, component: any) {
-    this.components.set(tag, component)
+    this.$components.set(tag, component)
   },
 
   mount(component: any) {
     if (!component.$isRoot()) return
-    autorun(() => {
+    autorun(() => { // tick
       const vdom = component.$vdom // old vdom tree
       console.info('Before: %o', vdom)
       component.$render()

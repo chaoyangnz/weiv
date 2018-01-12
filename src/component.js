@@ -3,12 +3,12 @@ import { VNode, h } from 'virtual-dom'
 import _ from 'lodash'
 // import Hogan from 'hogan.js'
 // import parser from 'vdom-parser'
-import { compile } from './template'
+import { parse } from './template'
 import { EventEmitter } from 'fbemitter'
 import Weiv from './weiv'
 
 export type Prop = {
-  type: Function,
+  type: string,
   default: any,
   required: boolean
 }
@@ -20,7 +20,7 @@ export type Options = {
   props?: {[string]: Prop}
 }
 
-export type ComponentMeta = {
+export type ComponentPrototype = {
   $name: ?string,
   $target: ?string,
   $template: ?any,
@@ -30,76 +30,86 @@ export type ComponentMeta = {
   $isRoot: () => boolean,
 }
 
-function createComponentMeta(options: Options) {
-  const meta: any = {}
-  if (options.target) {
-    meta.$target = options.target
-  }
-  if (options.props) {
-    meta.$props = _.cloneDeep(options.props)
-  }
-  if (options.components) {
-    meta.$components = _.cloneDeep(options.components)
-  }
-  meta.$render = function () {
-    if (this.$template) {
-      const vdom = this.$template.render(this)
-      this.$vdom = vdom
-    } else {
-      this.$vdom = h('div', {}, [])
+function injectPrototype(componentClass, options: Options) {
+  const prototype: any = {
+    $name: null,
+    $target: null,
+    $template: null,
+    $props: {},
+    $components: {},
+    $render: function () {
+      if (this.$template) {
+        const vdom = this.$template.render(this)
+        this.$vdom = vdom
+      } else {
+        this.$vdom = h('div', {}, [])
+      }
+    },
+    $isRoot: function () {
+      return !!this.$target
+    },
+    $lookupComponent: function (tag) {
+      let componentClass = this.$components[tag]
+      if (componentClass) return componentClass
+      return Weiv.$components.get(tag)
     }
   }
+  if (options.target) {
+    prototype.$target = options.target
+  }
+  if (options.props) {
+    prototype.$props = _.cloneDeep(options.props)
+  }
+  if (options.components) {
+    prototype.$components = _.cloneDeep(options.components)
+  }
 
-  meta.$isRoot = function () {
-    return !!this.$target
-  }
-  meta.$lookupComponent = function (tag) {
-    let componentClass = this.$components[tag]
-    if (componentClass) return componentClass
-    return Weiv.$components[tag]
-  }
+  Object.assign(componentClass.prototype, prototype) // share meta to all component instances
+
   if (options.template) {
-    meta.$template = compile(options.template.trim(), meta)
+    parse(options.template.trim(), componentClass)
   }
-
-  return meta
 }
 
-export class ComponentMixin {
+export type ComponentMixin = {
   // only mounted component has a root vdom tree
-  $vdom: ?VNode = null
-  $dom: ?HTMLElement = null
+  $vdom: ?VNode,
+  $dom: ?HTMLElement,
   // parent component
-  $parent: ?ComponentMixin = null
-  $root: ?ComponentMixin = null
+  $parent: ?any,
+  $root: ?any,
   // event emitter
-  $emitter: EventEmitter = new EventEmitter()
+  $emitter: EventEmitter
+}
 
-  constructor() {
-    // init instance from meta
-    // trigger $created lifecycle hook
+function injectComponent(parent, component) {
+  if (parent) {
+    component.$parent = parent
+    component.$root = parent.$root
+  } else {
+    component.$root = component
   }
-
-  // create component props properties as per $props declaration
-  initProps() {
-    // TODO
-  }
+  component.$vdom = null
+  component.$dom = null
+  component.$emitter = new EventEmitter()
 }
 
 export function Component(options: Options) {
   return function decorator(ComponentClass: any) {
-    Object.assign(ComponentClass.prototype, createComponentMeta(options)) // share meta to all component instances
-    const constructor = (props) => {
+    injectPrototype(ComponentClass, options)
+
+    // const constructor =
+    // constructor.prototype = ComponentClass.prototype
+    return (parent: any, props: any = {}) => {
       const component = new ComponentClass()
-      Object.assign(component, new ComponentMixin()) // inject internal properties
+      injectComponent(parent, component) // inject internal component properties
       Object.keys(props).forEach(prop => {
-        if (_.includes(Object.keys(component.props), prop)) { // TODO validate props type
+        if (_.includes(Object.keys(component.$props), prop)) { // TODO validate props type
           component[prop] = props[prop] // observable ???
         }
       })
+      console.info('%cComponent: %o', 'color: red', component)
       return component
     }
-    constructor.prototype.constructor = ComponentClass
-    return constructor
   }
 }
