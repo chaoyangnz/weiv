@@ -1,5 +1,4 @@
 // @flow
-import { VNode, h } from 'virtual-dom'
 import { EventEmitter } from 'fbemitter'
 import _ from 'lodash'
 import { parse } from './template'
@@ -24,13 +23,15 @@ function mixinPrototype(componentClass, options: Options) {
   Object.defineProperty(componentClass.prototype, '$target', { value: options.target || null})
   Object.defineProperty(componentClass.prototype, '$props', { value: _.cloneDeep(options.props || {}) })
   Object.defineProperty(componentClass.prototype, '$components', { value: _.cloneDeep(options.components || []) })
-  Object.defineProperty(componentClass.prototype, '$render', { value: function () {
-    if (this.$template) {
-      const vdom = this.$template.render(this)
-      this.$vdom = vdom
-    } else {
-      this.$vdom = h('div', {}, [])
-    }
+  Object.defineProperty(componentClass.prototype, '$render', { value: function (props: any = {}) {
+    Object.keys(props).forEach(prop => {
+      if (_.includes(Object.keys(this.$props), prop)) { // TODO validate props type
+        const value = _.cloneDeep(props[prop])
+        Object.freeze(value)
+        Object.defineProperty(this, prop, { value: value, configurable: true, writable: false })
+      }
+    })
+    this.$vdom = this.$template.render(this)
   }})
   Object.defineProperty(componentClass.prototype, '$isRoot', { value: function () {
     return !!this.$target
@@ -41,7 +42,7 @@ function mixinPrototype(componentClass, options: Options) {
     return Weiv.$components.get(tag)
   }})
   if (options.template) {
-    parse(options.template.trim(), componentClass)
+    parse(options.template.trim() || '<div />', componentClass)
   }
   Object.freeze(componentClass.prototype)
 }
@@ -66,14 +67,9 @@ export function Component(options: Options) {
   return function decorator(ComponentClass: any) {
     mixinPrototype(ComponentClass, options)
 
-    const constructor = (id: string, parent: any, props: any = {}) => {
+    const constructor = (id: string, parent: any) => {
       const component = new ComponentClass()
       mixinComponent(component, id, parent) // inject internal component properties
-      Object.keys(props).forEach(prop => {
-        if (_.includes(Object.keys(component.$props), prop)) { // TODO validate props type
-          Object.defineProperty(component, prop, { value: props[prop] })
-        }
-      })
       console.info('%cComponent: %o', 'color: red', component)
       return component
     }

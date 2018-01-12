@@ -253,9 +253,9 @@ class Node {
     /* eslint new-cap: 0 */
     let childComponent = component.$children[this.componentId]
     if (!childComponent) {
-      childComponent = new this['componentClass'](this.componentId, component, properties)
+      childComponent = new this['componentClass'](this.componentId, component)
     }
-    childComponent.$render()
+    childComponent.$render(properties)
     return childComponent.$vdom
   }
 }
