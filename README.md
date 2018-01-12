@@ -17,6 +17,20 @@ import Weiv from './weiv';
 import { observable, action } from 'mobx';
 
 @Component({
+  template: `
+  <span>show props: {{a}}</span>
+  `,
+  props: {
+    a: {type: 'number', required: true}
+  }
+})
+export class Todo {
+
+}
+
+Weiv.component('todo', Todo)
+
+@Component({
   target: '#app',
   template: `
   <div>
@@ -24,8 +38,9 @@ import { observable, action } from 'mobx';
     <div @if="counter < 5">Location: {{location.city}} - {{location.country}}</div>
     <p>Countdown: {{counter}}</p>
     <button onclick="minus" style="width: 80px">➖</button>
-    <button @on:click="plus" style="width: 80px">➕</button>
+    <button @on:click.native="plus" style="width: 80px">➕</button>
     <p>Tip: When counter is less than 5, location will be shown.</p>
+    <todo @bind:a="counter"></todo>
   </div>
   `
 })
