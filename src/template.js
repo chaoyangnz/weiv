@@ -192,29 +192,6 @@ class Directive {
     if (val === false || val === null || val === undefined) return false
     return true
   }
-
-  process(properties, children, component) {
-    if (this.command === 'if') {
-      const val = this.expression.eval(component)
-      return Directive.isTrue(val)
-    }
-    if (this.command === 'bind') {
-      const val = this.expression.eval(component)
-      properties[this.target] = val
-      return true
-    }
-    if (this.command === 'on') {
-      let val = this.expression.eval(component)
-      if (val && typeof val === 'function') {
-        if (_.includes(this.params, 'native')) {
-          properties[`on${this.target}`] = val
-        }
-      }
-      return true
-    }
-    console.error('Illegal directive: %o', this)
-    return true
-  }
 }
 
 class Text {
@@ -224,39 +201,6 @@ class Text {
 
   render(component) {
     return new vdom.VText(this.text)
-  }
-}
-class Node {
-  constructor(tagName, properties, directives, children, componentClass) {
-    this.tagName = tagName.toLowerCase()
-    this.properties = properties || {}
-    this.directives = directives || []
-    this.children = children || []
-    this.componentClass = componentClass
-    if (componentClass) {
-      this.componentId = `${componentClass.$class.name}_${Math.random().toString(36).substr(2, 9)}`
-    }
-  }
-
-  render(component) {
-    let properties = _.cloneDeep(this.properties)
-    // only `onclick..` attributes is expression
-    properties = _.mapValues(properties, attr => attr instanceof Expression ? attr.eval(component) : attr)
-    const children = _.remove(this.children.map(child => child.render(component)), null)
-    // start directiv processing
-    for (let directive of this.directives) {
-      if (!directive.process(properties, children, component)) return null
-    }
-    if (!this.componentClass) {
-      return vdom.h(this.tagName, properties, children)
-    }
-    /* eslint new-cap: 0 */
-    let childComponent = component.$children[this.componentId]
-    if (!childComponent) {
-      childComponent = new this['componentClass'](this.componentId, component)
-    }
-    childComponent.$render(properties)
-    return childComponent.$vdom
   }
 }
 
@@ -272,6 +216,139 @@ function parseDirective(name, exp) {
   }
   console.warn('Illagal directive attribute: %s', name)
   return null
+}
+
+class Node {
+  constructor(tagName, attributes) {
+    this.tagName = tagName.toLowerCase()
+    this.properties = {}
+    this.directives = []
+    this.children = []
+    for (let name of Object.keys(attributes)) {
+      if (name.match(/@[^@]+/)) { // directive prefix: @
+        const directive = parseDirective(name, attributes[name])
+        if (directive) this.directives.push(directive)
+      } else if (_.includes(HTML_EVENT_ATTRIBUTES, name.toLowerCase())) {
+        this.properties[name] = new Expression(attributes[name])
+      } else {
+        this.properties[name] = attributes[name]
+      }
+    }
+  }
+
+  // structural directive
+  structural(directive, properties, children, component) {
+    const val = directive.expression.eval(component)
+    if (directive.command === 'if') {
+      return Directive.isTrue(val)
+    }
+    return true
+  }
+
+  // behavioral directive
+  behavioral(directive, properties, children, component) {
+    const val = directive.expression.eval(component)
+    if (directive.command === 'bind') {
+      properties[directive.target] = val
+    } else if (directive.command === 'on') {
+      if (val && typeof val === 'function') {
+        if (_.includes(HTML_EVENT_ATTRIBUTES, directive.target.toLowerCase())) {
+          properties[`on${directive.target}`] = val
+        }
+      }
+    } else {
+      console.error('Illegal directive: %o', directive)
+    }
+  }
+
+  render(component) {
+    let properties = _.cloneDeep(this.properties)
+    // only `onclick..` attributes is expression
+    properties = _.mapValues(properties, attr => attr instanceof Expression ? attr.eval(component) : attr)
+    const children = _.remove(this.children.map(child => child.render(component)), null)
+    // start directiv processing
+    for (let directive of this.directives) {
+      if (!this.structural(directive, properties, children, component)) return null
+    }
+    for (let directive of this.directives) {
+      this.behavioral(directive, properties, children, component)
+    }
+    return vdom.h(this.tagName, properties, children)
+  }
+}
+
+class Component {
+  constructor(tagName, attributes, componentClass) {
+    this.tagName = tagName.toLowerCase()
+    this.properties = {}
+    this.directives = []
+    this.children = []
+    this.componentClass = componentClass
+    this.componentId = componentClass.$uniqueid()
+    for (let name of Object.keys(attributes)) {
+      if (name.match(/@[^@]+/)) { // directive prefix: @
+        const directive = parseDirective(name, attributes[name])
+        if (directive) this.directives.push(directive)
+      } else {
+        // validate component props
+        if (_.includes(Object.keys(componentClass.prototype.$props), name)) {
+          this.properties[name] = attributes[name]
+        } else {
+          console.warn('Illegal commponent props %s in %s', name, componentClass.$class.name)
+        }
+      }
+    }
+  }
+
+  // structural directive
+  structural(directive, properties, children, component) {
+    if (directive.command === 'if') {
+      const val = directive.expression.eval(component)
+      return Directive.isTrue(val)
+    }
+    return true
+  }
+
+  // behavioral directive
+  behavioral(directive, properties, children, component, childComponent) {
+    const val = directive.expression.eval(component)
+    if (directive.command === 'bind') {
+      properties[directive.target] = val
+    } else if (directive.command === 'on') {
+      if (val && typeof val === 'function') {
+        if (_.includes(directive.params, 'native')) {
+          if (_.includes(HTML_EVENT_ATTRIBUTES, directive.target.toLowerCase())) {
+            // TODO add native event to component's root element
+          }
+        } else {
+          childComponent.$addEventListener(directive.target, val)
+        }
+      }
+    } else {
+      console.error('Illegal directive: %o', directive)
+    }
+  }
+
+  render(component) {
+    let properties = _.cloneDeep(this.properties)
+    // only `onclick..` attributes is expression
+    properties = _.mapValues(properties, attr => attr instanceof Expression ? attr.eval(component) : attr)
+    const children = _.remove(this.children.map(child => child.render(component)), null)
+    // start directiv processing
+    for (let directive of this.directives) {
+      if (!this.structural(directive, properties, children, component)) return null
+    }
+    /* eslint new-cap: 0 */
+    let childComponent = component.$children[this.componentId]
+    if (!childComponent) {
+      childComponent = new this['componentClass'](this.componentId, component)
+    }
+    for (let directive of this.directives) {
+      this.behavioral(directive, properties, children, component, childComponent)
+    }
+    childComponent.$render(properties)
+    return childComponent.$vdom
+  }
 }
 
 function parseText(text) {
@@ -298,35 +375,11 @@ function parseTag(tagName, attributes, componentClass) {
   const properties = {}
   const directives = []
   if (_.includes(HTML_TAGS, tag)) { // HTML tags
-    for (let name of Object.keys(attributes)) {
-      if (name.match(/@[^@]+/)) { // directive prefix: @
-        const directive = parseDirective(name, attributes[name])
-        if (directive) directives.push(directive)
-      } else if (_.includes(HTML_EVENT_ATTRIBUTES, name.toLowerCase())) {
-        properties[name] = new Expression(attributes[name])
-      } else {
-        properties[name] = attributes[name]
-      }
-    }
-
-    return new Node(tag, properties, directives, [])
+    return new Node(tag, attributes)
   }
   const childComponentClass = componentClass.prototype.$lookupComponent(tag)
   if (childComponentClass) {
-    for (let name of Object.keys(attributes)) {
-      if (name.match(/@[^@]+/)) { // directive prefix: @
-        const directive = parseDirective(name, attributes[name])
-        if (directive) directives.push(directive)
-      } else {
-        // validate component props
-        if (_.includes(Object.keys(childComponentClass.prototype.$props), name)) {
-          properties[name] = attributes[name]
-        } else {
-          console.warn('Illegal commponent props %s in %s', name, childComponentClass.$class.name)
-        }
-      }
-    }
-    return new Node(tag, properties, directives, [], childComponentClass)
+    return new Component(tag, attributes, childComponentClass)
   }
   throw Error('Cannot find component for custom tag: ' + tag)
 }

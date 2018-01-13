@@ -9,19 +9,22 @@ import Weiv from './weiv'
 export type Prop = {
   type: string,
   default: any,
-  required: boolean
+  required: boolean,
+  description: ?string
 }
 
 export type Options = {
   name: string,
   template?: string,
   props?: {[string]: Prop},
+  events?: {[string]: any},
   components: any
 }
 
 function mixinPrototype(componentClass, options: Options) {
   Object.defineProperty(componentClass.prototype, '$name', { value: _.cloneDeep(options.name || null) })
   Object.defineProperty(componentClass.prototype, '$props', { value: _.cloneDeep(options.props || {}) })
+  Object.defineProperty(componentClass.prototype, '$events', { value: _.cloneDeep(options.events || {}) })
   Object.defineProperty(componentClass.prototype, '$components', { value: _.cloneDeep(options.components || []) })
   Object.defineProperty(componentClass.prototype, '$render', { value: function (props: any = {}) {
     Object.keys(props).forEach(prop => {
@@ -33,13 +36,22 @@ function mixinPrototype(componentClass, options: Options) {
     })
     this.$vdom = this.$template.render(this)
   }})
-  Object.defineProperty(componentClass.prototype, '$isRoot', { value: function () {
-    return !!this.$target
-  }})
   Object.defineProperty(componentClass.prototype, '$lookupComponent', { value: function (tag) {
     let componentClass = this.$components[tag]
     if (componentClass) return componentClass
     return Weiv.$components.get(tag)
+  }})
+  Object.defineProperty(componentClass.prototype, '$addEventListener', { value: function (event, listener) {
+    if (_.includes(Object.keys(this.$events), event)) { // TODO validate events type
+      this.$emitter.addListener(event, listener)
+    }
+  }})
+  Object.defineProperty(componentClass.prototype, '$emit', { value: function (event, ...args) {
+    if (_.includes(Object.keys(this.$events), event)) { // TODO validate events type
+      this.$emitter.emit(event, ...args)
+    } else {
+      throw new Error(`No event '${event}' declaration in component: ${componentClass.name}`)
+    }
   }})
   Object.defineProperty(componentClass.prototype, '$mount', { value: function (el) {
     if (this.$parent !== null || this.$dom !== null) {
@@ -72,6 +84,11 @@ function mixinPrototype(componentClass, options: Options) {
   const template = options.template ? options.template.trim() : '<div />'
   Object.defineProperty(componentClass.prototype, '$template', {value: parse(template, componentClass)})
   Object.freeze(componentClass.prototype)
+
+  // static methods
+  Object.defineProperty(componentClass, '$uniqueid', { value: function () {
+    return `${componentClass.name}@${Math.random().toString(36).substr(2, 9)}`
+  }})
 }
 
 function mixinComponent(component, id, parent) {
@@ -96,12 +113,12 @@ export function Component(options: Options) {
 
     const WeivComponent = (id: string, parent: any) => {
       const component = new ComponentClass()
-      mixinComponent(component, id, parent) // inject internal component properties
+      mixinComponent(component, id || ComponentClass.$uniqueid(), parent) // inject internal component properties
       console.info('%cComponent: %o', 'color: red', component)
       return component
     }
 
-    Object.defineProperty(WeivComponent, '$class', { value: ComponentClass })
+    Object.defineProperty(WeivComponent, '$uniqueid', { value: ComponentClass.$uniqueid })
     return WeivComponent
   }
 }

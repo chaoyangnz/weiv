@@ -7,10 +7,17 @@ import { observable, action } from 'mobx';
   <div>
     <span>TODO: {{a}}</span>
     <button onclick="changeProp" style="height: 30px">Try to change props?</button>
+    <p>
+      <input type="text" />
+      <button onclick="onSave" style="height: 30px">Save</button>
+    </p>
   </div>
   `,
   props: {
     a: {type: 'number', required: true}
+  },
+  events: {
+    save: {}
   }
 })
 export class Todo {
@@ -20,6 +27,10 @@ export class Todo {
     } catch (err) {
       alert(err.message)
     }
+  }
+
+  onSave() {
+    this.$emit('save', 1, 2)
   }
 }
 
@@ -34,7 +45,7 @@ Weiv.component('todo', Todo)
     <button onclick="minus" style="width: 80px">➖</button>
     <button @on:click.native="plus" style="width: 80px">➕</button>
     <p>Tip: When counter is less than 5, location will be shown.</p>
-    <todo @bind:a="counter"></todo>
+    <todo @bind:a="counter" @on:save="onSave"></todo>
   </span>
   `
 })
@@ -56,7 +67,10 @@ export class App {
     if (this.counter === 0) return
     this.counter -= 1
   }
+
+  onSave(a, b) {
+    alert(a + ' ' + b)
+  }
 }
 
-new App().$mount('#app')
 new App().$mount('#app')
