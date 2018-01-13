@@ -1,16 +1,17 @@
 ## What is `weiv`
 
-<img src='./weiv.svg' width="80" /> weiv.js - A home-brew UI view library for modern component-based web development.
+<img src='./weiv.svg' width="80" /> weiv.js - A home-brew UI view library for modern component-oriented web development.
 `Weiv` is the reverse of the word `View` or `微V` in Chinese which means micro-view literally.
 
 ## Why `weiv`?
 
-This is an era of evolution with tons of front-end frameworks: React, Angular, Vue, Preact, Ractive, Svelte. Probably like me, you also feel tired to follow this one or another one. So I choose to reinvent the wheel and eat my own dog food.
+This is an era of front-end evolution with tons of front-end frameworks: React, Angular, Vue, Preact, Ractive, Svelte. Probably like me, you also feel tired to follow this one or another one. So I choose to reinvent the wheel and eat my own dog food.
 
 ## How it's like
 
 <img src="https://i.imgur.com/7zDlvn1.gif" width="500">
 
+[![Edit weiv-demo](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/m7k55r39p9?autoresize=1&expanddevtools=1&hidenavigation=1)
 ```javascript
 import { Component, observable, action } from '.';
 

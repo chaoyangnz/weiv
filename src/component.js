@@ -1,7 +1,7 @@
 // @flow
 import _ from 'lodash'
-import { EventEmitter } from 'fbemitter'
 import VDOM from 'virtual-dom'
+import { EventEmitter } from 'fbemitter'
 import { autorun } from 'mobx'
 import { parse } from './template'
 import { Weiv } from '.'

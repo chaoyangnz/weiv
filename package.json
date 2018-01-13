@@ -1,7 +1,7 @@
 {
-  "name": "weiv",
+  "name": "weivjs",
   "version": "0.0.1",
-  "description": "Modern reactive component library for web, mobile and more",
+  "description": " A home-brew UI view library for modern component-based web development",
   "main": "lib/weiv.js",
   "scripts": {
     "build": "webpack --env dev && webpack --env build && npm run test",
