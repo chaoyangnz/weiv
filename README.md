@@ -9,30 +9,48 @@ This is an era of evolution with tons of front-end frameworks: React, Angular, V
 
 ## How it's like
 
-<img src="https://i.imgur.com/mpTwvNR.gif" width="500">
+<img src="https://i.imgur.com/RdfSgo2.gif" width="500">
 
 ```javascript
 import { Component } from './component';
 import Weiv from './weiv';
 import { observable, action } from 'mobx';
 
-@Component({
+@@Component({
   template: `
-  <span>show props: {{a}}</span>
+  <div>
+    <span>TODO: {{a}}</span>
+    <button onclick="changeProp" style="height: 30px">Try to change props?</button>
+    <p>
+      <input type="text" />
+      <button onclick="onSave" style="height: 30px">Save</button>
+    </p>
+  </div>
   `,
   props: {
     a: {type: 'number', required: true}
+  },
+  events: {
+    save: {}
   }
 })
 export class Todo {
+  changeProp() {
+    try {
+      this.a = 0
+    } catch (err) {
+      alert(err.message)
+    }
+  }
 
+  onSave() {
+    this.$emit('save', 1, 2)
+  }
 }
 
-// register component globally
 Weiv.component('todo', Todo)
 
 @Component({
-  target: '#app',
   template: `
   <div>
     <h1 @bind:title="counter">{{firstName}} {{lastName}}</h1><p>{{blogURL}}</p>
@@ -41,8 +59,8 @@ Weiv.component('todo', Todo)
     <button onclick="minus" style="width: 80px">➖</button>
     <button @on:click.native="plus" style="width: 80px">➕</button>
     <p>Tip: When counter is less than 5, location will be shown.</p>
-    <todo @bind:a="counter"></todo>
-  </div>
+    <todo @bind:a="counter" @on:save="onSave"></todo>
+  </span>
   `
 })
 export class App {
@@ -62,6 +80,10 @@ export class App {
   @action minus() {
     if (this.counter === 0) return
     this.counter -= 1
+  }
+
+  onSave(a, b) {
+    alert(a + ' ' + b)
   }
 }
 

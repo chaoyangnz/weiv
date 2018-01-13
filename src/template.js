@@ -252,7 +252,7 @@ class Node {
       properties[directive.target] = val
     } else if (directive.command === 'on') {
       if (val && typeof val === 'function') {
-        if (_.includes(HTML_EVENT_ATTRIBUTES, directive.target.toLowerCase())) {
+        if (_.includes(HTML_EVENT_ATTRIBUTES, 'on' + directive.target.toLowerCase())) {
           properties[`on${directive.target}`] = val
         }
       }
@@ -318,7 +318,7 @@ class Component {
       if (val && typeof val === 'function') {
         if (_.includes(directive.params, 'native')) {
           if (_.includes(HTML_EVENT_ATTRIBUTES, directive.target.toLowerCase())) {
-            // TODO add native event to component's root element
+            // TODO add native event to component's root dom element
           }
         } else {
           childComponent.$addEventListener(directive.target, val)
@@ -343,6 +343,7 @@ class Component {
     if (!childComponent) {
       childComponent = new this['componentClass'](this.componentId, component)
     }
+    childComponent.$emitter.removeAllListeners()
     for (let directive of this.directives) {
       this.behavioral(directive, properties, children, component, childComponent)
     }

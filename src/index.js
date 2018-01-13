@@ -43,7 +43,7 @@ Weiv.component('todo', Todo)
     <div @if="counter < 5">Location: {{location.city}} - {{location.country}}</div>
     <p>Countdown: {{counter}}</p>
     <button onclick="minus" style="width: 80px">➖</button>
-    <button @on:click.native="plus" style="width: 80px">➕</button>
+    <button @on:click="plus" style="width: 80px">➕</button>
     <p>Tip: When counter is less than 5, location will be shown.</p>
     <todo @bind:a="counter" @on:save="onSave"></todo>
   </span>
