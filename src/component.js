@@ -4,7 +4,7 @@ import { EventEmitter } from 'fbemitter'
 import VDOM from 'virtual-dom'
 import { autorun } from 'mobx'
 import { parse } from './template'
-import Weiv from './weiv'
+import { Weiv } from './weiv'
 
 export type Prop = {
   type: string,

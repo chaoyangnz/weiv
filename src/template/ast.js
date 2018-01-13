@@ -1,163 +1,9 @@
 import _ from 'lodash'
-import htmlparser from 'htmlparser2'
 import vdom from 'virtual-dom'
 import Jexl from 'jexl-sync'
+import { HTML_EVENT_ATTRIBUTES } from './html'
 
-const HTML_TAGS = [
-  'a',
-  'abbr',
-  'acronym',
-  'address',
-  'applet',
-  'area',
-  'article',
-  'aside',
-  'audio',
-  'b',
-  'base',
-  'basefont',
-  'bdi',
-  'bdo',
-  'big',
-  'blockquote',
-  'body',
-  'br',
-  'button',
-  'canvas',
-  'caption',
-  'center',
-  'cite',
-  'code',
-  'col',
-  'colgroup',
-  'datalist',
-  'dd',
-  'del',
-  'details',
-  'dfn',
-  'dialog',
-  'dir',
-  'div',
-  'dl',
-  'dt',
-  'em',
-  'embed',
-  'fieldset',
-  'figcaption',
-  'figure',
-  'font',
-  'footer',
-  'form',
-  'frame',
-  'frameset',
-  'h1',
-  'head',
-  'header',
-  'hr',
-  'html',
-  'i',
-  'iframe',
-  'img',
-  'input',
-  'ins',
-  'kbd',
-  'label',
-  'legend',
-  'li',
-  'link',
-  'main',
-  'map',
-  'mark',
-  'menu',
-  'menuitem',
-  'meta',
-  'meter',
-  'nav',
-  'noframes',
-  'noscript',
-  'object',
-  'ol',
-  'optgroup',
-  'option',
-  'output',
-  'p',
-  'param',
-  'picture',
-  'pre',
-  'progress',
-  'q',
-  'rp',
-  'rt',
-  'ruby',
-  's',
-  'samp',
-  'script',
-  'section',
-  'select',
-  'small',
-  'source',
-  'span',
-  'strike',
-  'strong',
-  'style',
-  'sub',
-  'summary',
-  'sup',
-  'table',
-  'tbody',
-  'td',
-  'textarea',
-  'tfoot',
-  'th',
-  'thead',
-  'time',
-  'title',
-  'tr',
-  'track',
-  'tt',
-  'u',
-  'ul',
-  'var',
-  'video',
-  'wbr'
-]
-
-const HTML_EVENT_ATTRIBUTES = [
-  'onblur',
-  'onchange',
-  'oncontextmenu',
-  'onfocus',
-  'oninput',
-  'oninvalid',
-  'onreset',
-  'onsearch',
-  'onselect',
-  'onsubmit',
-  'onkeydown',
-  'onkeypress',
-  'onkeyup',
-  'onclick',
-  'ondblclick',
-  'onmousedown',
-  'onmousemove',
-  'onmouseout',
-  'onmouseover',
-  'onmouseup',
-  'onwheel',
-  'ondrag',
-  'ondragend',
-  'ondragenter',
-  'ondragleave',
-  'ondragover',
-  'ondragstart',
-  'ondrop',
-  'onscroll',
-  'oncopy',
-  'oncut',
-  'onpaste'
-]
-
-class Expression {
+export class Expression {
   constructor(exp) {
     this.exp = exp
     this.ast = Jexl.parse(exp)
@@ -194,7 +40,7 @@ class Directive {
   }
 }
 
-class Text {
+export class Text {
   constructor(text) {
     this.text = text
   }
@@ -218,7 +64,7 @@ function parseDirective(name, exp) {
   return null
 }
 
-class Node {
+export class Node {
   constructor(tagName, attributes) {
     this.tagName = tagName.toLowerCase()
     this.properties = {}
@@ -277,7 +123,7 @@ class Node {
   }
 }
 
-class Component {
+export class Component {
   constructor(tagName, attributes, componentClass) {
     this.tagName = tagName.toLowerCase()
     this.properties = {}
@@ -350,92 +196,4 @@ class Component {
     childComponent.$render(properties)
     return childComponent.$vdom
   }
-}
-
-function parseText(text) {
-  const arr = []
-  const pattern = /(.*)({{([^{}]+))+$/
-  const segs = text.split('}}')
-  for (let i = 0; i < segs.length - 1; i += 1) {
-    const m = segs[i].match(pattern)
-    if (m) {
-      arr.push(new Text(m[1]))
-      if (m[3]) {
-        arr.push(new Expression(m[3]))
-      }
-    } else {
-      arr.push(new Text(segs[i]))
-    }
-  }
-  arr.push(new Text(segs[segs.length - 1]))
-  return arr
-}
-
-function parseTag(tagName, attributes, componentClass) {
-  const tag = tagName.toLowerCase()
-  const properties = {}
-  const directives = []
-  if (_.includes(HTML_TAGS, tag)) { // HTML tags
-    return new Node(tag, attributes)
-  }
-  const childComponentClass = componentClass.prototype.$lookupComponent(tag)
-  if (childComponentClass) {
-    return new Component(tag, attributes, childComponentClass)
-  }
-  throw Error('Cannot find component for custom tag: ' + tag)
-}
-
-export function parse(template, componentClass) {
-  const roots = []
-  const stack = []
-  /* eslint no-unused-vars: 0 */
-  let ast = null
-
-  function onOpenTag(tagName, attributes) {
-    console.debug(`<${tagName}>`)
-    console.debug(attributes)
-    const node = parseTag(tagName, attributes, componentClass)
-    stack.push(node)
-    console.debug(stack)
-  }
-
-  function onText(text) {
-    stack[stack.length - 1].children.push(...parseText(text))
-  }
-
-  function onCloseTag(tagName) {
-    console.debug(`</${tagName}>`)
-    const node = stack.splice(-1)[0]
-    // console.log(node)
-    console.debug(stack)
-    if (node.tagName !== tagName.toLowerCase()) {
-      throw new Error('Tags are not closed correctly: ' + tagName)
-    }
-    if (stack.length === 0) {
-      roots.push(node)
-    } else {
-      stack[stack.length - 1].children.push(node)
-    }
-    console.debug(stack)
-  }
-
-  function onEnd() {
-    if (roots.length === 1) {
-      ast = roots[0]
-      return;
-    }
-    throw new Error('Template only supports single root.')
-  }
-
-  const parser = new htmlparser.Parser({
-    onopentag: onOpenTag,
-    ontext: onText,
-    onclosetag: onCloseTag,
-    onend: onEnd
-  }, {decodeEntities: true});
-
-  parser.write(template)
-  parser.done()
-
-  return ast
 }

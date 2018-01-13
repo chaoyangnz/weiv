@@ -47,4 +47,27 @@ const config = {
   plugins: plugins
 };
 
-module.exports = config;
+const appConfig = {
+  entry: __dirname + '/src/app.js',
+  devtool: 'source-map',
+  output: {
+    path: __dirname + '/lib',
+    filename: 'app.js'
+  },
+  module: {
+    rules: [
+      {
+        test: /(\.js)$/,
+        loader: 'babel-loader',
+        exclude: /(node_modules)/
+      }
+    ]
+  },
+  resolve: {
+    modules: [path.resolve('./node_modules'), path.resolve('./src')],
+    extensions: ['.json', '.js']
+  },
+  plugins: plugins
+};
+
+module.exports = [config, appConfig];
