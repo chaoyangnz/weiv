@@ -1,4 +1,4 @@
-import { Component, Weiv, observable, action } from '.';
+import { Component, observable, action } from '.';
 
 @Component({
   template: `
@@ -32,8 +32,6 @@ export class Todo {
   }
 }
 
-Weiv.component('todo', Todo)
-
 @Component({
   template: `
   <div>
@@ -45,7 +43,8 @@ Weiv.component('todo', Todo)
     <p>Tip: When counter is less than 5, location will be shown.</p>
     <todo @bind:a="counter" @on:save="onSave"></todo>
   </span>
-  `
+  `,
+  components: {'todo': Todo}
 })
 export class App {
   firstName = 'Chao'

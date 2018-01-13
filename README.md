@@ -9,14 +9,12 @@ This is an era of evolution with tons of front-end frameworks: React, Angular, V
 
 ## How it's like
 
-<img src="https://i.imgur.com/RdfSgo2.gif" width="500">
+<img src="https://i.imgur.com/7zDlvn1.gif" width="500">
 
 ```javascript
-import { Component } from './component';
-import Weiv from './weiv';
-import { observable, action } from 'mobx';
+import { Component, observable, action } from '.';
 
-@@Component({
+@Component({
   template: `
   <div>
     <span>TODO: {{a}}</span>
@@ -48,8 +46,6 @@ export class Todo {
   }
 }
 
-Weiv.component('todo', Todo)
-
 @Component({
   template: `
   <div>
@@ -57,11 +53,12 @@ Weiv.component('todo', Todo)
     <div @if="counter < 5">Location: {{location.city}} - {{location.country}}</div>
     <p>Countdown: {{counter}}</p>
     <button onclick="minus" style="width: 80px">➖</button>
-    <button @on:click.native="plus" style="width: 80px">➕</button>
+    <button @on:click="plus" style="width: 80px">➕</button>
     <p>Tip: When counter is less than 5, location will be shown.</p>
     <todo @bind:a="counter" @on:save="onSave"></todo>
   </span>
-  `
+  `,
+  components: {'todo': Todo}
 })
 export class App {
   firstName = 'Chao'

@@ -1,6 +1,6 @@
 {
   "name": "weiv",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Modern reactive component library for web, mobile and more",
   "main": "lib/weiv.js",
   "scripts": {
@@ -48,7 +48,6 @@
     "yargs": "^10.1.1"
   },
   "dependencies": {
-    "dom-delegator": "^13.1.0",
     "fbemitter": "^2.1.1",
     "htmlparser2": "^3.9.2",
     "jexl-sync": "^1.0.1",
@@ -58,7 +57,13 @@
     "virtual-dom": "^2.1.1"
   },
   "jest": {
-    "moduleFileExtensions": ["js", "jsx"],
-    "moduleDirectories": ["node_modules", "src"]
+    "moduleFileExtensions": [
+      "js",
+      "jsx"
+    ],
+    "moduleDirectories": [
+      "node_modules",
+      "src"
+    ]
   }
 }

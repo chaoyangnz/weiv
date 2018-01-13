@@ -26,12 +26,33 @@ export class Expression {
   }
 }
 
+const STRUCTRUAL_DIRECTIVES = [
+  'if',
+  'elseif',
+  'else'
+]
+
+const BEHAVIORAL_DIRECTIVES = [
+  'bind',
+  'on'
+]
+
+const STRUCTRUAL_DIRECTIVE = 0
+const BEHAVIORAL_DIRECTIVE = 1
+
 class Directive {
   constructor(command, target, params, exp) {
-    this.command = command
+    this.command = command.toLowerCase()
     this.target = target
     this.params = params
     this.expression = new Expression(exp)
+    if (_.includes(STRUCTRUAL_DIRECTIVES, this.command)) {
+      this.type = STRUCTRUAL_DIRECTIVE
+    } else if (_.includes(BEHAVIORAL_DIRECTIVES, this.command)) {
+      this.type = BEHAVIORAL_DIRECTIVE
+    } else {
+      throw new Error(`Illegal directive: '${this.command}'`)
+    }
   }
 
   static isTrue(val) {
@@ -60,8 +81,7 @@ function parseDirective(name, exp) {
     }
     return new Directive(m[1], m[3], params, exp)
   }
-  console.warn('Illagal directive attribute: %s', name)
-  return null
+  throw new Error(`Illagal directive attribute format: ${name}`)
 }
 
 export class Node {
@@ -102,8 +122,6 @@ export class Node {
           properties[`on${directive.target}`] = val
         }
       }
-    } else {
-      console.error('Illegal directive: %o', directive)
     }
   }
 
@@ -113,10 +131,12 @@ export class Node {
     properties = _.mapValues(properties, attr => attr instanceof Expression ? attr.eval(component) : attr)
     const children = _.remove(this.children.map(child => child.render(component)), null)
     // start directiv processing
-    for (let directive of this.directives) {
+    const structualDirectives = this.directives.filter(directive => directive.type === STRUCTRUAL_DIRECTIVE)
+    const behavioralDirectives = this.directives.filter(directive => directive.type === BEHAVIORAL_DIRECTIVE)
+    for (let directive of structualDirectives) {
       if (!this.structural(directive, properties, children, component)) return null
     }
-    for (let directive of this.directives) {
+    for (let directive of behavioralDirectives) {
       this.behavioral(directive, properties, children, component)
     }
     return vdom.h(this.tagName, properties, children)
@@ -181,7 +201,9 @@ export class Component {
     properties = _.mapValues(properties, attr => attr instanceof Expression ? attr.eval(component) : attr)
     const children = _.remove(this.children.map(child => child.render(component)), null)
     // start directiv processing
-    for (let directive of this.directives) {
+    const structualDirectives = this.directives.filter(directive => directive.type === STRUCTRUAL_DIRECTIVE)
+    const behavioralDirectives = this.directives.filter(directive => directive.type === BEHAVIORAL_DIRECTIVE)
+    for (let directive of structualDirectives) {
       if (!this.structural(directive, properties, children, component)) return null
     }
     /* eslint new-cap: 0 */
@@ -190,7 +212,7 @@ export class Component {
       childComponent = new this['componentClass'](this.componentId, component)
     }
     childComponent.$emitter.removeAllListeners()
-    for (let directive of this.directives) {
+    for (let directive of behavioralDirectives) {
       this.behavioral(directive, properties, children, component, childComponent)
     }
     childComponent.$render(properties)
