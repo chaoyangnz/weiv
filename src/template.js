@@ -1,6 +1,6 @@
+import _ from 'lodash'
 import htmlparser from 'htmlparser2'
 import vdom from 'virtual-dom'
-import _ from 'lodash'
 import Jexl from 'jexl-sync'
 
 const HTML_TAGS = [
@@ -234,7 +234,7 @@ class Node {
     this.children = children || []
     this.componentClass = componentClass
     if (componentClass) {
-      this.componentId = `${componentClass.origin.name}_${Math.random().toString(36).substr(2, 9)}`
+      this.componentId = `${componentClass.$class.name}_${Math.random().toString(36).substr(2, 9)}`
     }
   }
 
@@ -322,7 +322,7 @@ function parseTag(tagName, attributes, componentClass) {
         if (_.includes(Object.keys(childComponentClass.prototype.$props), name)) {
           properties[name] = attributes[name]
         } else {
-          console.warn('Illegal commponent props %s in %s', name, childComponentClass.name)
+          console.warn('Illegal commponent props %s in %s', name, childComponentClass.$class.name)
         }
       }
     }
@@ -383,6 +383,5 @@ export function parse(template, componentClass) {
   parser.write(template)
   parser.done()
 
-  // attach parsed ast to component prototype
-  Object.defineProperty(componentClass.prototype, '$template', {value: ast})
+  return ast
 }

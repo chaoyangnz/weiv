@@ -5,8 +5,8 @@ import { observable, action } from 'mobx';
 @Component({
   template: `
   <div>
-    <span>sss {{a}}</span>
-    <button>ooppp</button>
+    <span>TODO: {{a}}</span>
+    <button onclick="changeProp" style="height: 30px">Try to change props?</button>
   </div>
   `,
   props: {
@@ -14,12 +14,18 @@ import { observable, action } from 'mobx';
   }
 })
 export class Todo {
+  changeProp() {
+    try {
+      this.a = 0
+    } catch (err) {
+      alert(err.message)
+    }
+  }
 }
 
 Weiv.component('todo', Todo)
 
 @Component({
-  target: '#app',
   template: `
   <div>
     <h1 @bind:title="counter">{{firstName}} {{lastName}}</h1><p>{{blogURL}}</p>
@@ -52,10 +58,5 @@ export class App {
   }
 }
 
-const app = new App()
-Weiv.mount(app)
-
-// change data
-// setInterval(() => app.countdown(), 1000)
-
-Weiv.startup()
+new App().$mount('#app')
+new App().$mount('#app')

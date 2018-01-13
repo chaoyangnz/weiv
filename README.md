@@ -65,11 +65,8 @@ export class App {
   }
 }
 
-// root component
-const app = new App()
-
-// mount and go!
-Weiv.mount(app)
+// mount root component and go!
+new App().$mount('#app')
 ```
 
 ## Building blocks & Credits
