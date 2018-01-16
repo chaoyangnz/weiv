@@ -74,9 +74,19 @@ function mixinPrototype(componentClass, options: Options) {
         if (!mountNode) {
           throw new Error('Cannot find DOM element: ' + el)
         }
-        mountNode.appendChild(dom)
+        if (!mountNode.parentNode) {
+          throw new Error('Cannot mount to <body>: ' + el)
+        }
+        mountNode.parentNode.replaceChild(dom, mountNode)
       }
-      console.info('After patch to DOM: %o', this.$dom)
+      // after mount, give children commpoent dom element
+      console.log(this.$children)
+      this.$children.forEach((child) => {
+        if (!child.$dom) {
+          child.$dom = document.getElementById(child.$id)
+        }
+      })
+      console.info('After patch to DOM: %o', self.$dom)
     }
     autorun(tick)
   }})
@@ -93,9 +103,9 @@ function mixinPrototype(componentClass, options: Options) {
 
 function mixinComponent(component, id, parent) {
   Object.defineProperty(component, '$id', { value: id })
-  Object.defineProperty(component, '$children', { value: [] })
+  Object.defineProperty(component, '$children', { value: new Map() })
   if (parent) {
-    parent.$children[id] = component
+    parent.$children.set(id, component)
     Object.defineProperty(component, '$parent', { value: parent })
     Object.defineProperty(component, '$root', { value: parent.$root })
   } else {

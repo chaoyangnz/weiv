@@ -207,7 +207,7 @@ export class Component {
       if (!this.structural(directive, properties, children, component)) return null
     }
     /* eslint new-cap: 0 */
-    let childComponent = component.$children[this.componentId]
+    let childComponent = component.$children.get(this.componentId)
     if (!childComponent) {
       childComponent = new this['componentClass'](this.componentId, component)
     }
@@ -216,6 +216,7 @@ export class Component {
       this.behavioral(directive, properties, children, component, childComponent)
     }
     childComponent.$render(properties)
+    childComponent.$vdom.properties.id = this.componentId // attach an id attribute
     return childComponent.$vdom
   }
 }
