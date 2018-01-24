@@ -74,18 +74,8 @@ function mixinPrototype(componentClass, options: Options) {
         if (!mountNode) {
           throw new Error('Cannot find DOM element: ' + el)
         }
-        if (!mountNode.parentNode) {
-          throw new Error('Cannot mount to <body>: ' + el)
-        }
-        mountNode.parentNode.replaceChild(dom, mountNode)
+        mountNode.appendChild(dom)
       }
-      // after mount, give children commpoent dom element
-      console.log(this.$children)
-      this.$children.forEach((child) => {
-        if (!child.$dom) {
-          child.$dom = document.getElementById(child.$id)
-        }
-      })
       console.info('After patch to DOM: %o', self.$dom)
     }
     autorun(tick)

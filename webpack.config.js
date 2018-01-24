@@ -48,10 +48,10 @@ const config = {
 };
 
 const appConfig = {
-  entry: __dirname + '/src/app.js',
+  entry: __dirname + '/example/app.js',
   devtool: 'source-map',
   output: {
-    path: __dirname + '/lib',
+    path: __dirname + '/example/dist',
     filename: 'app.js'
   },
   module: {
@@ -65,7 +65,10 @@ const appConfig = {
   },
   resolve: {
     modules: [path.resolve('./node_modules'), path.resolve('./src')],
-    extensions: ['.json', '.js']
+    extensions: ['.json', '.js'],
+    alias: {
+      weivjs: path.resolve(__dirname, 'src/')
+    }
   },
   plugins: plugins
 };

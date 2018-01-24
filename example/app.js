@@ -1,4 +1,4 @@
-import { Component, observable, action } from '.'
+import { Component, observable, action } from 'weivjs'
 
 @Component({
   template: `

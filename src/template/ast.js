@@ -103,7 +103,7 @@ export class Node {
   }
 
   // structural directive
-  structural(directive, properties, children, component) {
+  _structural(directive, properties, children, component) {
     const val = directive.expression.eval(component)
     if (directive.command === 'if') {
       return Directive.isTrue(val)
@@ -112,7 +112,7 @@ export class Node {
   }
 
   // behavioral directive
-  behavioral(directive, properties, children, component) {
+  _behavioral(directive, properties, children, component) {
     const val = directive.expression.eval(component)
     if (directive.command === 'bind') {
       properties[directive.target] = val
@@ -134,10 +134,10 @@ export class Node {
     const structualDirectives = this.directives.filter(directive => directive.type === STRUCTRUAL_DIRECTIVE)
     const behavioralDirectives = this.directives.filter(directive => directive.type === BEHAVIORAL_DIRECTIVE)
     for (let directive of structualDirectives) {
-      if (!this.structural(directive, properties, children, component)) return null
+      if (!this._structural(directive, properties, children, component)) return null
     }
     for (let directive of behavioralDirectives) {
-      this.behavioral(directive, properties, children, component)
+      this._behavioral(directive, properties, children, component)
     }
     return vdom.h(this.tagName, properties, children)
   }
@@ -167,7 +167,7 @@ export class Component {
   }
 
   // structural directive
-  structural(directive, properties, children, component) {
+  _structural(directive, properties, children, component) {
     if (directive.command === 'if') {
       const val = directive.expression.eval(component)
       return Directive.isTrue(val)
@@ -176,7 +176,7 @@ export class Component {
   }
 
   // behavioral directive
-  behavioral(directive, properties, children, component, childComponent) {
+  _behavioral(directive, properties, children, component, childComponent) {
     const val = directive.expression.eval(component)
     if (directive.command === 'bind') {
       properties[directive.target] = val
@@ -204,7 +204,7 @@ export class Component {
     const structualDirectives = this.directives.filter(directive => directive.type === STRUCTRUAL_DIRECTIVE)
     const behavioralDirectives = this.directives.filter(directive => directive.type === BEHAVIORAL_DIRECTIVE)
     for (let directive of structualDirectives) {
-      if (!this.structural(directive, properties, children, component)) return null
+      if (!this._structural(directive, properties, children, component)) return null
     }
     /* eslint new-cap: 0 */
     let childComponent = component.$children.get(this.componentId)
@@ -213,7 +213,7 @@ export class Component {
     }
     childComponent.$emitter.removeAllListeners()
     for (let directive of behavioralDirectives) {
-      this.behavioral(directive, properties, children, component, childComponent)
+      this._behavioral(directive, properties, children, component, childComponent)
     }
     childComponent.$render(properties)
     childComponent.$vdom.properties.id = this.componentId // attach an id attribute
