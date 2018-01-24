@@ -94,3 +94,13 @@ new App().$mount('#app')
 - [virtual dom](https://github.com/Matt-Esch/virtual-dom)
 - [mobx](https://github.com/mobxjs/mobx)
 - [jexl-sync](https://github.com/richdyang/jexl-sync)
+
+## TODOs
+
+- Add slots support
+- Add lifecycle hooks
+- Enhance events support
+- Optimise: cache subtree via vdom-trunk
+- Optimise: batch update via main-loop
+- Optimise: try to use zone.js intead of mobx `autorun`
+- Write a UI component library like ElementUI

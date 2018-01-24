@@ -1,7 +1,10 @@
 import _ from 'lodash'
 import htmlparser from 'htmlparser2'
+import debug from 'debug'
 import { HTML_TAGS } from './html'
 import { Node, Component, Text, Expression, Directive } from './ast'
+
+const log = debug('weiv:parse')
 
 function parseText(text) {
   const arr = []
@@ -24,8 +27,6 @@ function parseText(text) {
 
 function parseTag(tagName, attributes, componentClass) {
   const tag = tagName.toLowerCase()
-  const properties = {}
-  const directives = []
   if (_.includes(HTML_TAGS, tag)) { // HTML tags
     return new Node(tag, attributes)
   }
@@ -37,28 +38,28 @@ function parseTag(tagName, attributes, componentClass) {
 }
 
 export function parse(template, componentClass) {
+  if (_.isEmpty) return new Text('')
   const roots = []
   const stack = []
-  /* eslint no-unused-vars: 0 */
   let ast = null
 
-  function onOpenTag(tagName, attributes) {
-    console.debug(`<${tagName}>`)
-    console.debug(attributes)
+  const onOpenTag = (tagName, attributes) => {
+    log(`<${tagName}>`)
+    log(attributes)
     const node = parseTag(tagName, attributes, componentClass)
     stack.push(node)
-    console.debug(stack)
+    log(stack)
   }
 
-  function onText(text) {
+  const onText = (text) => {
     stack[stack.length - 1].children.push(...parseText(text))
   }
 
-  function onCloseTag(tagName) {
-    console.debug(`</${tagName}>`)
+  const onCloseTag = (tagName) => {
+    log(`</${tagName}>`)
     const node = stack.splice(-1)[0]
-    // console.log(node)
-    console.debug(stack)
+    // log(node)
+    log(stack)
     if (node.tagName !== tagName.toLowerCase()) {
       throw new Error('Tags are not closed correctly: ' + tagName)
     }
@@ -67,10 +68,10 @@ export function parse(template, componentClass) {
     } else {
       stack[stack.length - 1].children.push(node)
     }
-    console.debug(stack)
+    log(stack)
   }
 
-  function onEnd() {
+  const onEnd = () => {
     if (roots.length === 1) {
       ast = roots[0]
       return;

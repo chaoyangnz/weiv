@@ -1,7 +1,10 @@
 import _ from 'lodash'
 import vdom from 'virtual-dom'
 import Jexl from 'jexl-sync'
+import debug from 'debug'
 import { HTML_EVENT_ATTRIBUTES } from './html'
+
+const log = debug('weiv:render')
 
 export class Expression {
   constructor(exp) {
@@ -11,7 +14,7 @@ export class Expression {
 
   eval(component) {
     let val = Jexl.evaluate(this.ast, component)
-    console.debug('Evaluate expression `%s`: %o', this.exp, val)
+    log('Evaluate expression `%s`: %o', this.exp, val)
     // autobind functions
     if (val && typeof val === 'function') {
       val = val.bind(component)
@@ -28,7 +31,7 @@ export class Expression {
 
 const STRUCTRUAL_DIRECTIVES = [
   'if',
-  'elseif',
+  'else-if',
   'else'
 ]
 
@@ -150,7 +153,7 @@ export class Component {
     this.directives = []
     this.children = []
     this.componentClass = componentClass
-    this.componentId = componentClass.$uniqueid()
+    this.componentId = componentClass.$original.$uniqueid()
     for (let name of Object.keys(attributes)) {
       if (name.match(/@[^@]+/)) { // directive prefix: @
         const directive = parseDirective(name, attributes[name])
@@ -184,10 +187,10 @@ export class Component {
       if (val && typeof val === 'function') {
         if (_.includes(directive.params, 'native')) {
           if (_.includes(HTML_EVENT_ATTRIBUTES, directive.target.toLowerCase())) {
-            // TODO add native event to component's root dom element
+            // TODO add native event to component's root dom element from its template
           }
         } else {
-          childComponent.$addEventListener(directive.target, val)
+          childComponent.$on(directive.target, val)
         }
       }
     } else {
