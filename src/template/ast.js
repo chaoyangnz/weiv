@@ -23,8 +23,10 @@ export class Expression {
   }
 
   render(component) {
+    console.group('%o', this)
     const val = this.eval(component)
     const text = (val !== null && val !== undefined) ? String(val) : ''
+    console.groupEnd()
     return new vdom.VText(text)
   }
 }
@@ -70,6 +72,7 @@ export class Text {
   }
 
   render(component) {
+    console.log('%o', this)
     return new vdom.VText(this.text)
   }
 }
@@ -93,6 +96,7 @@ export class Node {
     this.properties = {}
     this.directives = []
     this.children = []
+    this.parent = null
     for (let name of Object.keys(attributes)) {
       if (name.match(/@[^@]+/)) { // directive prefix: @
         const directive = parseDirective(name, attributes[name])
@@ -103,6 +107,30 @@ export class Node {
         this.properties[name] = attributes[name]
       }
     }
+  }
+
+  closestComponent() {
+    let node = this
+    while (node != null) {
+      /* eslint no-use-before-define: 0*/
+      if (node instanceof Component) return node
+      node = node.parent
+    }
+    return null
+  }
+
+  previousSiblingNode() {
+    if (this.parent === null) return null
+    const index = _.indexOf(this.parent.children, this)
+    if (index === 0) return null
+    return this.parent.children[index - 1]
+  }
+
+  nextSiblingNode() {
+    if (this.parent === null) return null
+    const index = _.indexOf(this.parent.children, this)
+    if (index === this.parent.children.length - 1) return null
+    return this.parent.children[index + 1]
   }
 
   // structural directive
@@ -129,10 +157,11 @@ export class Node {
   }
 
   render(component) {
+    console.group('%o', this)
     let properties = _.cloneDeep(this.properties)
     // only `onclick..` attributes is expression
     properties = _.mapValues(properties, attr => attr instanceof Expression ? attr.eval(component) : attr)
-    const children = _.remove(this.children.map(child => child.render(component)), null)
+    const children = _.compact(_.flatMap(this.children, child => child.render(component)))
     // start directiv processing
     const structualDirectives = this.directives.filter(directive => directive.type === STRUCTRUAL_DIRECTIVE)
     const behavioralDirectives = this.directives.filter(directive => directive.type === BEHAVIORAL_DIRECTIVE)
@@ -142,16 +171,43 @@ export class Node {
     for (let directive of behavioralDirectives) {
       this._behavioral(directive, properties, children, component)
     }
+    console.groupEnd()
     return vdom.h(this.tagName, properties, children)
   }
 }
 
-export class Component {
+export class Slot extends Node {
+  constructor(tagName, attributes) {
+    super(tagName, attributes)
+    this.name = attributes.name || 'default'
+  }
+
+  render(component) { // return
+    console.group('%o', this)
+    let properties = _.cloneDeep(this.properties)
+    // only `onclick..` attributes is expression
+    properties = _.mapValues(properties, attr => attr instanceof Expression ? attr.eval(component) : attr)
+    const children = _.compact(_.flatMap(this.children, child => child.render(component)))
+    // start directiv processing
+    const structualDirectives = this.directives.filter(directive => directive.type === STRUCTRUAL_DIRECTIVE)
+    const behavioralDirectives = this.directives.filter(directive => directive.type === BEHAVIORAL_DIRECTIVE)
+    for (let directive of structualDirectives) {
+      if (!this._structural(directive, properties, children, component)) return null
+    }
+    for (let directive of behavioralDirectives) {
+      this._behavioral(directive, properties, children, component)
+    }
+    console.groupEnd()
+    if (component.$vslots.has(this.name) && !_.isEmpty(component.$vslots.get(this.name))) {
+      return component.$vslots.get(this.name)
+    }
+    return children
+  }
+}
+
+export class Component extends Node {
   constructor(tagName, attributes, componentClass) {
-    this.tagName = tagName.toLowerCase()
-    this.properties = {}
-    this.directives = []
-    this.children = []
+    super(tagName, attributes)
     this.componentClass = componentClass
     this.componentId = componentClass.$original.$uniqueid()
     for (let name of Object.keys(attributes)) {
@@ -199,27 +255,39 @@ export class Component {
   }
 
   render(component) {
+    console.group('%o', this)
     let properties = _.cloneDeep(this.properties)
     // only `onclick..` attributes is expression
-    properties = _.mapValues(properties, attr => attr instanceof Expression ? attr.eval(component) : attr)
-    const children = _.remove(this.children.map(child => child.render(component)), null)
-    // start directiv processing
+    properties = _.mapValues(properties, prop => prop instanceof Expression ? prop.eval(component) : prop)
+    const children = _.compact(_.flatMap(this.children, child => child.render(component)))
+    // start directive processing
     const structualDirectives = this.directives.filter(directive => directive.type === STRUCTRUAL_DIRECTIVE)
     const behavioralDirectives = this.directives.filter(directive => directive.type === BEHAVIORAL_DIRECTIVE)
     for (let directive of structualDirectives) {
       if (!this._structural(directive, properties, children, component)) return null
     }
+
     /* eslint new-cap: 0 */
     let childComponent = component.$children.get(this.componentId)
     if (!childComponent) {
-      childComponent = new this['componentClass'](this.componentId, component)
+      childComponent = new this.componentClass(this.componentId, component)
     }
+    // process childrent to fill slots
+    children.forEach(child => {
+      const slot = _.has(child.properties, 'slot') ? child.properties['slot'] : 'default'
+      if (childComponent.$vslots.has(slot)) {
+        childComponent.$vslots.get(slot).push(child)
+      } else {
+        console.warn('Fail to find slot %j in component %s template', slot, this.componentClass.$original.name)
+      }
+    })
     childComponent.$emitter.removeAllListeners()
     for (let directive of behavioralDirectives) {
       this._behavioral(directive, properties, children, component, childComponent)
     }
     childComponent.$render(properties)
     childComponent.$vdom.properties.id = this.componentId // attach an id attribute
+    console.groupEnd()
     return childComponent.$vdom
   }
 }

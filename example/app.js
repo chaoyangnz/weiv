@@ -7,7 +7,11 @@ import { Component, observable, action } from 'weivjs'
     <button onclick="changeProp" style="height: 30px">Try to change props?</button>
     <p>
       <input type="text" />
+      <slot>
+      <strong>show when no slot</strong>
+      </slot>
       <button onclick="onSave" style="height: 30px">Save</button>
+      <slot name="slot1"></slot>
     </p>
   </div>
   `,
@@ -41,7 +45,11 @@ export class Todo {
     <button onclick="minus" style="width: 80px">➖</button>
     <button @on:click="plus" style="width: 80px">➕</button>
     <p>Tip: When counter is less than 5, location will be shown.</p>
-    <todo @bind:a="counter" @on:save="onSave"></todo>
+    <todo @bind:a="counter" @on:save="onSave">
+      <div>this is a default slot</div>
+      <p slot="slot1"> this is for slot1</p>
+      <span>another default slot</span>
+    </todo>
   </span>
   `,
   components: {'todo': Todo}

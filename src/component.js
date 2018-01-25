@@ -1,10 +1,13 @@
 // @flow
 import _ from 'lodash'
+import debug from 'debug'
 import VDOM from 'virtual-dom'
 import { EventEmitter } from 'fbemitter'
 import { autorun } from 'mobx'
 import { parse } from './template'
 import { Weiv } from '.'
+
+const log = debug('weiv:render')
 
 export type Prop = {
   type: string,
@@ -22,6 +25,7 @@ export type Options = {
 }
 
 function $render(props: any = {}) {
+  console.groupCollapsed('Render component: %o', this)
   Object.keys(props).forEach(prop => {
     if (_.includes(Object.keys(this.$props), prop)) { // TODO validate props type
       const value = _.cloneDeep(props[prop])
@@ -30,6 +34,7 @@ function $render(props: any = {}) {
     }
   })
   this.$vdom = this.$template.render(this)
+  console.groupEnd()
 }
 
 function $lookupComponent(tag) {
@@ -58,13 +63,13 @@ function $mount(el) {
   }
   const tick = () => { // tick
     const vdom = this.$vdom // old vdom tree
-    console.info('Before: %o', vdom)
+    log('Before: %o', vdom)
     this.$render()
-    console.info('After: %o', this.$vdom)
+    log('After: %o', this.$vdom)
     console.assert(vdom !== this.$vdom)
     if (vdom) {
       const patches = VDOM.diff(vdom, this.$vdom)
-      console.info('Diff: %o', patches)
+      log('Diff: %o', patches)
       this.$dom = VDOM.patch(this.$dom, patches)
     } else {
       const dom: any = VDOM.create(this.$vdom)
@@ -75,7 +80,7 @@ function $mount(el) {
       }
       mountNode.appendChild(dom)
     }
-    console.info('After patch to DOM: %o', self.$dom)
+    log('After patch to DOM: %o', self.$dom)
   }
   autorun(tick)
 }
@@ -91,7 +96,8 @@ function mixinPrototype(componentClass, options: Options) {
   Object.defineProperty(componentClass.prototype, '$emit', { value: $emit })
   Object.defineProperty(componentClass.prototype, '$mount', { value: $mount })
   // attach parsed ast to component prototype
-  const template = options.template ? options.template.trim() : '<template />'
+  const template = options.template ? options.template.trim() : ''
+  Object.defineProperty(componentClass.prototype, '$slots', {value: new Set()})
   Object.defineProperty(componentClass.prototype, '$template', {value: parse(template, componentClass)})
   Object.freeze(componentClass.prototype)
 
@@ -114,6 +120,10 @@ function mixinComponent(component, id, parent) {
   }
   Object.defineProperty(component, '$emitter', { value: new EventEmitter() })
   Object.defineProperty(component, '$vdom', { value: null, writable: true })
+  // <string, array<vnode>>slots save the vdom rendered in parent scope
+  const slots = new Map()
+  component.$slots.forEach(slot => slots.set(slot, []))
+  Object.defineProperty(component, '$vslots', { value: slots })
   Object.defineProperty(component, '$dom', { value: null, writable: true })
 }
 
@@ -124,7 +134,7 @@ export function Component(options: Options) {
     const Component = (id: string, parent: any) => {
       const component = new ComponentClass()
       mixinComponent(component, id || ComponentClass.$uniqueid(), parent) // inject internal component properties
-      console.info('%cComponent: %o', 'color: red', component)
+      log('%cNew Component: %o', 'color: white; background-color: forestgreen', component)
       return component
     }
     Object.defineProperty(Component, '$original', { value: ComponentClass })

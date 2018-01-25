@@ -12,4 +12,4 @@ export const Weiv = {
 }
 
 // set all debug to console.debug
-debug.log = console.debug.bind(console)
+debug.log = console.log.bind(console)
