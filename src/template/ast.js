@@ -182,6 +182,7 @@ export class Component extends Node {
       if (childComponent.$slots.has(slotName)) {
         const slot = slots[slotName] || []
         slot.push(child)
+        slots[slotName] = slot
       }
     })
 

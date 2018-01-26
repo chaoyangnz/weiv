@@ -28521,7 +28521,7 @@ function _initializerWarningHelper(descriptor, context) {
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Todo = exports.Todo = (_dec = (0, _weivjs.Component)({
-  template: '\n  <div>\n    <span>TODO: {{a}}</span>\n    <button onclick="changeProp" style="height: 30px">Try to change props?</button>\n    <p>\n      <input type="text" />\n      <slot>\n      <strong>show when no slot</strong>\n      </slot>\n      <button onclick="onSave" style="height: 30px">Save</button>\n      <slot name="slot1"></slot>\n    </p>\n  </div>\n  ',
+  template: '\n  <div>\n    <span>TODO: {{a}}</span>\n    <button onclick="changeProp" style="height: 30px">Try to change props?</button>\n    <p>\n      <input type="text" />\n      <slot>\n      <strong>show when no slot</strong>\n      </slot>\n      <button onclick="onSave" style="height: 30px">Save</button>\n      <ul>\n        <slot name="item">show when no item slot</slot>\n      </ul>\n    </p>\n  </div>\n  ',
   props: {
     a: { type: 'number', required: true }
   },
@@ -28552,7 +28552,7 @@ var Todo = exports.Todo = (_dec = (0, _weivjs.Component)({
   return Todo;
 }()) || _class);
 var App = exports.App = (_dec2 = (0, _weivjs.Component)({
-  template: '\n  <div>\n    <h1 @bind:title="counter">{{firstName}} {{lastName}}</h1><p>{{blogURL}}</p>\n    <div @if="counter < 5">Location: {{location.city}} - {{location.country}}</div>\n    <p>Countdown: {{counter}}</p>\n    <button onclick="minus" style="width: 80px">\u2796</button>\n    <button @on:click="plus" style="width: 80px">\u2795</button>\n    <p>Tip: When counter is less than 5, location will be shown.</p>\n    <todo @bind:a="counter" @on:save="onSave">\n      <div>this is a default slot</div>\n      <p slot="slot1"> this is for slot1</p>\n      <span>another default slot</span>\n    </todo>\n  </span>\n  ',
+  template: '\n  <div>\n    <h1 @bind:title="counter">{{firstName}} {{lastName}}</h1><p>{{blogURL}}</p>\n    <div @if="counter < 5">Location: {{location.city}} - {{location.country}}</div>\n    <p>Countdown: {{counter}}</p>\n    <button onclick="minus" style="width: 80px">\u2796</button>\n    <button @on:click="plus" style="width: 80px">\u2795</button>\n    <p>Tip: When counter is less than 5, location will be shown.</p>\n    <todo @bind:a="counter" @on:save="onSave">\n      <div>this is a default slot</div>\n      <li slot="item">item1</li>\n      <li slot="item">item2</li>\n      <span>another default slot</span>\n    </todo>\n  </span>\n  ',
   components: { 'todo': Todo }
 }), _dec2(_class2 = (_class3 = function () {
   function App() {
@@ -33694,6 +33694,7 @@ var Component = exports.Component = function (_Node) {
         if (childComponent.$slots.has(slotName)) {
           var slot = slots[slotName] || [];
           slot.push(child);
+          slots[slotName] = slot;
         }
       });
 

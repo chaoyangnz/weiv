@@ -97,10 +97,12 @@ new App().$mount('#app')
 
 ## TODOs
 
-- Add slots support
-- Add lifecycle hooks
-- Enhance events support
-- Optimise: cache subtree via vdom-trunk
-- Optimise: batch update via main-loop
-- Optimise: try to use zone.js intead of mobx `autorun`
-- Write a UI component library like ElementUI
+- [x] Add slots support
+- [x] Refine directive structure
+- [ ] Add scope to support `for ... in`
+- [x] Enhance events support
+- [ ] Add lifecycle hooks
+- [ ] Optimise: cache subtree via vdom-trunk
+- [ ] Optimise: batch update via main-loop
+- [ ] Optimise: try to use zone.js intead of mobx `autorun`
+- [ ] Write a UI component library like ElementUI

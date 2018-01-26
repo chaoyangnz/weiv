@@ -11,7 +11,9 @@ import { Component, observable, action } from 'weivjs'
       <strong>show when no slot</strong>
       </slot>
       <button onclick="onSave" style="height: 30px">Save</button>
-      <slot name="slot1"></slot>
+      <ul>
+        <slot name="item">show when no item slot</slot>
+      </ul>
     </p>
   </div>
   `,
@@ -47,7 +49,8 @@ export class Todo {
     <p>Tip: When counter is less than 5, location will be shown.</p>
     <todo @bind:a="counter" @on:save="onSave">
       <div>this is a default slot</div>
-      <p slot="slot1"> this is for slot1</p>
+      <li slot="item">item1</li>
+      <li slot="item">item2</li>
       <span>another default slot</span>
     </todo>
   </span>
