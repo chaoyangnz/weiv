@@ -13,7 +13,7 @@ This is an era of front-end evolution with tons of front-end frameworks: React, 
 
 [![Edit weiv-demo](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/m7k55r39p9?autoresize=1&expanddevtools=1&hidenavigation=1)
 ```javascript
-import { Component, observable, action } from '.';
+import { Component, observable, action } from 'weivjs'
 
 @Component({
   template: `
@@ -21,8 +21,17 @@ import { Component, observable, action } from '.';
     <span>TODO: {{a}}</span>
     <button onclick="changeProp" style="height: 30px">Try to change props?</button>
     <p>
-      <input type="text" />
-      <button onclick="onSave" style="height: 30px">Save</button>
+      <slot>
+        <p>show when no slot</p>
+      </slot>
+      <p>
+        <input type="text" oninput="onInput"  />
+        <button onclick="onSave" style="height: 30px">Save</button>
+        <span> {{input}} </span>
+      </p>
+      <ul>
+        <slot name="item">show when no item slot</slot>
+      </ul>
     </p>
   </div>
   `,
@@ -43,7 +52,15 @@ export class Todo {
   }
 
   onSave() {
-    this.$emit('save', 1, 2)
+    this.$emit('save', this.input, '')
+  }
+
+  @observable
+  input = ''
+
+  onInput(e) {
+    this.input = e.target.value
+    console.log('on input %o', e)
   }
 }
 
@@ -56,7 +73,12 @@ export class Todo {
     <button onclick="minus" style="width: 80px">➖</button>
     <button @on:click="plus" style="width: 80px">➕</button>
     <p>Tip: When counter is less than 5, location will be shown.</p>
-    <todo @bind:a="counter" @on:save="onSave"></todo>
+    <todo @bind:a="counter" @on:save="onSave">
+      <div>this is a default slot</div>
+      <li slot="item">item1</li>
+      <li slot="item">item2</li>
+      <span>another default slot</span>
+    </todo>
   </span>
   `,
   components: {'todo': Todo}
@@ -81,11 +103,10 @@ export class App {
   }
 
   onSave(a, b) {
-    alert(a + ' ' + b)
+    alert(`Are you sure to save: ${a} ${b}?`)
   }
 }
 
-// mount root component and go!
 new App().$mount('#app')
 ```
 

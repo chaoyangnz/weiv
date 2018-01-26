@@ -6,11 +6,14 @@ import { Component, observable, action } from 'weivjs'
     <span>TODO: {{a}}</span>
     <button onclick="changeProp" style="height: 30px">Try to change props?</button>
     <p>
-      <input type="text" />
       <slot>
-      <strong>show when no slot</strong>
+        <p>show when no slot</p>
       </slot>
-      <button onclick="onSave" style="height: 30px">Save</button>
+      <p>
+        <input type="text" oninput="onInput"  />
+        <button onclick="onSave" style="height: 30px">Save</button>
+        <span> {{input}} </span>
+      </p>
       <ul>
         <slot name="item">show when no item slot</slot>
       </ul>
@@ -34,7 +37,15 @@ export class Todo {
   }
 
   onSave() {
-    this.$emit('save', 1, 2)
+    this.$emit('save', this.input, '')
+  }
+
+  @observable
+  input = ''
+
+  onInput(e) {
+    this.input = e.target.value
+    console.log('on input %o', e)
   }
 }
 
@@ -77,7 +88,7 @@ export class App {
   }
 
   onSave(a, b) {
-    alert(a + ' ' + b)
+    alert(`Are you sure to save: ${a} ${b}?`)
   }
 }
 

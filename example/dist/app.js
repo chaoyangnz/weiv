@@ -28471,7 +28471,7 @@ exports.App = exports.Todo = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _dec, _class, _dec2, _class2, _desc, _value, _class3, _descriptor;
+var _dec, _class, _desc, _value, _class2, _descriptor, _dec2, _class4, _desc2, _value2, _class5, _descriptor2;
 
 var _weivjs = __webpack_require__(25);
 
@@ -28484,6 +28484,8 @@ function _initDefineProp(target, property, descriptor, context) {
     value: descriptor.initializer ? descriptor.initializer.call(context) : void 0
   });
 }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) {
   var desc = {};
@@ -28518,19 +28520,19 @@ function _initializerWarningHelper(descriptor, context) {
   throw new Error('Decorating class property failed. Please ensure that transform-class-properties is enabled.');
 }
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 var Todo = exports.Todo = (_dec = (0, _weivjs.Component)({
-  template: '\n  <div>\n    <span>TODO: {{a}}</span>\n    <button onclick="changeProp" style="height: 30px">Try to change props?</button>\n    <p>\n      <input type="text" />\n      <slot>\n      <strong>show when no slot</strong>\n      </slot>\n      <button onclick="onSave" style="height: 30px">Save</button>\n      <ul>\n        <slot name="item">show when no item slot</slot>\n      </ul>\n    </p>\n  </div>\n  ',
+  template: '\n  <div>\n    <span>TODO: {{a}}</span>\n    <button onclick="changeProp" style="height: 30px">Try to change props?</button>\n    <p>\n      <slot>\n        <p>show when no slot</p>\n      </slot>\n      <p>\n        <input type="text" oninput="onInput"  />\n        <button onclick="onSave" style="height: 30px">Save</button>\n        <span> {{input}} </span>\n      </p>\n      <ul>\n        <slot name="item">show when no item slot</slot>\n      </ul>\n    </p>\n  </div>\n  ',
   props: {
     a: { type: 'number', required: true }
   },
   events: {
     save: {}
   }
-}), _dec(_class = function () {
+}), _dec(_class = (_class2 = function () {
   function Todo() {
     _classCallCheck(this, Todo);
+
+    _initDefineProp(this, 'input', _descriptor, this);
   }
 
   _createClass(Todo, [{
@@ -28545,16 +28547,27 @@ var Todo = exports.Todo = (_dec = (0, _weivjs.Component)({
   }, {
     key: 'onSave',
     value: function onSave() {
-      this.$emit('save', 1, 2);
+      this.$emit('save', this.input, '');
+    }
+  }, {
+    key: 'onInput',
+    value: function onInput(e) {
+      this.input = e.target.value;
+      console.log('on input %o', e);
     }
   }]);
 
   return Todo;
-}()) || _class);
+}(), (_descriptor = _applyDecoratedDescriptor(_class2.prototype, 'input', [_weivjs.observable], {
+  enumerable: true,
+  initializer: function initializer() {
+    return '';
+  }
+})), _class2)) || _class);
 var App = exports.App = (_dec2 = (0, _weivjs.Component)({
   template: '\n  <div>\n    <h1 @bind:title="counter">{{firstName}} {{lastName}}</h1><p>{{blogURL}}</p>\n    <div @if="counter < 5">Location: {{location.city}} - {{location.country}}</div>\n    <p>Countdown: {{counter}}</p>\n    <button onclick="minus" style="width: 80px">\u2796</button>\n    <button @on:click="plus" style="width: 80px">\u2795</button>\n    <p>Tip: When counter is less than 5, location will be shown.</p>\n    <todo @bind:a="counter" @on:save="onSave">\n      <div>this is a default slot</div>\n      <li slot="item">item1</li>\n      <li slot="item">item2</li>\n      <span>another default slot</span>\n    </todo>\n  </span>\n  ',
   components: { 'todo': Todo }
-}), _dec2(_class2 = (_class3 = function () {
+}), _dec2(_class4 = (_class5 = function () {
   function App() {
     _classCallCheck(this, App);
 
@@ -28566,7 +28579,7 @@ var App = exports.App = (_dec2 = (0, _weivjs.Component)({
       country: 'New Zealand'
     };
 
-    _initDefineProp(this, 'counter', _descriptor, this);
+    _initDefineProp(this, 'counter', _descriptor2, this);
   }
 
   _createClass(App, [{
@@ -28584,17 +28597,17 @@ var App = exports.App = (_dec2 = (0, _weivjs.Component)({
   }, {
     key: 'onSave',
     value: function onSave(a, b) {
-      alert(a + ' ' + b);
+      alert('Are you sure to save: ' + a + ' ' + b + '?');
     }
   }]);
 
   return App;
-}(), (_descriptor = _applyDecoratedDescriptor(_class3.prototype, 'counter', [_weivjs.observable], {
+}(), (_descriptor2 = _applyDecoratedDescriptor(_class5.prototype, 'counter', [_weivjs.observable], {
   enumerable: true,
   initializer: function initializer() {
     return 10;
   }
-}), _applyDecoratedDescriptor(_class3.prototype, 'plus', [_weivjs.action], Object.getOwnPropertyDescriptor(_class3.prototype, 'plus'), _class3.prototype), _applyDecoratedDescriptor(_class3.prototype, 'minus', [_weivjs.action], Object.getOwnPropertyDescriptor(_class3.prototype, 'minus'), _class3.prototype)), _class3)) || _class2);
+}), _applyDecoratedDescriptor(_class5.prototype, 'plus', [_weivjs.action], Object.getOwnPropertyDescriptor(_class5.prototype, 'plus'), _class5.prototype), _applyDecoratedDescriptor(_class5.prototype, 'minus', [_weivjs.action], Object.getOwnPropertyDescriptor(_class5.prototype, 'minus'), _class5.prototype)), _class5)) || _class4);
 
 
 new App().$mount('#app');
