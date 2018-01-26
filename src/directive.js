@@ -12,46 +12,46 @@ export class Directive {
 
   validate() { return true }
 
-  initialised({component, node}) {}
+  initialised({contextComponent, node}) {}
 
   // only component node
-  eventsPrepared({component, node, events}) {}
+  eventsPrepared({contextComponent, node, events}) {}
 
-  propertiesEvaluated({component, node, properties}) {}
+  propertiesEvaluated({contextComponent, node, properties}) {}
 
-  childrenRendered({component, node, properties, children}) {}
+  childrenRendered({contextComponent, node, properties, children}) {}
 
   // only component node
-  childComponentCreated({component, node, properties, children, childComponent}) {}
+  childComponentCreated({contextComponent, node, properties, children, childComponent}) {}
 }
 
 export class IfDirective extends Directive {
 
-  initialised({component, node}) {
-    const value = this.expression.eval(component)
+  initialised({contextComponent, node}) {
+    const value = this.expression.eval(contextComponent)
     return !value
   }
 }
 
 export class BindDirective extends Directive {
 
-  propertiesEvaluated({component, properties}) {
-    const value = this.expression.eval(component)
+  propertiesEvaluated({contextComponent, properties}) {
+    const value = this.expression.eval(contextComponent)
     properties[this.target] = value
   }
 }
 
 export class OnDirective extends Directive {
 
-  eventsPrepared({component, node, events}) {
-    const value = this.expression.eval(component)
+  eventsPrepared({contextComponent, node, events}) {
+    const value = this.expression.eval(contextComponent)
     if (node instanceof Component) {
       events[this.target] = value
     }
   }
 
-  propertiesEvaluated({component, node, properties}) {
-    const value = this.expression.eval(component)
+  propertiesEvaluated({contextComponent, node, properties}) {
+    const value = this.expression.eval(contextComponent)
     if (node instanceof Node && _.includes(HTML_EVENT_ATTRIBUTES, `on${this.target}`)) {
       properties[`on${this.target}`] = value
     }

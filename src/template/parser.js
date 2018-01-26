@@ -19,24 +19,24 @@ function parseText(text) {
   return arr
 }
 
-function parseTag(tagName, attributes, componentClass) {
+function parseTag(tagName, attributes, contextComponentClass) {
   const tag = tagName.toLowerCase()
   if (_.includes(HTML_TAGS, tag)) { // HTML tags
-    return new Node(componentClass, tag, attributes)
+    return new Node(contextComponentClass, tag, attributes)
   }
   if (tag === 'slot') {
-    const slot = new Slot(componentClass, tag, attributes)
-    componentClass.prototype.$slots.add(slot.name)
+    const slot = new Slot(contextComponentClass, tag, attributes)
+    contextComponentClass.prototype.$slots.add(slot.name)
     return slot
   }
-  const childComponentClass = componentClass.prototype.$lookupComponent(tag) // custom tag for component
+  const childComponentClass = contextComponentClass.prototype.$lookupComponent(tag) // custom tag for component
   if (childComponentClass) {
-    return new Component(componentClass, tag, attributes, childComponentClass)
+    return new Component(contextComponentClass, tag, attributes, childComponentClass)
   }
   throw Error('Cannot find component for custom tag: ' + tag)
 }
 
-export function parse(template, componentClass) {
+export function parse(template, contextComponentClass) {
   if (_.isEmpty(template)) return new Text('')
   const roots = []
   const stack = []
@@ -44,7 +44,7 @@ export function parse(template, componentClass) {
 
   const onOpenTag = (tagName, attributes) => {
     console.group('<%s> attrs: %o', tagName, attributes)
-    const node = parseTag(tagName, attributes, componentClass)
+    const node = parseTag(tagName, attributes, contextComponentClass)
     stack.push(node)
     // log(stack)
   }
@@ -89,7 +89,7 @@ export function parse(template, componentClass) {
     onend: onEnd
   }, {decodeEntities: true});
 
-  console.groupCollapsed('Parse template: %o', componentClass.name)
+  console.groupCollapsed('Parse template: %o', contextComponentClass.name)
   parser.write(template)
   parser.done()
   console.groupEnd()

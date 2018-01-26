@@ -12,7 +12,7 @@ import { Component, observable, action } from 'weivjs'
       <p>
         <input type="text" oninput="onInput"  />
         <button onclick="onSave" style="height: 30px">Save</button>
-        <span> {{input}} </span>
+        <input type="text" disabled @bind:value="input" />
       </p>
       <ul>
         <slot name="item">show when no item slot</slot>
