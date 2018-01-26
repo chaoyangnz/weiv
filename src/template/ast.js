@@ -6,6 +6,7 @@ import { HTML_EVENT_ATTRIBUTES } from './html'
 
 const log = debug('weiv:render')
 
+// Expression can exist as child of Node, also as the value of attribute
 export class Expression {
   constructor(exp) {
     this.exp = exp
@@ -31,41 +32,6 @@ export class Expression {
   }
 }
 
-const STRUCTRUAL_DIRECTIVES = [
-  'if',
-  'else-if',
-  'else'
-]
-
-const BEHAVIORAL_DIRECTIVES = [
-  'bind',
-  'on'
-]
-
-const STRUCTRUAL_DIRECTIVE = 0
-const BEHAVIORAL_DIRECTIVE = 1
-
-class Directive {
-  constructor(command, target, params, exp) {
-    this.command = command.toLowerCase()
-    this.target = target
-    this.params = params
-    this.expression = new Expression(exp)
-    if (_.includes(STRUCTRUAL_DIRECTIVES, this.command)) {
-      this.type = STRUCTRUAL_DIRECTIVE
-    } else if (_.includes(BEHAVIORAL_DIRECTIVES, this.command)) {
-      this.type = BEHAVIORAL_DIRECTIVE
-    } else {
-      throw new Error(`Illegal directive: '${this.command}'`)
-    }
-  }
-
-  static isTrue(val) {
-    if (val === false || val === null || val === undefined) return false
-    return true
-  }
-}
-
 export class Text {
   constructor(text) {
     this.text = text
@@ -77,36 +43,40 @@ export class Text {
   }
 }
 
-function parseDirective(name, exp) {
-  const pattern = /@(\w+)(:(\w+)((\.\w+)*))?/
-  const m = name.match(pattern)
-  if (m) {
-    let params = []
-    if (m[4]) {
-      params = _.remove(m[4].split('.'), null)
-    }
-    return new Directive(m[1], m[3], params, exp)
-  }
-  throw new Error(`Illagal directive attribute format: ${name}`)
-}
-
 export class Node {
-  constructor(tagName, attributes) {
+  constructor(ownerComponentClass, tagName, attributes) {
+    this.ownerComponentClass = ownerComponentClass
     this.tagName = tagName.toLowerCase()
-    this.properties = {}
-    this.directives = []
-    this.children = []
+    this.properties = {} // name -> value (string), except html events: onclick -> value (expression)
+    this.directives = [] // @command:(target).(params..) -> expression
+    this.children = [] // children nodes
     this.parent = null
     for (let name of Object.keys(attributes)) {
       if (name.match(/@[^@]+/)) { // directive prefix: @
-        const directive = parseDirective(name, attributes[name])
+        const directive = this._parseDirective(name, attributes[name])
         if (directive) this.directives.push(directive)
       } else if (_.includes(HTML_EVENT_ATTRIBUTES, name.toLowerCase())) {
-        this.properties[name] = new Expression(attributes[name])
+        this.properties[name.toLowerCase()] = new Expression(attributes[name])
       } else {
-        this.properties[name] = attributes[name]
+        this.properties[name.toLowerCase()] = attributes[name]
       }
     }
+  }
+
+  _parseDirective(name, exp) {
+    const pattern = /@(\w+)(:(\w+)((\.\w+)*))?/
+    const m = name.match(pattern)
+    if (m) {
+      let params = []
+      if (m[4]) {
+        params = _.remove(m[4].split('.'), null)
+      }
+      const directiveClass = this.ownerComponentClass.prototype.$lookupDirective(m[1])
+      if (directiveClass) {
+        return new directiveClass(m[1], m[3], params, exp)
+      }
+    }
+    throw new Error(`Illagal directive attribute format: ${name}`)
   }
 
   closestComponent() {
@@ -133,86 +103,35 @@ export class Node {
     return this.parent.children[index + 1]
   }
 
-  // structural directive
-  _structural(directive, properties, children, component) {
-    const val = directive.expression.eval(component)
-    if (directive.command === 'if') {
-      return Directive.isTrue(val)
-    }
-    return true
-  }
-
-  // behavioral directive
-  _behavioral(directive, properties, children, component) {
-    const val = directive.expression.eval(component)
-    if (directive.command === 'bind') {
-      properties[directive.target] = val
-    } else if (directive.command === 'on') {
-      if (val && typeof val === 'function') {
-        if (_.includes(HTML_EVENT_ATTRIBUTES, 'on' + directive.target.toLowerCase())) {
-          properties[`on${directive.target}`] = val
-        }
-      }
-    }
-  }
-
   render(component) {
     console.group('%o', this)
-    let properties = _.cloneDeep(this.properties)
+    let stop = _.some(this.directives.map(directive => directive.initialised({component, node: this})))
+    if (stop) return null
+
     // only `onclick..` attributes is expression
-    properties = _.mapValues(properties, attr => attr instanceof Expression ? attr.eval(component) : attr)
+    let properties = _.mapValues(_.cloneDeep(this.properties), attr => attr instanceof Expression ? attr.eval(component) : attr)
+
+    stop = _.some(this.directives.map(directive => directive.propertiesEvaluated({component, node: this, properties})))
+    if (stop) return null
+
     const children = _.compact(_.flatMap(this.children, child => child.render(component)))
-    // start directiv processing
-    const structualDirectives = this.directives.filter(directive => directive.type === STRUCTRUAL_DIRECTIVE)
-    const behavioralDirectives = this.directives.filter(directive => directive.type === BEHAVIORAL_DIRECTIVE)
-    for (let directive of structualDirectives) {
-      if (!this._structural(directive, properties, children, component)) return null
-    }
-    for (let directive of behavioralDirectives) {
-      this._behavioral(directive, properties, children, component)
-    }
+
+    stop = _.some(this.directives.map(directive => directive.childrenRendered({component, node: this, properties, children})))
+    if (stop) return null
+
     console.groupEnd()
     return vdom.h(this.tagName, properties, children)
   }
 }
 
-export class Slot extends Node {
-  constructor(tagName, attributes) {
-    super(tagName, attributes)
-    this.name = attributes.name || 'default'
-  }
-
-  render(component) { // return
-    console.group('%o', this)
-    let properties = _.cloneDeep(this.properties)
-    // only `onclick..` attributes is expression
-    properties = _.mapValues(properties, attr => attr instanceof Expression ? attr.eval(component) : attr)
-    const children = _.compact(_.flatMap(this.children, child => child.render(component)))
-    // start directiv processing
-    const structualDirectives = this.directives.filter(directive => directive.type === STRUCTRUAL_DIRECTIVE)
-    const behavioralDirectives = this.directives.filter(directive => directive.type === BEHAVIORAL_DIRECTIVE)
-    for (let directive of structualDirectives) {
-      if (!this._structural(directive, properties, children, component)) return null
-    }
-    for (let directive of behavioralDirectives) {
-      this._behavioral(directive, properties, children, component)
-    }
-    console.groupEnd()
-    if (component.$vslots.has(this.name) && !_.isEmpty(component.$vslots.get(this.name))) {
-      return component.$vslots.get(this.name)
-    }
-    return children
-  }
-}
-
 export class Component extends Node {
-  constructor(tagName, attributes, componentClass) {
-    super(tagName, attributes)
+  constructor(ownerComponentClass, tagName, attributes, componentClass) {
+    super(ownerComponentClass, tagName, attributes)
     this.componentClass = componentClass
     this.componentId = componentClass.$original.$uniqueid()
     for (let name of Object.keys(attributes)) {
       if (name.match(/@[^@]+/)) { // directive prefix: @
-        const directive = parseDirective(name, attributes[name])
+        const directive = this._parseDirective(name, attributes[name])
         if (directive) this.directives.push(directive)
       } else {
         // validate component props
@@ -225,69 +144,81 @@ export class Component extends Node {
     }
   }
 
-  // structural directive
-  _structural(directive, properties, children, component) {
-    if (directive.command === 'if') {
-      const val = directive.expression.eval(component)
-      return Directive.isTrue(val)
-    }
-    return true
-  }
-
-  // behavioral directive
-  _behavioral(directive, properties, children, component, childComponent) {
-    const val = directive.expression.eval(component)
-    if (directive.command === 'bind') {
-      properties[directive.target] = val
-    } else if (directive.command === 'on') {
-      if (val && typeof val === 'function') {
-        if (_.includes(directive.params, 'native')) {
-          if (_.includes(HTML_EVENT_ATTRIBUTES, directive.target.toLowerCase())) {
-            // TODO add native event to component's root dom element from its template
-          }
-        } else {
-          childComponent.$on(directive.target, val)
-        }
-      }
-    } else {
-      console.error('Illegal directive: %o', directive)
-    }
-  }
-
   render(component) {
     console.group('%o', this)
-    let properties = _.cloneDeep(this.properties)
-    // only `onclick..` attributes is expression
-    properties = _.mapValues(properties, prop => prop instanceof Expression ? prop.eval(component) : prop)
+
+    let stop = _.some(this.directives.map(directive => directive.initialised({component, node: this})))
+    if (stop) return null
+
+    const events = {}
+
+    stop = _.some(this.directives.map(directive => directive.eventsPrepared({component, node: this, events})))
+    if (stop) return null
+
+    const properties = _.mapValues(_.cloneDeep(this.properties), prop => prop instanceof Expression ? prop.eval(component) : prop)
+
+    stop = _.some(this.directives.map(directive => directive.propertiesEvaluated({component, node: this, properties})))
+    if (stop) return null
+
     const children = _.compact(_.flatMap(this.children, child => child.render(component)))
-    // start directive processing
-    const structualDirectives = this.directives.filter(directive => directive.type === STRUCTRUAL_DIRECTIVE)
-    const behavioralDirectives = this.directives.filter(directive => directive.type === BEHAVIORAL_DIRECTIVE)
-    for (let directive of structualDirectives) {
-      if (!this._structural(directive, properties, children, component)) return null
-    }
+
+    stop = _.some(this.directives.map(directive => directive.childrenRendered({component, node: this, properties, children})))
+    if (stop) return null
 
     /* eslint new-cap: 0 */
     let childComponent = component.$children.get(this.componentId)
     if (!childComponent) {
       childComponent = new this.componentClass(this.componentId, component)
     }
+
+    stop = _.some(this.directives.map(directive => directive.childComponentCreated({component, node: this, properties, children, childComponent})))
+    if (stop) return null
+
     // process childrent to fill slots
+    const slots = {}
     children.forEach(child => {
-      const slot = _.has(child.properties, 'slot') ? child.properties['slot'] : 'default'
-      if (childComponent.$vslots.has(slot)) {
-        childComponent.$vslots.get(slot).push(child)
-      } else {
-        console.warn('Fail to find slot %j in component %s template', slot, this.componentClass.$original.name)
+      const slotName = _.has(child.properties, 'slot') ? child.properties['slot'] : 'default'
+      if (childComponent.$slots.has(slotName)) {
+        const slot = slots[slotName] || []
+        slot.push(child)
       }
     })
-    childComponent.$emitter.removeAllListeners()
-    for (let directive of behavioralDirectives) {
-      this._behavioral(directive, properties, children, component, childComponent)
-    }
-    childComponent.$render(properties)
+
+    childComponent.$render(properties, events, slots)
     childComponent.$vdom.properties.id = this.componentId // attach an id attribute
     console.groupEnd()
+
     return childComponent.$vdom
+  }
+}
+
+export class Slot extends Node {
+  constructor(ownerComponentClass, tagName, attributes) {
+    super(ownerComponentClass, tagName, attributes)
+    this.name = attributes.name || 'default'
+  }
+
+  render(component) { // return multiple vnodes
+    console.group('%o', this)
+    let stop = _.some(this.directives.map(directive => directive.initialised({component, node: this})))
+    if (stop) return null
+
+    // only `onclick..` attributes is expression
+    let properties = _.mapValues(_.cloneDeep(this.properties), attr => attr instanceof Expression ? attr.eval(component) : attr)
+
+    stop = _.some(this.directives.map(directive => directive.propertiesEvaluated({component, node: this, properties})))
+    if (stop) return null
+
+    const children = _.compact(_.flatMap(this.children, child => child.render(component)))
+
+    stop = _.some(this.directives.map(directive => directive.childrenRendered({component, node: this, properties, children})))
+    if (stop) return null
+
+    console.groupEnd()
+    if (component.$vslots.has(this.name) && !_.isEmpty(component.$vslots.get(this.name))) {
+      return component.$vslots.get(this.name)
+    }
+
+    return children
   }
 }

@@ -5,7 +5,7 @@ import VDOM from 'virtual-dom'
 import { EventEmitter } from 'fbemitter'
 import { autorun } from 'mobx'
 import { parse } from './template'
-import { Weiv } from '.'
+import * as weiv from '.'
 
 const log = debug('weiv:render')
 
@@ -24,8 +24,9 @@ export type Options = {
   components: any
 }
 
-function $render(props: any = {}) {
+function $render(props: any = {}, events = {}, slots = {}) {
   console.groupCollapsed('Render component: %o', this)
+  // props
   Object.keys(props).forEach(prop => {
     if (_.includes(Object.keys(this.$props), prop)) { // TODO validate props type
       const value = _.cloneDeep(props[prop])
@@ -33,6 +34,22 @@ function $render(props: any = {}) {
       Object.defineProperty(this, prop, { value: value, configurable: true, writable: false })
     }
   })
+  // events
+  this.$emitter.removeAllListeners()
+  Object.keys(events).forEach(event => {
+    if (_.includes(Object.keys(this.$events), event)) { // TODO validate props type
+      this.$on(event, events[event])
+    }
+  })
+  // slots
+  Object.keys(slots).forEach(slot => {
+    if (this.$slots.has(slot)) {
+      this.$vslots.set(slot, slots[slot])
+    } else {
+      console.warn('Fail to find slot %j in component %s template', slot, this.componentClass.$original.name)
+    }
+  })
+
   this.$vdom = this.$template.render(this)
   console.groupEnd()
 }
@@ -40,7 +57,13 @@ function $render(props: any = {}) {
 function $lookupComponent(tag) {
   let componentClass = this.$components[tag]
   if (componentClass) return componentClass
-  return Weiv.$components.get(tag)
+  return weiv.component(tag)
+}
+
+function $lookupDirective(name) {
+  let directive = this.$directives[name]
+  if (directive) return directive
+  return weiv.directive(name)
 }
 
 function $on(event, listener) {
@@ -90,8 +113,10 @@ function mixinPrototype(componentClass, options: Options) {
   Object.defineProperty(componentClass.prototype, '$props', { value: _.cloneDeep(options.props || {}) })
   Object.defineProperty(componentClass.prototype, '$events', { value: _.cloneDeep(options.events || {}) })
   Object.defineProperty(componentClass.prototype, '$components', { value: _.cloneDeep(options.components || []) })
+  Object.defineProperty(componentClass.prototype, '$directives', { value: _.cloneDeep(options.directives || []) })
   Object.defineProperty(componentClass.prototype, '$render', { value: $render })
   Object.defineProperty(componentClass.prototype, '$lookupComponent', { value: $lookupComponent })
+  Object.defineProperty(componentClass.prototype, '$lookupDirective', { value: $lookupDirective })
   Object.defineProperty(componentClass.prototype, '$on', { value: $on })
   Object.defineProperty(componentClass.prototype, '$emit', { value: $emit })
   Object.defineProperty(componentClass.prototype, '$mount', { value: $mount })

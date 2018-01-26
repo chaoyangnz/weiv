@@ -22,16 +22,16 @@ function parseText(text) {
 function parseTag(tagName, attributes, componentClass) {
   const tag = tagName.toLowerCase()
   if (_.includes(HTML_TAGS, tag)) { // HTML tags
-    return new Node(tag, attributes)
+    return new Node(componentClass, tag, attributes)
   }
   if (tag === 'slot') {
-    const slot = new Slot(tag, attributes)
+    const slot = new Slot(componentClass, tag, attributes)
     componentClass.prototype.$slots.add(slot.name)
     return slot
   }
   const childComponentClass = componentClass.prototype.$lookupComponent(tag) // custom tag for component
   if (childComponentClass) {
-    return new Component(tag, attributes, childComponentClass)
+    return new Component(componentClass, tag, attributes, childComponentClass)
   }
   throw Error('Cannot find component for custom tag: ' + tag)
 }
