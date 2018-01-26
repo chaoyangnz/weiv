@@ -73,7 +73,8 @@ export class Node {
       }
       const directiveClass = this.ownerComponentClass.prototype.$lookupDirective(m[1])
       if (directiveClass) {
-        return new directiveClass(m[1], m[3], params, exp)
+        const directive = new directiveClass(m[1], m[3], params, exp)
+        if (directive.validate()) return directive
       }
     }
     throw new Error(`Illagal directive attribute format: ${name}`)

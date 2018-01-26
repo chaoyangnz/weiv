@@ -10,6 +10,8 @@ export class Directive {
     this.expression = new Expression(exp)
   }
 
+  validate() { return true }
+
   initialised({component, node}) {}
 
   // only component node

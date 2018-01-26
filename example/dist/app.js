@@ -33519,7 +33519,8 @@ var Node = exports.Node = function () {
         }
         var directiveClass = this.ownerComponentClass.prototype.$lookupDirective(m[1]);
         if (directiveClass) {
-          return new directiveClass(m[1], m[3], params, exp);
+          var directive = new directiveClass(m[1], m[3], params, exp);
+          if (directive.validate()) return directive;
         }
       }
       throw new Error('Illagal directive attribute format: ' + name);
@@ -35126,6 +35127,11 @@ var Directive = exports.Directive = function () {
   }
 
   _createClass(Directive, [{
+    key: 'validate',
+    value: function validate() {
+      return true;
+    }
+  }, {
     key: 'initialised',
     value: function initialised(_ref) {
       var component = _ref.component,
