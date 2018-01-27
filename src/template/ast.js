@@ -13,8 +13,8 @@ export class Expression {
     this.ast = Jexl.parse(exp)
   }
 
-  eval(contextComponent) {
-    let val = Jexl.evaluate(this.ast, contextComponent)
+  eval(contextComponent, scope) {
+    let val = Jexl.evaluate(this.ast, scope)
     log('Evaluate expression `%s`: %o', this.exp, val)
     // autobind functions
     if (val && typeof val === 'function') {
@@ -23,9 +23,9 @@ export class Expression {
     return val
   }
 
-  render(contextComponent) {
+  render(contextComponent, scope) {
     console.group('%o', this)
-    const val = this.eval(contextComponent)
+    const val = this.eval(contextComponent, scope)
     const text = (val !== null && val !== undefined) ? String(val) : ''
     console.groupEnd()
     return new vdom.VText(text)
@@ -37,7 +37,7 @@ export class Text {
     this.text = text
   }
 
-  render(contextComponent) {
+  render(contextComponent, scope) {
     console.log('%o', this)
     return new vdom.VText(this.text)
   }
@@ -104,21 +104,37 @@ export class Node {
     return this.parent.children[index + 1]
   }
 
-  render(contextComponent) {
+  // true -> continue  array -> stop
+  _process(results) {
+    for (const result of results) {
+      if (_.isArray(result)) return result
+    }
+    return true
+  }
+
+  render(contextComponent, superScope, options = {}) {
     console.group('%o', this)
-    let stop = _.some(this.directives.map(directive => directive.initialised({contextComponent, node: this})))
-    if (stop) return null
+    let scope
+    if (options.notNewScope) {
+      scope = superScope
+    } else {
+      scope = {__super: superScope, __tag: this.tagName}
+      Object.setPrototypeOf(scope, superScope)
+    }
+
+    let result = this._process(this.directives.map(directive => directive.initialised({contextComponent, scope, node: this})))
+    if (result !== true) return result
 
     // only `onclick..` attributes is expression
-    let properties = _.mapValues(_.cloneDeep(this.properties), attr => attr instanceof Expression ? attr.eval(contextComponent) : attr)
+    let properties = _.mapValues(_.cloneDeep(this.properties), attr => attr instanceof Expression ? attr.eval(contextComponent, scope) : attr)
 
-    stop = _.some(this.directives.map(directive => directive.propertiesEvaluated({contextComponent, node: this, properties})))
-    if (stop) return null
+    result = this._process(this.directives.map(directive => directive.propertiesEvaluated({contextComponent, scope, node: this, properties})))
+    if (result !== true) return result
 
-    const children = _.compact(_.flatMap(this.children, child => child.render(contextComponent)))
+    const children = _.compact(_.flatMap(this.children, child => child.render(contextComponent, scope)))
 
-    stop = _.some(this.directives.map(directive => directive.childrenRendered({contextComponent, node: this, properties, children})))
-    if (stop) return null
+    result = this._process(this.directives.map(directive => directive.childrenRendered({contextComponent, scope, node: this, properties, children})))
+    if (result !== true) return result
 
     console.groupEnd()
     return vdom.h(this.tagName, properties, children)
@@ -145,26 +161,33 @@ export class Component extends Node {
     }
   }
 
-  render(contextComponent) {
+  render(contextComponent, superScope, options = {}) {
     console.group('%o', this)
+    let scope
+    if (options.notNewScope) {
+      scope = superScope
+    } else {
+      scope = {__super: superScope, __tag: this.tagName}
+      Object.setPrototypeOf(scope, superScope)
+    }
 
-    let stop = _.some(this.directives.map(directive => directive.initialised({contextComponent, node: this})))
-    if (stop) return null
+    let result = this._process(this.directives.map(directive => directive.initialised({contextComponent, scope, node: this})))
+    if (result !== true) return result
 
     const events = {}
 
-    stop = _.some(this.directives.map(directive => directive.eventsPrepared({contextComponent, node: this, events})))
-    if (stop) return null
+    result = this._process(this.directives.map(directive => directive.eventsPrepared({contextComponent, scope, node: this, events})))
+    if (result !== true) return result
 
-    const properties = _.mapValues(_.cloneDeep(this.properties), prop => prop instanceof Expression ? prop.eval(contextComponent) : prop)
+    const properties = _.mapValues(_.cloneDeep(this.properties), prop => prop instanceof Expression ? prop.eval(contextComponent, scope) : prop)
 
-    stop = _.some(this.directives.map(directive => directive.propertiesEvaluated({contextComponent, node: this, properties})))
-    if (stop) return null
+    result = this._process(this.directives.map(directive => directive.propertiesEvaluated({contextComponent, scope, node: this, properties})))
+    if (result !== true) return result
 
-    const children = _.compact(_.flatMap(this.children, child => child.render(contextComponent)))
+    const children = _.compact(_.flatMap(this.children, child => child.render(contextComponent, scope)))
 
-    stop = _.some(this.directives.map(directive => directive.childrenRendered({contextComponent, node: this, properties, children})))
-    if (stop) return null
+    result = this._process(this.directives.map(directive => directive.childrenRendered({contextComponent, scope, node: this, properties, children})))
+    if (result !== true) return result
 
     /* eslint new-cap: 0 */
     let childComponent = contextComponent.$children.get(this.componentId)
@@ -172,8 +195,8 @@ export class Component extends Node {
       childComponent = new this.componentClass(this.componentId, contextComponent)
     }
 
-    stop = _.some(this.directives.map(directive => directive.childComponentCreated({contextComponent, node: this, properties, children, childComponent})))
-    if (stop) return null
+    result = this._process(this.directives.map(directive => directive.childComponentCreated({contextComponent, scope, node: this, properties, children, childComponent})))
+    if (result !== true) return result
 
     // process childrent to fill slots
     const slots = {}
@@ -200,21 +223,29 @@ export class Slot extends Node {
     this.name = attributes.name || 'default'
   }
 
-  render(contextComponent) { // return multiple vnodes
+  render(contextComponent, superScope, options = {}) { // return multiple vnodes
     console.group('%o', this)
-    let stop = _.some(this.directives.map(directive => directive.initialised({contextComponent, node: this})))
-    if (stop) return null
+    let scope
+    if (options.notNewScope) {
+      scope = superScope
+    } else {
+      scope = {__super: superScope, __tag: this.tagName}
+      Object.setPrototypeOf(scope, superScope)
+    }
+
+    let result = this._process(this.directives.map(directive => directive.initialised({contextComponent, scope, node: this})))
+    if (result !== true) return result
 
     // only `onclick..` attributes is expression
-    let properties = _.mapValues(_.cloneDeep(this.properties), attr => attr instanceof Expression ? attr.eval(contextComponent) : attr)
+    let properties = _.mapValues(_.cloneDeep(this.properties), attr => attr instanceof Expression ? attr.eval(contextComponent, scope) : attr)
 
-    stop = _.some(this.directives.map(directive => directive.propertiesEvaluated({contextComponent, node: this, properties})))
-    if (stop) return null
+    result = this._process(this.directives.map(directive => directive.propertiesEvaluated({contextComponent, scope, node: this, properties})))
+    if (result !== true) return result
 
-    const children = _.compact(_.flatMap(this.children, child => child.render(contextComponent)))
+    const children = _.compact(_.flatMap(this.children, child => child.render(contextComponent, scope)))
 
-    stop = _.some(this.directives.map(directive => directive.childrenRendered({contextComponent, node: this, properties, children})))
-    if (stop) return null
+    result = this._process(this.directives.map(directive => directive.childrenRendered({contextComponent, scope, node: this, properties, children})))
+    if (result !== true) return result
 
     console.groupEnd()
     if (contextComponent.$vslots.has(this.name) && !_.isEmpty(contextComponent.$vslots.get(this.name))) {

@@ -3,7 +3,8 @@ import _ from 'lodash'
 import debug from 'debug'
 import VDOM from 'virtual-dom'
 import { EventEmitter } from 'fbemitter'
-import { autorun } from 'mobx'
+import { autorun, isObservable } from 'mobx'
+import { createViewModel } from 'mobx-utils'
 import { parse } from './template'
 import * as weiv from '.'
 
@@ -25,7 +26,7 @@ export type Options = {
 }
 
 function $render(props: any = {}, events = {}, slots = {}) {
-  console.groupCollapsed('Render component: %o', this)
+  console.group('Render component: %o', this)
   // props
   Object.keys(props).forEach(prop => {
     if (_.includes(Object.keys(this.$props), prop)) { // TODO validate props type
@@ -50,7 +51,7 @@ function $render(props: any = {}, events = {}, slots = {}) {
     }
   })
 
-  this.$vdom = this.$template.render(this)
+  this.$vdom = this.$template.render(this, this.$scope())
   console.groupEnd()
 }
 
@@ -108,6 +109,23 @@ function $mount(el) {
   autorun(tick)
 }
 
+// filter out private properties starting from $, keep user perperties for eval context
+function $scope() {
+  // TODO
+  const scope = createViewModel(this)
+  Object.getOwnPropertyNames(this).forEach(prop => {
+    if (!prop.startsWith('$') && !isObservable(this[prop])) {
+      scope[prop] = this[prop]
+    }
+  })
+  Object.getOwnPropertyNames(Object.getPrototypeOf(this)).forEach(prop => {
+    if (!prop.startsWith('$')) {
+      scope[prop] = this[prop]
+    }
+  })
+  return scope
+}
+
 function mixinPrototype(componentClass, options: Options) {
   Object.defineProperty(componentClass.prototype, '$name', { value: _.cloneDeep(options.name || null) })
   Object.defineProperty(componentClass.prototype, '$props', { value: _.cloneDeep(options.props || {}) })
@@ -122,8 +140,9 @@ function mixinPrototype(componentClass, options: Options) {
   Object.defineProperty(componentClass.prototype, '$mount', { value: $mount })
   // attach parsed ast to component prototype
   const template = options.template ? options.template.trim() : ''
-  Object.defineProperty(componentClass.prototype, '$slots', {value: new Set()})
-  Object.defineProperty(componentClass.prototype, '$template', {value: parse(template, componentClass)})
+  Object.defineProperty(componentClass.prototype, '$slots', { value: new Set() })
+  Object.defineProperty(componentClass.prototype, '$template', { value: Object.freeze(parse(template, componentClass)) })
+  Object.defineProperty(componentClass.prototype, '$scope', { value: $scope })
   Object.freeze(componentClass.prototype)
 
   // static methods

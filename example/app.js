@@ -51,18 +51,24 @@ export class Todo {
 
 @Component({
   template: `
-  <div>
+  <div @var:i="100">
     <h1 @bind:title="counter">{{firstName}} {{lastName}}</h1><p>{{blogURL}}</p>
     <div @if="counter < 5">Location: {{location.city}} - {{location.country}}</div>
     <p>Countdown: {{counter}}</p>
     <button onclick="minus" style="width: 80px">➖</button>
     <button @on:click="plus" style="width: 80px">➕</button>
     <p>Tip: When counter is less than 5, location will be shown.</p>
+    <ol>
+      <li @for:i="[1,2,3]">
+      {{i}} - {{__super.i}}
+      </li>
+    </ol>
     <todo @bind:a="counter" @on:save="onSave">
       <div>this is a default slot</div>
       <li slot="item">item1</li>
       <li slot="item">item2</li>
       <span>another default slot</span>
+      <p>show var value: {{i}}</p>
     </todo>
   </span>
   `,

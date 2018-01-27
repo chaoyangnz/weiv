@@ -1,5 +1,5 @@
 import debug from 'debug'
-import { BindDirective, OnDirective, IfDirective } from './directive';
+import { BindDirective, OnDirective, IfDirective, VarDirective, ForDirective } from './directive';
 
 export { Component } from './component'
 export { Directive } from './directive'
@@ -30,6 +30,8 @@ export function directive(name: string, directive: any) {
 debug.log = console.log.bind(console)
 
 // register built-in directives
+directive('var', VarDirective)
 directive('bind', BindDirective)
 directive('on', OnDirective)
 directive('if', IfDirective)
+directive('for', ForDirective)

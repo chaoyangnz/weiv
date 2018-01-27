@@ -8,9 +8,9 @@ const log = debug('weiv:parse')
 
 function parseText(text) {
   const arr = []
-  const pattern = /{{\s*[\w\.]+\s*}}/g
+  const pattern = /{{\s*[\w\._\$]+\s*}}/g
   const m = text.match(pattern) || []
-  const expressions = m.map(x => x.match(/[\w\.]+/)[0])
+  const expressions = m.map(x => x.match(/[\w\._\$]+/)[0])
   const texts = text.split(pattern)
   for (let i = 0; i < Math.max(expressions.length, texts.length); ++i) {
     if (i < texts.length && !texts[i].match(/^\s*$/)) arr.push(new Text(texts[i]))
