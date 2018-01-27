@@ -3,6 +3,7 @@ import vdom from 'virtual-dom'
 import Jexl from 'jexl-sync'
 import debug from 'debug'
 import { HTML_EVENT_ATTRIBUTES } from './html'
+import * as utils from '../utils'
 
 const log = debug('weiv:render')
 
@@ -23,11 +24,10 @@ export class Expression {
     return val
   }
 
+  @utils.log
   render(contextComponent, scope) {
-    console.group('%o', this)
     const val = this.eval(contextComponent, scope)
     const text = (val !== null && val !== undefined) ? String(val) : ''
-    console.groupEnd()
     return new vdom.VText(text)
   }
 }
@@ -112,8 +112,8 @@ export class Node {
     return true
   }
 
+  @utils.log(false)
   render(contextComponent, superScope, options = {}) {
-    console.group('%o', this)
     let scope
     if (options.notNewScope) {
       scope = superScope
@@ -136,7 +136,6 @@ export class Node {
     result = this._process(this.directives.map(directive => directive.childrenRendered({contextComponent, scope, node: this, properties, children})))
     if (result !== true) return result
 
-    console.groupEnd()
     return vdom.h(this.tagName, properties, children)
   }
 }
@@ -161,8 +160,8 @@ export class Component extends Node {
     }
   }
 
+  @utils.log(false)
   render(contextComponent, superScope, options = {}) {
-    console.group('%o', this)
     let scope
     if (options.notNewScope) {
       scope = superScope
@@ -211,7 +210,6 @@ export class Component extends Node {
 
     childComponent.$render(properties, events, slots)
     childComponent.$vdom.properties.id = this.componentId // attach an id attribute
-    console.groupEnd()
 
     return childComponent.$vdom
   }
@@ -223,8 +221,8 @@ export class Slot extends Node {
     this.name = attributes.name || 'default'
   }
 
+  @utils.log(false)
   render(contextComponent, superScope, options = {}) { // return multiple vnodes
-    console.group('%o', this)
     let scope
     if (options.notNewScope) {
       scope = superScope
@@ -247,7 +245,6 @@ export class Slot extends Node {
     result = this._process(this.directives.map(directive => directive.childrenRendered({contextComponent, scope, node: this, properties, children})))
     if (result !== true) return result
 
-    console.groupEnd()
     if (contextComponent.$vslots.has(this.name) && !_.isEmpty(contextComponent.$vslots.get(this.name))) {
       return contextComponent.$vslots.get(this.name)
     }

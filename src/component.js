@@ -26,7 +26,7 @@ export type Options = {
 }
 
 function $render(props: any = {}, events = {}, slots = {}) {
-  console.group('Render component: %o', this)
+  console.groupCollapsed('Render component: %o', this)
   // props
   Object.keys(props).forEach(prop => {
     if (_.includes(Object.keys(this.$props), prop)) { // TODO validate props type

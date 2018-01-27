@@ -28257,6 +28257,8 @@ exports.Slot = exports.Component = exports.Node = exports.Text = exports.Express
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+var _dec, _desc, _value, _class, _dec2, _desc2, _value2, _class2, _dec3, _desc3, _value3, _class3, _dec4, _desc4, _value4, _class4;
+
 var _lodash = __webpack_require__(10);
 
 var _lodash2 = _interopRequireDefault(_lodash);
@@ -28275,6 +28277,12 @@ var _debug2 = _interopRequireDefault(_debug);
 
 var _html = __webpack_require__(26);
 
+var _utils = __webpack_require__(124);
+
+var utils = _interopRequireWildcard(_utils);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
@@ -28283,11 +28291,39 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
+function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) {
+  var desc = {};
+  Object['ke' + 'ys'](descriptor).forEach(function (key) {
+    desc[key] = descriptor[key];
+  });
+  desc.enumerable = !!desc.enumerable;
+  desc.configurable = !!desc.configurable;
+
+  if ('value' in desc || desc.initializer) {
+    desc.writable = true;
+  }
+
+  desc = decorators.slice().reverse().reduce(function (desc, decorator) {
+    return decorator(target, property, desc) || desc;
+  }, desc);
+
+  if (context && desc.initializer !== void 0) {
+    desc.value = desc.initializer ? desc.initializer.call(context) : void 0;
+    desc.initializer = undefined;
+  }
+
+  if (desc.initializer === void 0) {
+    Object['define' + 'Property'](target, property, desc);
+    desc = null;
+  }
+
+  return desc;
+}
+
 var log = (0, _debug2.default)('weiv:render');
 
 // Expression can exist as child of Node, also as the value of attribute
-
-var Expression = exports.Expression = function () {
+var Expression = exports.Expression = (_dec = utils.log, (_class = function () {
   function Expression(exp) {
     _classCallCheck(this, Expression);
 
@@ -28309,16 +28345,14 @@ var Expression = exports.Expression = function () {
   }, {
     key: 'render',
     value: function render(contextComponent, scope) {
-      console.group('%o', this);
       var val = this.eval(contextComponent, scope);
       var text = val !== null && val !== undefined ? String(val) : '';
-      console.groupEnd();
       return new _virtualDom2.default.VText(text);
     }
   }]);
 
   return Expression;
-}();
+}(), (_applyDecoratedDescriptor(_class.prototype, 'render', [_dec], Object.getOwnPropertyDescriptor(_class.prototype, 'render'), _class.prototype)), _class));
 
 var Text = exports.Text = function () {
   function Text(text) {
@@ -28338,7 +28372,7 @@ var Text = exports.Text = function () {
   return Text;
 }();
 
-var Node = exports.Node = function () {
+var Node = exports.Node = (_dec2 = utils.log(false), (_class2 = function () {
   function Node(contextComponentClass, tagName, attributes) {
     _classCallCheck(this, Node);
 
@@ -28467,7 +28501,6 @@ var Node = exports.Node = function () {
 
       var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
-      console.group('%o', this);
       var scope = void 0;
       if (options.notNewScope) {
         scope = superScope;
@@ -28500,15 +28533,13 @@ var Node = exports.Node = function () {
       }));
       if (result !== true) return result;
 
-      console.groupEnd();
       return _virtualDom2.default.h(this.tagName, properties, children);
     }
   }]);
 
   return Node;
-}();
-
-var Component = exports.Component = function (_Node) {
+}(), (_applyDecoratedDescriptor(_class2.prototype, 'render', [_dec2], Object.getOwnPropertyDescriptor(_class2.prototype, 'render'), _class2.prototype)), _class2));
+var Component = exports.Component = (_dec3 = utils.log(false), (_class3 = function (_Node) {
   _inherits(Component, _Node);
 
   function Component(contextComponentClass, tagName, attributes, componentClass) {
@@ -28564,7 +28595,6 @@ var Component = exports.Component = function (_Node) {
 
       var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
-      console.group('%o', this);
       var scope = void 0;
       if (options.notNewScope) {
         scope = superScope;
@@ -28627,16 +28657,14 @@ var Component = exports.Component = function (_Node) {
 
       childComponent.$render(properties, events, slots);
       childComponent.$vdom.properties.id = this.componentId; // attach an id attribute
-      console.groupEnd();
 
       return childComponent.$vdom;
     }
   }]);
 
   return Component;
-}(Node);
-
-var Slot = exports.Slot = function (_Node2) {
+}(Node), (_applyDecoratedDescriptor(_class3.prototype, 'render', [_dec3], Object.getOwnPropertyDescriptor(_class3.prototype, 'render'), _class3.prototype)), _class3));
+var Slot = exports.Slot = (_dec4 = utils.log(false), (_class4 = function (_Node2) {
   _inherits(Slot, _Node2);
 
   function Slot(contextComponentClass, tagName, attributes) {
@@ -28655,7 +28683,6 @@ var Slot = exports.Slot = function (_Node2) {
 
       var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
       // return multiple vnodes
-      console.group('%o', this);
       var scope = void 0;
       if (options.notNewScope) {
         scope = superScope;
@@ -28688,7 +28715,6 @@ var Slot = exports.Slot = function (_Node2) {
       }));
       if (result !== true) return result;
 
-      console.groupEnd();
       if (contextComponent.$vslots.has(this.name) && !_lodash2.default.isEmpty(contextComponent.$vslots.get(this.name))) {
         return contextComponent.$vslots.get(this.name);
       }
@@ -28698,7 +28724,7 @@ var Slot = exports.Slot = function (_Node2) {
   }]);
 
   return Slot;
-}(Node);
+}(Node), (_applyDecoratedDescriptor(_class4.prototype, 'render', [_dec4], Object.getOwnPropertyDescriptor(_class4.prototype, 'render'), _class4.prototype)), _class4));
 
 /***/ }),
 /* 51 */
@@ -29121,7 +29147,7 @@ function $render() {
   var events = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
   var slots = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
-  console.group('Render component: %o', this);
+  console.groupCollapsed('Render component: %o', this);
   // props
   Object.keys(props).forEach(function (prop) {
     if (_lodash2.default.includes(Object.keys(_this.$props), prop)) {
@@ -36468,6 +36494,50 @@ var ForDirective = exports.ForDirective = function (_Directive5) {
 
   return ForDirective;
 }(Directive);
+
+/***/ }),
+/* 124 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.log = log;
+function log() {
+  var collapsed = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
+  return function logDecorator(target, name, descriptor) {
+    var original = descriptor.value;
+    if (typeof original === 'function') {
+      descriptor.value = function () {
+        if (collapsed) {
+          console.groupCollapsed(this);
+        } else {
+          console.group(this);
+        }
+        // console.group(`Arguments: ${args}`);
+        try {
+          for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+          }
+
+          var result = original.apply(this, args);
+          // console.log(`Result: ${result}`);
+          return result;
+        } catch (e) {
+          // console.log(`Error: ${e}`);
+          throw e;
+        } finally {
+          console.groupEnd();
+        }
+      };
+    }
+    return descriptor;
+  };
+}
 
 /***/ })
 /******/ ]);
