@@ -24963,7 +24963,7 @@ Object.defineProperty(exports, 'Component', {
   }
 });
 
-var _directive = __webpack_require__(123);
+var _directive = __webpack_require__(124);
 
 Object.defineProperty(exports, 'Directive', {
   enumerable: true,
@@ -28279,7 +28279,7 @@ var _debug2 = _interopRequireDefault(_debug);
 
 var _html = __webpack_require__(26);
 
-var _utils = __webpack_require__(124);
+var _utils = __webpack_require__(123);
 
 var utils = _interopRequireWildcard(_utils);
 
@@ -29008,7 +29008,7 @@ function _initializerWarningHelper(descriptor, context) {
 }
 
 var Todo = exports.Todo = (_dec = (0, _weivjs.Component)({
-  template: '\n  <div>\n    <span>TODO: {{a}}</span>\n    <button onclick="changeProp" style="height: 30px">Try to change props?</button>\n    <aa></aa>\n    <p>\n      <slot>\n        <p>show when no slot</p>\n      </slot>\n      <p>\n        <input type="text" oninput="onInput"  />\n        <button onclick="onSave" style="height: 30px">Save</button>\n        <input type="text" disabled="false" @bind:value="input" />\n      </p>\n      <ul>\n        <slot name="item">show when no item slot</slot>\n      </ul>\n    </p>\n  </div>\n  ',
+  template: '\n  <div>\n    <span>TODO: {{a}}</span>\n    <button onclick="changeProp" style="height: 30px">Try to change props?</button>\n    <p>\n      <slot>\n        <p>show when no slot</p>\n      </slot>\n      <p>\n        <input type="text" oninput="onInput"  />\n        <button onclick="onSave" style="height: 30px">Save</button>\n        <input type="text" disabled="false" @bind:value="input" />\n      </p>\n      <ul>\n        <slot name="item">show when no item slot</slot>\n      </ul>\n    </p>\n  </div>\n  ',
   props: {
     a: { type: 'number', required: true }
   },
@@ -29052,7 +29052,7 @@ var Todo = exports.Todo = (_dec = (0, _weivjs.Component)({
   }
 })), _class2)) || _class);
 var App = exports.App = (_dec2 = (0, _weivjs.Component)({
-  template: '\n  <div @var:i="100">\n    <h1 @bind:title="counter">{{firstName}} {{lastName}}</h1><p>{{blogURL}}</p>\n    <div @if="counter < 5">Location: {{location.city}} - {{location.country}}</div>\n    <p>Countdown: {{counter}}</p>\n    <button onclick="minus" style="width: 80px">\u2796</button>\n    <button @on:click="plus" style="width: 80px">\u2795</button>\n    <p>Tip: When counter is less than 5, location will be shown.</p>\n    <ol>\n      <li @for:i="[1,2,3]">\n      {{i}} - {{__super.i}}\n      </li>\n    </ol>\n    <todo @bind:a="counter" @on:save="onSave">\n      <div>this is a default slot</div>\n      <li slot="item">item1</li>\n      <li slot="item">item2</li>\n      <span>another default slot</span>\n      <p>show var value: {{i}}</p>\n    </todo>\n  </span>\n  ',
+  template: '\n  <div @var:i="100">\n    <h1 @bind:title="counter">{{firstName}} {{lastName}}</h1><p>{{blogURL}}</p>\n    <div @if="counter < 5">Location: {{location.city}} - {{location.country}}</div>\n    <p>Countdown: {{counter}}</p>\n    <button onclick="minus" style="width: 80px">\u2796</button>\n    <button @on:click="plus" style="width: 80px">\u2795</button>\n    <p>Tip: When counter is less than 5, location will be shown.</p>\n    <ol>\n      <li @for:i="[1,2,3]">\n      {{i}} - {{__super.i}}\n      </li>\n    </ol>\n    <todo @bind:a="counter" @on:save="onSave">\n      <div>this is a default slot</div>\n      <li slot="item">item1</li>\n      <li slot="item">item2</li>\n      <span>another default slot</span>\n      <p>show var value: {{i}}</p>\n    </todo>\n  </div>\n  ',
   components: { 'todo': Todo }
 }), _dec2(_class4 = (_class5 = function () {
   function App() {
@@ -36274,6 +36274,50 @@ exports.elements = {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.log = log;
+function log() {
+  var collapsed = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
+  return function logDecorator(target, name, descriptor) {
+    var original = descriptor.value;
+    if (typeof original === 'function') {
+      descriptor.value = function () {
+        if (collapsed) {
+          console.groupCollapsed(this);
+        } else {
+          console.group(this);
+        }
+        // console.group(`Arguments: ${args}`);
+        try {
+          for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+            args[_key] = arguments[_key];
+          }
+
+          var result = original.apply(this, args);
+          // console.log(`Result: ${result}`);
+          return result;
+        } catch (e) {
+          // console.log(`Error: ${e}`);
+          throw e;
+        } finally {
+          console.groupEnd();
+        }
+      };
+    }
+    return descriptor;
+  };
+}
+
+/***/ }),
+/* 124 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 exports.ForDirective = exports.VarDirective = exports.OnDirective = exports.BindDirective = exports.IfDirective = exports.Directive = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -36533,50 +36577,6 @@ var ForDirective = exports.ForDirective = function (_Directive5) {
 
   return ForDirective;
 }(Directive);
-
-/***/ }),
-/* 124 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.log = log;
-function log() {
-  var collapsed = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
-
-  return function logDecorator(target, name, descriptor) {
-    var original = descriptor.value;
-    if (typeof original === 'function') {
-      descriptor.value = function () {
-        if (collapsed) {
-          console.groupCollapsed(this);
-        } else {
-          console.group(this);
-        }
-        // console.group(`Arguments: ${args}`);
-        try {
-          for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-            args[_key] = arguments[_key];
-          }
-
-          var result = original.apply(this, args);
-          // console.log(`Result: ${result}`);
-          return result;
-        } catch (e) {
-          // console.log(`Error: ${e}`);
-          throw e;
-        } finally {
-          console.groupEnd();
-        }
-      };
-    }
-    return descriptor;
-  };
-}
 
 /***/ })
 /******/ ]);

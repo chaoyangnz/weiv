@@ -85,7 +85,7 @@ export class Todo {
       <span>another default slot</span>
       <p>show var value: {{i}}</p>
     </todo>
-  </span>
+  </div>
   `,
   components: {'todo': Todo}
 })

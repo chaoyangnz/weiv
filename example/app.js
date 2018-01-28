@@ -5,7 +5,6 @@ import { Component, observable, action } from 'weivjs'
   <div>
     <span>TODO: {{a}}</span>
     <button onclick="changeProp" style="height: 30px">Try to change props?</button>
-    <aa></aa>
     <p>
       <slot>
         <p>show when no slot</p>
@@ -71,7 +70,7 @@ export class Todo {
       <span>another default slot</span>
       <p>show var value: {{i}}</p>
     </todo>
-  </span>
+  </div>
   `,
   components: {'todo': Todo}
 })
