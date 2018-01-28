@@ -26,11 +26,11 @@ export type Options = {
 }
 
 function $render(props: any = {}, events = {}, slots = {}) {
-  console.groupCollapsed('Render component: %o', this)
+  console.groupCollapsed('%cRender component: %o', 'color: white; background-color: forestgreen', this)
   // props
   Object.keys(props).forEach(prop => {
     if (_.includes(Object.keys(this.$props), prop)) { // TODO validate props type
-      const value = _.cloneDeep(props[prop])
+      const value = props[prop] // _.clone(props[prop]) // deep clone??
       Object.freeze(value)
       Object.defineProperty(this, prop, { value: value, configurable: true, writable: false })
     }
@@ -112,18 +112,19 @@ function $mount(el) {
 // filter out private properties starting from $, keep user perperties for eval context
 function $scope() {
   // TODO
-  const scope = createViewModel(this)
-  Object.getOwnPropertyNames(this).forEach(prop => {
-    if (!prop.startsWith('$') && !isObservable(this[prop])) {
-      scope[prop] = this[prop]
-    }
-  })
-  Object.getOwnPropertyNames(Object.getPrototypeOf(this)).forEach(prop => {
-    if (!prop.startsWith('$')) {
-      scope[prop] = this[prop]
-    }
-  })
-  return scope
+  return this
+  // const scope = createViewModel(this)
+  // Object.getOwnPropertyNames(this).forEach(prop => {
+  //   if (!prop.startsWith('$') && !isObservable(this[prop])) {
+  //     scope[prop] = this[prop]
+  //   }
+  // })
+  // Object.getOwnPropertyNames(Object.getPrototypeOf(this)).forEach(prop => {
+  //   if (!prop.startsWith('$')) {
+  //     scope[prop] = this[prop]
+  //   }
+  // })
+  // return scope
 }
 
 function mixinPrototype(componentClass, options: Options) {
@@ -178,7 +179,7 @@ export function Component(options: Options) {
     const Component = (id: string, parent: any) => {
       const component = new ComponentClass()
       mixinComponent(component, id || ComponentClass.$uniqueid(), parent) // inject internal component properties
-      log('%cNew Component: %o', 'color: white; background-color: forestgreen', component)
+      // log('%cNew Component: %o', 'color: white; background-color: forestgreen', component)
       return component
     }
     Object.defineProperty(Component, '$original', { value: ComponentClass })

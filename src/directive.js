@@ -37,6 +37,15 @@ export class BindDirective extends Directive {
 
   propertiesEvaluated({contextComponent, scope, properties}) {
     const value = this.expression.eval(contextComponent, scope)
+    if (this.target === 'class') {
+      const classes = []
+      _.forIn(value, (val, key) => {
+        if (val) classes.push(key)
+      })
+      properties['className'] = classes.join(' ')
+      return
+    }
+
     properties[this.target] = value
   }
 }
@@ -80,6 +89,10 @@ export class ForDirective extends Directive {
     const vnodes = []
     for (const item of value) {
       const clonedNode = _.cloneDeep(node) // can optimise, because i just change directives
+      if (clonedNode instanceof Component) {
+        // generate new component id
+        clonedNode.componentId = clonedNode.componentClass.$original.$uniqueid()
+      }
       _.remove(clonedNode.directives, directive => directive instanceof ForDirective)
       scope[this.target] = item // inject for $var in ..
       vnodes.push(clonedNode.render(contextComponent, scope, {notNewScope: true}))

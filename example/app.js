@@ -2,7 +2,7 @@ import { Component, observable, action } from 'weivjs'
 
 @Component({
   template: `
-  <div>
+  <div class="a">
     <span>TODO: {{a}}</span>
     <button onclick="changeProp" style="height: 30px">Try to change props?</button>
     <p>

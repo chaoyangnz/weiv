@@ -73,4 +73,30 @@ const appConfig = {
   plugins: plugins
 };
 
-module.exports = [config, appConfig];
+const todomvcConfig = {
+  entry: __dirname + '/todomvc/index.js',
+  devtool: 'source-map',
+  output: {
+    path: __dirname + '/todomvc/dist',
+    filename: 'index.js'
+  },
+  module: {
+    rules: [
+      {
+        test: /(\.js)$/,
+        loader: 'babel-loader',
+        exclude: /(node_modules)/
+      }
+    ]
+  },
+  resolve: {
+    modules: [path.resolve('./node_modules'), path.resolve('./src')],
+    extensions: ['.json', '.js'],
+    alias: {
+      weivjs: path.resolve(__dirname, 'src/')
+    }
+  },
+  plugins: plugins
+};
+
+module.exports = [config, appConfig, todomvcConfig];

@@ -57,6 +57,8 @@ export class Node {
         if (directive) this.directives.push(directive)
       } else if (_.includes(HTML_EVENT_ATTRIBUTES, name)) {
         this.properties[name] = new Expression(attributes[name])
+      } else if (name === 'class') {
+        this.properties['className'] = attributes[name]
       } else {
         this.properties[name] = attributes[name]
       }
@@ -151,7 +153,7 @@ export class Component extends Node {
         if (directive) this.directives.push(directive)
       } else {
         // validate component props
-        if (_.includes(Object.keys(componentClass.prototype.$props), name)) {
+        if (_.includes(Object.keys(componentClass.$original.prototype.$props), name)) {
           this.properties[name] = attributes[name]
         } else {
           console.warn('Illegal commponent props %s in %s', name, componentClass.$class.name)
@@ -178,7 +180,7 @@ export class Component extends Node {
     result = this._process(this.directives.map(directive => directive.eventsPrepared({contextComponent, scope, node: this, events})))
     if (result !== true) return result
 
-    const properties = _.mapValues(_.cloneDeep(this.properties), prop => prop instanceof Expression ? prop.eval(contextComponent, scope) : prop)
+    let properties = _.mapValues(_.cloneDeep(this.properties), prop => prop instanceof Expression ? prop.eval(contextComponent, scope) : prop)
 
     result = this._process(this.directives.map(directive => directive.propertiesEvaluated({contextComponent, scope, node: this, properties})))
     if (result !== true) return result

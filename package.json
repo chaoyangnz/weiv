@@ -1,6 +1,6 @@
 {
   "name": "weivjs",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": " A home-brew UI view library for modern component-based web development",
   "main": "lib/weiv.js",
   "scripts": {
@@ -39,6 +39,7 @@
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-flow": "^6.23.0",
     "chai": "^4.1.2",
+    "css-loader": "^0.28.9",
     "eslint": "^4.16.0",
     "eslint-loader": "^1.9.0",
     "flow-bin": "^0.64.0",
@@ -51,7 +52,7 @@
     "debug": "^3.1.0",
     "fbemitter": "^2.1.1",
     "htmlparser2": "^3.9.2",
-    "jexl-sync": "^1.0.2",
+    "jexl-sync": "^1.0.3",
     "lodash": "^4.17.4",
     "main-loop": "^3.4.0",
     "mobx": "^3.4.1",
