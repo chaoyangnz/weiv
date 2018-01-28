@@ -1,6 +1,6 @@
 {
   "name": "weivjs",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": " A home-brew UI view library for modern component-based web development",
   "main": "lib/weiv.js",
   "scripts": {
