@@ -46,7 +46,7 @@ export class Text {
 export class Node {
   constructor(contextComponentClass, tagName, attributes) {
     this.contextComponentClass = contextComponentClass
-    this.tagName = tagName.toLowerCase()
+    this.tagName = tagName
     this.properties = {} // name -> value (string), except html events: onclick -> value (expression)
     this.directives = [] // @command:(target).(params..) -> expression
     this.children = [] // children nodes
@@ -55,10 +55,10 @@ export class Node {
       if (name.match(/@[^@]+/)) { // directive prefix: @
         const directive = this._parseDirective(name, attributes[name])
         if (directive) this.directives.push(directive)
-      } else if (_.includes(HTML_EVENT_ATTRIBUTES, name.toLowerCase())) {
-        this.properties[name.toLowerCase()] = new Expression(attributes[name])
+      } else if (_.includes(HTML_EVENT_ATTRIBUTES, name)) {
+        this.properties[name] = new Expression(attributes[name])
       } else {
-        this.properties[name.toLowerCase()] = attributes[name]
+        this.properties[name] = attributes[name]
       }
     }
   }

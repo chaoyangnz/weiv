@@ -5,6 +5,7 @@ import { Component, observable, action } from 'weivjs'
   <div>
     <span>TODO: {{a}}</span>
     <button onclick="changeProp" style="height: 30px">Try to change props?</button>
+    <aa></aa>
     <p>
       <slot>
         <p>show when no slot</p>
@@ -12,7 +13,7 @@ import { Component, observable, action } from 'weivjs'
       <p>
         <input type="text" oninput="onInput"  />
         <button onclick="onSave" style="height: 30px">Save</button>
-        <input type="text" disabled @bind:value="input" />
+        <input type="text" disabled="false" @bind:value="input" />
       </p>
       <ul>
         <slot name="item">show when no item slot</slot>

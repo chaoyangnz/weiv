@@ -151,3 +151,31 @@ export const HTML_EVENT_ATTRIBUTES = [
   'oncut',
   'onpaste'
 ]
+
+export const BOOLEAN_ATTRIBUTES = [
+  ['checked', 'input', {type: 'checkbox'}],
+  ['checked', 'input', {type: 'radio'}],
+  ['selected', 'option'],
+  ['disabled', 'input'],
+  ['disabled', 'textarea'],
+  ['disabled', 'button'],
+  ['disabled', 'select'],
+  ['disabled', 'option'],
+  ['disabled', 'optgroup'],
+  ['readonly', 'input', {type: 'text'}],
+  ['readonly', 'input', {type: 'password'}],
+  ['readonly', 'textarea'],
+  ['multiple', 'select'],
+  ['ismap', 'img'],
+  ['ismap', 'input', {type: 'image'}],
+  ['defer', 'script'],
+  ['noresize', 'frame'],
+  ['nowrap', 'td'],
+  ['nowrap', 'th'],
+  ['noshade', 'hr'],
+  ['compact', 'ul'],
+  ['compact', 'ol'],
+  ['compact', 'dl'],
+  ['compact', 'menu'],
+  ['compact', 'dir']
+]
