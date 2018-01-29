@@ -193,6 +193,7 @@ export class Component extends Node {
     /* eslint new-cap: 0 */
     let childComponent = contextComponent.$children.get(this.componentId)
     if (!childComponent) {
+      log('New')
       childComponent = new this.componentClass(this.componentId, contextComponent)
     }
 

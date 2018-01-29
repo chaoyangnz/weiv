@@ -91,7 +91,7 @@ export class ForDirective extends Directive {
       const clonedNode = _.cloneDeep(node) // can optimise, because i just change directives
       if (clonedNode instanceof Component) {
         // generate new component id
-        clonedNode.componentId = clonedNode.componentClass.$original.$uniqueid()
+        clonedNode.componentId = node.componentId + '@' + item.id
       }
       _.remove(clonedNode.directives, directive => directive instanceof ForDirective)
       scope[this.target] = item // inject for $var in ..

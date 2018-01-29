@@ -1,4 +1,4 @@
-import { observable, computed, transaction, action } from 'mobx'
+import { observable, computed, transaction } from 'mobx'
 
 export const SHOW_ALL = 'show_all'
 export const SHOW_COMPLETED = 'show_completed'
@@ -13,8 +13,6 @@ const TODO_FILTERS = {
 export default class AppState {
   @observable filter = SHOW_ALL;
   @observable todos = [];
-
-  @observable editing = -1
 
   constructor(initialTodos) {
     this.todos = initialTodos || []
@@ -52,14 +50,7 @@ export default class AppState {
   }
 
   editTodo(id, text) {
-    transaction(() => {
-      this.findTodo(id).text = text
-      this.editing = -1
-    })
-  }
-
-  setEditingTodo(id) {
-    this.editing = id
+    this.findTodo(id).text = text
   }
 
   completeTodo(id) {

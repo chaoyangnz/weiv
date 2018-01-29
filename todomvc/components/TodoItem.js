@@ -1,15 +1,16 @@
-import { Component, observable } from 'weivjs'
+import { Component, action } from 'weivjs'
 import TodoTextInput from './TodoTextInput'
+import { extendObservable } from 'mobx';
 
 @Component({
   template: `
-  <li @bind:class="{completed: todo.completed, editing: todo.id == store.editing}">
+  <li @bind:class="{completed: todo.completed, editing: editing}">
     <span>
-      <todo-text-input @if="todo.id == store.editing"
+      <todo-text-input @if="editing"
                       @bind:text="todo.text"
-                      @bind:editing="todo.id == store.editing"
+                      @bind:editing="editing"
                       @on:save="handleSave"></todo-text-input>
-      <span class="view" @if="todo.id != store.editing">
+      <span class="view" @if="!editing">
         <input class="toggle"
               type="checkbox"
               @bind:checked="todo.completed"
@@ -32,15 +33,18 @@ import TodoTextInput from './TodoTextInput'
   }
 })
 class TodoItem {
-  // @observable editing = false;
+  // @observable editing = false
+
+  constructor() {
+    extendObservable(this, {editing: false})
+  }
 
   get completed() {
     return this.todo.other && this.todo.other.completed ? 'Yes!' : ' . '
   }
 
-  handleDoubleClick() {
-    this.store.setEditingTodo(this.todo.id)
-    // this.editing = true
+  @action handleDoubleClick() {
+    this.editing = true
   }
 
   handleSave(text) {
