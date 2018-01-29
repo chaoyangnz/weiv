@@ -149,7 +149,7 @@ Object.defineProperty(exports, 'Directive', {
   }
 });
 
-var _mobx = __webpack_require__(10);
+var _mobx = __webpack_require__(16);
 
 Object.defineProperty(exports, 'observable', {
   enumerable: true,
@@ -172,7 +172,7 @@ Object.defineProperty(exports, 'computed', {
 exports.component = component;
 exports.directive = directive;
 
-var _debug = __webpack_require__(13);
+var _debug = __webpack_require__(12);
 
 var _debug2 = _interopRequireDefault(_debug);
 
@@ -460,7 +460,7 @@ var objectKeys = Object.keys || function (obj) {
 module.exports = Duplex;
 
 /*<replacement>*/
-var util = __webpack_require__(12);
+var util = __webpack_require__(11);
 util.inherits = __webpack_require__(0);
 /*</replacement>*/
 
@@ -17675,6 +17675,433 @@ function isVirtualNode(x) {
 
 /***/ }),
 /* 10 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var Parser = __webpack_require__(39),
+    DomHandler = __webpack_require__(87);
+
+function defineProp(name, value){
+	delete module.exports[name];
+	module.exports[name] = value;
+	return value;
+}
+
+module.exports = {
+	Parser: Parser,
+	Tokenizer: __webpack_require__(40),
+	ElementType: __webpack_require__(6),
+	DomHandler: DomHandler,
+	get FeedHandler(){
+		return defineProp("FeedHandler", __webpack_require__(89));
+	},
+	get Stream(){
+		return defineProp("Stream", __webpack_require__(90));
+	},
+	get WritableStream(){
+		return defineProp("WritableStream", __webpack_require__(44));
+	},
+	get ProxyHandler(){
+		return defineProp("ProxyHandler", __webpack_require__(105));
+	},
+	get DomUtils(){
+		return defineProp("DomUtils", __webpack_require__(106));
+	},
+	get CollectingHandler(){
+		return defineProp("CollectingHandler", __webpack_require__(117));
+	},
+	// For legacy support
+	DefaultHandler: DomHandler,
+	get RssHandler(){
+		return defineProp("RssHandler", this.FeedHandler);
+	},
+	//helper methods
+	parseDOM: function(data, options){
+		var handler = new DomHandler(options);
+		new Parser(handler, options).end(data);
+		return handler.dom;
+	},
+	parseFeed: function(feed, options){
+		var handler = new module.exports.FeedHandler(options);
+		new Parser(handler, options).end(feed);
+		return handler.dom;
+	},
+	createDomStream: function(cb, options, elementCb){
+		var handler = new DomHandler(cb, options, elementCb);
+		return new Parser(handler, options);
+	},
+	// List of all events that the parser emits
+	EVENTS: { /* Format: eventname: number of arguments */
+		attribute: 2,
+		cdatastart: 0,
+		cdataend: 0,
+		text: 1,
+		processinginstruction: 2,
+		comment: 1,
+		commentend: 0,
+		closetag: 1,
+		opentag: 2,
+		opentagname: 1,
+		error: 1,
+		end: 0
+	}
+};
+
+
+/***/ }),
+/* 11 */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(Buffer) {// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+// NOTE: These type checking functions intentionally don't use `instanceof`
+// because it is fragile and can be easily faked with `Object.create()`.
+
+function isArray(arg) {
+  if (Array.isArray) {
+    return Array.isArray(arg);
+  }
+  return objectToString(arg) === '[object Array]';
+}
+exports.isArray = isArray;
+
+function isBoolean(arg) {
+  return typeof arg === 'boolean';
+}
+exports.isBoolean = isBoolean;
+
+function isNull(arg) {
+  return arg === null;
+}
+exports.isNull = isNull;
+
+function isNullOrUndefined(arg) {
+  return arg == null;
+}
+exports.isNullOrUndefined = isNullOrUndefined;
+
+function isNumber(arg) {
+  return typeof arg === 'number';
+}
+exports.isNumber = isNumber;
+
+function isString(arg) {
+  return typeof arg === 'string';
+}
+exports.isString = isString;
+
+function isSymbol(arg) {
+  return typeof arg === 'symbol';
+}
+exports.isSymbol = isSymbol;
+
+function isUndefined(arg) {
+  return arg === void 0;
+}
+exports.isUndefined = isUndefined;
+
+function isRegExp(re) {
+  return objectToString(re) === '[object RegExp]';
+}
+exports.isRegExp = isRegExp;
+
+function isObject(arg) {
+  return typeof arg === 'object' && arg !== null;
+}
+exports.isObject = isObject;
+
+function isDate(d) {
+  return objectToString(d) === '[object Date]';
+}
+exports.isDate = isDate;
+
+function isError(e) {
+  return (objectToString(e) === '[object Error]' || e instanceof Error);
+}
+exports.isError = isError;
+
+function isFunction(arg) {
+  return typeof arg === 'function';
+}
+exports.isFunction = isFunction;
+
+function isPrimitive(arg) {
+  return arg === null ||
+         typeof arg === 'boolean' ||
+         typeof arg === 'number' ||
+         typeof arg === 'string' ||
+         typeof arg === 'symbol' ||  // ES6 symbol
+         typeof arg === 'undefined';
+}
+exports.isPrimitive = isPrimitive;
+
+exports.isBuffer = Buffer.isBuffer;
+
+function objectToString(o) {
+  return Object.prototype.toString.call(o);
+}
+
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(24).Buffer))
+
+/***/ }),
+/* 12 */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(process) {/**
+ * This is the web browser implementation of `debug()`.
+ *
+ * Expose `debug()` as the module.
+ */
+
+exports = module.exports = __webpack_require__(57);
+exports.log = log;
+exports.formatArgs = formatArgs;
+exports.save = save;
+exports.load = load;
+exports.useColors = useColors;
+exports.storage = 'undefined' != typeof chrome
+               && 'undefined' != typeof chrome.storage
+                  ? chrome.storage.local
+                  : localstorage();
+
+/**
+ * Colors.
+ */
+
+exports.colors = [
+  '#0000CC', '#0000FF', '#0033CC', '#0033FF', '#0066CC', '#0066FF', '#0099CC',
+  '#0099FF', '#00CC00', '#00CC33', '#00CC66', '#00CC99', '#00CCCC', '#00CCFF',
+  '#3300CC', '#3300FF', '#3333CC', '#3333FF', '#3366CC', '#3366FF', '#3399CC',
+  '#3399FF', '#33CC00', '#33CC33', '#33CC66', '#33CC99', '#33CCCC', '#33CCFF',
+  '#6600CC', '#6600FF', '#6633CC', '#6633FF', '#66CC00', '#66CC33', '#9900CC',
+  '#9900FF', '#9933CC', '#9933FF', '#99CC00', '#99CC33', '#CC0000', '#CC0033',
+  '#CC0066', '#CC0099', '#CC00CC', '#CC00FF', '#CC3300', '#CC3333', '#CC3366',
+  '#CC3399', '#CC33CC', '#CC33FF', '#CC6600', '#CC6633', '#CC9900', '#CC9933',
+  '#CCCC00', '#CCCC33', '#FF0000', '#FF0033', '#FF0066', '#FF0099', '#FF00CC',
+  '#FF00FF', '#FF3300', '#FF3333', '#FF3366', '#FF3399', '#FF33CC', '#FF33FF',
+  '#FF6600', '#FF6633', '#FF9900', '#FF9933', '#FFCC00', '#FFCC33'
+];
+
+/**
+ * Currently only WebKit-based Web Inspectors, Firefox >= v31,
+ * and the Firebug extension (any Firefox version) are known
+ * to support "%c" CSS customizations.
+ *
+ * TODO: add a `localStorage` variable to explicitly enable/disable colors
+ */
+
+function useColors() {
+  // NB: In an Electron preload script, document will be defined but not fully
+  // initialized. Since we know we're in Chrome, we'll just detect this case
+  // explicitly
+  if (typeof window !== 'undefined' && window.process && window.process.type === 'renderer') {
+    return true;
+  }
+
+  // Internet Explorer and Edge do not support colors.
+  if (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/(edge|trident)\/(\d+)/)) {
+    return false;
+  }
+
+  // is webkit? http://stackoverflow.com/a/16459606/376773
+  // document is undefined in react-native: https://github.com/facebook/react-native/pull/1632
+  return (typeof document !== 'undefined' && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance) ||
+    // is firebug? http://stackoverflow.com/a/398120/376773
+    (typeof window !== 'undefined' && window.console && (window.console.firebug || (window.console.exception && window.console.table))) ||
+    // is firefox >= v31?
+    // https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
+    (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31) ||
+    // double check webkit in userAgent just in case we are in a worker
+    (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/));
+}
+
+/**
+ * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
+ */
+
+exports.formatters.j = function(v) {
+  try {
+    return JSON.stringify(v);
+  } catch (err) {
+    return '[UnexpectedJSONParseError]: ' + err.message;
+  }
+};
+
+
+/**
+ * Colorize log arguments if enabled.
+ *
+ * @api public
+ */
+
+function formatArgs(args) {
+  var useColors = this.useColors;
+
+  args[0] = (useColors ? '%c' : '')
+    + this.namespace
+    + (useColors ? ' %c' : ' ')
+    + args[0]
+    + (useColors ? '%c ' : ' ')
+    + '+' + exports.humanize(this.diff);
+
+  if (!useColors) return;
+
+  var c = 'color: ' + this.color;
+  args.splice(1, 0, c, 'color: inherit')
+
+  // the final "%c" is somewhat tricky, because there could be other
+  // arguments passed either before or after the %c, so we need to
+  // figure out the correct index to insert the CSS into
+  var index = 0;
+  var lastC = 0;
+  args[0].replace(/%[a-zA-Z%]/g, function(match) {
+    if ('%%' === match) return;
+    index++;
+    if ('%c' === match) {
+      // we only are interested in the *last* %c
+      // (the user may have provided their own)
+      lastC = index;
+    }
+  });
+
+  args.splice(lastC, 0, c);
+}
+
+/**
+ * Invokes `console.log()` when available.
+ * No-op when `console.log` is not a "function".
+ *
+ * @api public
+ */
+
+function log() {
+  // this hackery is required for IE8/9, where
+  // the `console.log` function doesn't have 'apply'
+  return 'object' === typeof console
+    && console.log
+    && Function.prototype.apply.call(console.log, console, arguments);
+}
+
+/**
+ * Save `namespaces`.
+ *
+ * @param {String} namespaces
+ * @api private
+ */
+
+function save(namespaces) {
+  try {
+    if (null == namespaces) {
+      exports.storage.removeItem('debug');
+    } else {
+      exports.storage.debug = namespaces;
+    }
+  } catch(e) {}
+}
+
+/**
+ * Load `namespaces`.
+ *
+ * @return {String} returns the previously persisted debug modes
+ * @api private
+ */
+
+function load() {
+  var r;
+  try {
+    r = exports.storage.debug;
+  } catch(e) {}
+
+  // If debug isn't set in LS, and we're in Electron, try to load $DEBUG
+  if (!r && typeof process !== 'undefined' && 'env' in process) {
+    r = process.env.DEBUG;
+  }
+
+  return r;
+}
+
+/**
+ * Enable namespaces listed in `localStorage.debug` initially.
+ */
+
+exports.enable(load());
+
+/**
+ * Localstorage attempts to return the localstorage.
+ *
+ * This is necessary because safari throws
+ * when a user disables cookies/localstorage
+ * and you attempt to access it.
+ *
+ * @return {LocalStorage}
+ * @api private
+ */
+
+function localstorage() {
+  try {
+    return window.localStorage;
+  } catch (e) {}
+}
+
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
+
+/***/ }),
+/* 13 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var version = __webpack_require__(8)
+
+module.exports = isVirtualText
+
+function isVirtualText(x) {
+    return x && x.type === "VirtualText" && x.version === version
+}
+
+
+/***/ }),
+/* 14 */
+/***/ (function(module, exports) {
+
+module.exports = isThunk
+
+function isThunk(t) {
+    return t && t.type === "Thunk"
+}
+
+
+/***/ }),
+/* 15 */
+/***/ (function(module, exports) {
+
+module.exports = isHook
+
+function isHook(hook) {
+    return hook &&
+      (typeof hook.hook === "function" && !hook.hasOwnProperty("hook") ||
+       typeof hook.unhook === "function" && !hook.hasOwnProperty("unhook"))
+}
+
+
+/***/ }),
+/* 16 */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -21378,433 +21805,6 @@ if (typeof __MOBX_DEVTOOLS_GLOBAL_HOOK__ === "object") {
 /* WEBPACK VAR INJECTION */}.call(__webpack_exports__, __webpack_require__(1)))
 
 /***/ }),
-/* 11 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var Parser = __webpack_require__(39),
-    DomHandler = __webpack_require__(87);
-
-function defineProp(name, value){
-	delete module.exports[name];
-	module.exports[name] = value;
-	return value;
-}
-
-module.exports = {
-	Parser: Parser,
-	Tokenizer: __webpack_require__(40),
-	ElementType: __webpack_require__(6),
-	DomHandler: DomHandler,
-	get FeedHandler(){
-		return defineProp("FeedHandler", __webpack_require__(89));
-	},
-	get Stream(){
-		return defineProp("Stream", __webpack_require__(90));
-	},
-	get WritableStream(){
-		return defineProp("WritableStream", __webpack_require__(44));
-	},
-	get ProxyHandler(){
-		return defineProp("ProxyHandler", __webpack_require__(105));
-	},
-	get DomUtils(){
-		return defineProp("DomUtils", __webpack_require__(106));
-	},
-	get CollectingHandler(){
-		return defineProp("CollectingHandler", __webpack_require__(117));
-	},
-	// For legacy support
-	DefaultHandler: DomHandler,
-	get RssHandler(){
-		return defineProp("RssHandler", this.FeedHandler);
-	},
-	//helper methods
-	parseDOM: function(data, options){
-		var handler = new DomHandler(options);
-		new Parser(handler, options).end(data);
-		return handler.dom;
-	},
-	parseFeed: function(feed, options){
-		var handler = new module.exports.FeedHandler(options);
-		new Parser(handler, options).end(feed);
-		return handler.dom;
-	},
-	createDomStream: function(cb, options, elementCb){
-		var handler = new DomHandler(cb, options, elementCb);
-		return new Parser(handler, options);
-	},
-	// List of all events that the parser emits
-	EVENTS: { /* Format: eventname: number of arguments */
-		attribute: 2,
-		cdatastart: 0,
-		cdataend: 0,
-		text: 1,
-		processinginstruction: 2,
-		comment: 1,
-		commentend: 0,
-		closetag: 1,
-		opentag: 2,
-		opentagname: 1,
-		error: 1,
-		end: 0
-	}
-};
-
-
-/***/ }),
-/* 12 */
-/***/ (function(module, exports, __webpack_require__) {
-
-/* WEBPACK VAR INJECTION */(function(Buffer) {// Copyright Joyent, Inc. and other Node contributors.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-// NOTE: These type checking functions intentionally don't use `instanceof`
-// because it is fragile and can be easily faked with `Object.create()`.
-
-function isArray(arg) {
-  if (Array.isArray) {
-    return Array.isArray(arg);
-  }
-  return objectToString(arg) === '[object Array]';
-}
-exports.isArray = isArray;
-
-function isBoolean(arg) {
-  return typeof arg === 'boolean';
-}
-exports.isBoolean = isBoolean;
-
-function isNull(arg) {
-  return arg === null;
-}
-exports.isNull = isNull;
-
-function isNullOrUndefined(arg) {
-  return arg == null;
-}
-exports.isNullOrUndefined = isNullOrUndefined;
-
-function isNumber(arg) {
-  return typeof arg === 'number';
-}
-exports.isNumber = isNumber;
-
-function isString(arg) {
-  return typeof arg === 'string';
-}
-exports.isString = isString;
-
-function isSymbol(arg) {
-  return typeof arg === 'symbol';
-}
-exports.isSymbol = isSymbol;
-
-function isUndefined(arg) {
-  return arg === void 0;
-}
-exports.isUndefined = isUndefined;
-
-function isRegExp(re) {
-  return objectToString(re) === '[object RegExp]';
-}
-exports.isRegExp = isRegExp;
-
-function isObject(arg) {
-  return typeof arg === 'object' && arg !== null;
-}
-exports.isObject = isObject;
-
-function isDate(d) {
-  return objectToString(d) === '[object Date]';
-}
-exports.isDate = isDate;
-
-function isError(e) {
-  return (objectToString(e) === '[object Error]' || e instanceof Error);
-}
-exports.isError = isError;
-
-function isFunction(arg) {
-  return typeof arg === 'function';
-}
-exports.isFunction = isFunction;
-
-function isPrimitive(arg) {
-  return arg === null ||
-         typeof arg === 'boolean' ||
-         typeof arg === 'number' ||
-         typeof arg === 'string' ||
-         typeof arg === 'symbol' ||  // ES6 symbol
-         typeof arg === 'undefined';
-}
-exports.isPrimitive = isPrimitive;
-
-exports.isBuffer = Buffer.isBuffer;
-
-function objectToString(o) {
-  return Object.prototype.toString.call(o);
-}
-
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(24).Buffer))
-
-/***/ }),
-/* 13 */
-/***/ (function(module, exports, __webpack_require__) {
-
-/* WEBPACK VAR INJECTION */(function(process) {/**
- * This is the web browser implementation of `debug()`.
- *
- * Expose `debug()` as the module.
- */
-
-exports = module.exports = __webpack_require__(57);
-exports.log = log;
-exports.formatArgs = formatArgs;
-exports.save = save;
-exports.load = load;
-exports.useColors = useColors;
-exports.storage = 'undefined' != typeof chrome
-               && 'undefined' != typeof chrome.storage
-                  ? chrome.storage.local
-                  : localstorage();
-
-/**
- * Colors.
- */
-
-exports.colors = [
-  '#0000CC', '#0000FF', '#0033CC', '#0033FF', '#0066CC', '#0066FF', '#0099CC',
-  '#0099FF', '#00CC00', '#00CC33', '#00CC66', '#00CC99', '#00CCCC', '#00CCFF',
-  '#3300CC', '#3300FF', '#3333CC', '#3333FF', '#3366CC', '#3366FF', '#3399CC',
-  '#3399FF', '#33CC00', '#33CC33', '#33CC66', '#33CC99', '#33CCCC', '#33CCFF',
-  '#6600CC', '#6600FF', '#6633CC', '#6633FF', '#66CC00', '#66CC33', '#9900CC',
-  '#9900FF', '#9933CC', '#9933FF', '#99CC00', '#99CC33', '#CC0000', '#CC0033',
-  '#CC0066', '#CC0099', '#CC00CC', '#CC00FF', '#CC3300', '#CC3333', '#CC3366',
-  '#CC3399', '#CC33CC', '#CC33FF', '#CC6600', '#CC6633', '#CC9900', '#CC9933',
-  '#CCCC00', '#CCCC33', '#FF0000', '#FF0033', '#FF0066', '#FF0099', '#FF00CC',
-  '#FF00FF', '#FF3300', '#FF3333', '#FF3366', '#FF3399', '#FF33CC', '#FF33FF',
-  '#FF6600', '#FF6633', '#FF9900', '#FF9933', '#FFCC00', '#FFCC33'
-];
-
-/**
- * Currently only WebKit-based Web Inspectors, Firefox >= v31,
- * and the Firebug extension (any Firefox version) are known
- * to support "%c" CSS customizations.
- *
- * TODO: add a `localStorage` variable to explicitly enable/disable colors
- */
-
-function useColors() {
-  // NB: In an Electron preload script, document will be defined but not fully
-  // initialized. Since we know we're in Chrome, we'll just detect this case
-  // explicitly
-  if (typeof window !== 'undefined' && window.process && window.process.type === 'renderer') {
-    return true;
-  }
-
-  // Internet Explorer and Edge do not support colors.
-  if (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/(edge|trident)\/(\d+)/)) {
-    return false;
-  }
-
-  // is webkit? http://stackoverflow.com/a/16459606/376773
-  // document is undefined in react-native: https://github.com/facebook/react-native/pull/1632
-  return (typeof document !== 'undefined' && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance) ||
-    // is firebug? http://stackoverflow.com/a/398120/376773
-    (typeof window !== 'undefined' && window.console && (window.console.firebug || (window.console.exception && window.console.table))) ||
-    // is firefox >= v31?
-    // https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
-    (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31) ||
-    // double check webkit in userAgent just in case we are in a worker
-    (typeof navigator !== 'undefined' && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/));
-}
-
-/**
- * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
- */
-
-exports.formatters.j = function(v) {
-  try {
-    return JSON.stringify(v);
-  } catch (err) {
-    return '[UnexpectedJSONParseError]: ' + err.message;
-  }
-};
-
-
-/**
- * Colorize log arguments if enabled.
- *
- * @api public
- */
-
-function formatArgs(args) {
-  var useColors = this.useColors;
-
-  args[0] = (useColors ? '%c' : '')
-    + this.namespace
-    + (useColors ? ' %c' : ' ')
-    + args[0]
-    + (useColors ? '%c ' : ' ')
-    + '+' + exports.humanize(this.diff);
-
-  if (!useColors) return;
-
-  var c = 'color: ' + this.color;
-  args.splice(1, 0, c, 'color: inherit')
-
-  // the final "%c" is somewhat tricky, because there could be other
-  // arguments passed either before or after the %c, so we need to
-  // figure out the correct index to insert the CSS into
-  var index = 0;
-  var lastC = 0;
-  args[0].replace(/%[a-zA-Z%]/g, function(match) {
-    if ('%%' === match) return;
-    index++;
-    if ('%c' === match) {
-      // we only are interested in the *last* %c
-      // (the user may have provided their own)
-      lastC = index;
-    }
-  });
-
-  args.splice(lastC, 0, c);
-}
-
-/**
- * Invokes `console.log()` when available.
- * No-op when `console.log` is not a "function".
- *
- * @api public
- */
-
-function log() {
-  // this hackery is required for IE8/9, where
-  // the `console.log` function doesn't have 'apply'
-  return 'object' === typeof console
-    && console.log
-    && Function.prototype.apply.call(console.log, console, arguments);
-}
-
-/**
- * Save `namespaces`.
- *
- * @param {String} namespaces
- * @api private
- */
-
-function save(namespaces) {
-  try {
-    if (null == namespaces) {
-      exports.storage.removeItem('debug');
-    } else {
-      exports.storage.debug = namespaces;
-    }
-  } catch(e) {}
-}
-
-/**
- * Load `namespaces`.
- *
- * @return {String} returns the previously persisted debug modes
- * @api private
- */
-
-function load() {
-  var r;
-  try {
-    r = exports.storage.debug;
-  } catch(e) {}
-
-  // If debug isn't set in LS, and we're in Electron, try to load $DEBUG
-  if (!r && typeof process !== 'undefined' && 'env' in process) {
-    r = process.env.DEBUG;
-  }
-
-  return r;
-}
-
-/**
- * Enable namespaces listed in `localStorage.debug` initially.
- */
-
-exports.enable(load());
-
-/**
- * Localstorage attempts to return the localstorage.
- *
- * This is necessary because safari throws
- * when a user disables cookies/localstorage
- * and you attempt to access it.
- *
- * @return {LocalStorage}
- * @api private
- */
-
-function localstorage() {
-  try {
-    return window.localStorage;
-  } catch (e) {}
-}
-
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
-
-/***/ }),
-/* 14 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var version = __webpack_require__(8)
-
-module.exports = isVirtualText
-
-function isVirtualText(x) {
-    return x && x.type === "VirtualText" && x.version === version
-}
-
-
-/***/ }),
-/* 15 */
-/***/ (function(module, exports) {
-
-module.exports = isThunk
-
-function isThunk(t) {
-    return t && t.type === "Thunk"
-}
-
-
-/***/ }),
-/* 16 */
-/***/ (function(module, exports) {
-
-module.exports = isHook
-
-function isHook(hook) {
-    return hook &&
-      (typeof hook.hook === "function" && !hook.hasOwnProperty("hook") ||
-       typeof hook.unhook === "function" && !hook.hasOwnProperty("unhook"))
-}
-
-
-/***/ }),
 /* 17 */
 /***/ (function(module, exports) {
 
@@ -24138,7 +24138,7 @@ var Duplex;
 Writable.WritableState = WritableState;
 
 /*<replacement>*/
-var util = __webpack_require__(12);
+var util = __webpack_require__(11);
 util.inherits = __webpack_require__(0);
 /*</replacement>*/
 
@@ -25086,9 +25086,9 @@ VirtualPatch.prototype.type = "VirtualPatch"
 /***/ (function(module, exports, __webpack_require__) {
 
 var isVNode = __webpack_require__(9)
-var isVText = __webpack_require__(14)
+var isVText = __webpack_require__(13)
 var isWidget = __webpack_require__(4)
-var isThunk = __webpack_require__(15)
+var isThunk = __webpack_require__(14)
 
 module.exports = handleThunk
 
@@ -25172,7 +25172,7 @@ var document = __webpack_require__(32)
 var applyProperties = __webpack_require__(34)
 
 var isVNode = __webpack_require__(9)
-var isVText = __webpack_require__(14)
+var isVText = __webpack_require__(13)
 var isWidget = __webpack_require__(4)
 var handleThunk = __webpack_require__(30)
 
@@ -25220,7 +25220,7 @@ function createElement(vnode, opts) {
 /***/ (function(module, exports, __webpack_require__) {
 
 var isObject = __webpack_require__(31)
-var isHook = __webpack_require__(16)
+var isHook = __webpack_require__(15)
 
 module.exports = applyProperties
 
@@ -25325,8 +25325,8 @@ function getPrototype(value) {
 var version = __webpack_require__(8)
 var isVNode = __webpack_require__(9)
 var isWidget = __webpack_require__(4)
-var isThunk = __webpack_require__(15)
-var isVHook = __webpack_require__(16)
+var isThunk = __webpack_require__(14)
+var isVHook = __webpack_require__(15)
 
 module.exports = VirtualNode
 
@@ -26986,7 +26986,7 @@ function _isUint8Array(obj) {
 /*</replacement>*/
 
 /*<replacement>*/
-var util = __webpack_require__(12);
+var util = __webpack_require__(11);
 util.inherits = __webpack_require__(0);
 /*</replacement>*/
 
@@ -28100,7 +28100,7 @@ module.exports = Transform;
 var Duplex = __webpack_require__(5);
 
 /*<replacement>*/
-var util = __webpack_require__(12);
+var util = __webpack_require__(11);
 util.inherits = __webpack_require__(0);
 /*</replacement>*/
 
@@ -28273,7 +28273,7 @@ var _jexlSync = __webpack_require__(118);
 
 var _jexlSync2 = _interopRequireDefault(_jexlSync);
 
-var _debug = __webpack_require__(13);
+var _debug = __webpack_require__(12);
 
 var _debug2 = _interopRequireDefault(_debug);
 
@@ -28963,7 +28963,7 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 var _TODO_FILTERS, _desc, _value, _class, _descriptor, _descriptor2;
 
-var _mobx = __webpack_require__(10);
+var _mobx = __webpack_require__(16);
 
 function _initDefineProp(target, property, descriptor, context) {
   if (!descriptor) return;
@@ -29295,7 +29295,7 @@ var _lodash = __webpack_require__(7);
 
 var _lodash2 = _interopRequireDefault(_lodash);
 
-var _debug = __webpack_require__(13);
+var _debug = __webpack_require__(12);
 
 var _debug2 = _interopRequireDefault(_debug);
 
@@ -29305,7 +29305,7 @@ var _virtualDom2 = _interopRequireDefault(_virtualDom);
 
 var _fbemitter = __webpack_require__(78);
 
-var _mobx = __webpack_require__(10);
+var _mobx = __webpack_require__(16);
 
 var _mobxUtils = __webpack_require__(83);
 
@@ -29939,9 +29939,9 @@ var isArray = __webpack_require__(20)
 
 var VPatch = __webpack_require__(29)
 var isVNode = __webpack_require__(9)
-var isVText = __webpack_require__(14)
+var isVText = __webpack_require__(13)
 var isWidget = __webpack_require__(4)
-var isThunk = __webpack_require__(15)
+var isThunk = __webpack_require__(14)
 var handleThunk = __webpack_require__(30)
 
 var diffProps = __webpack_require__(61)
@@ -30369,7 +30369,7 @@ function appendPatch(apply, patch) {
 /***/ (function(module, exports, __webpack_require__) {
 
 var isObject = __webpack_require__(31)
-var isHook = __webpack_require__(16)
+var isHook = __webpack_require__(15)
 
 module.exports = diffProps
 
@@ -30819,10 +30819,10 @@ var isArray = __webpack_require__(20);
 var VNode = __webpack_require__(35);
 var VText = __webpack_require__(36);
 var isVNode = __webpack_require__(9);
-var isVText = __webpack_require__(14);
+var isVText = __webpack_require__(13);
 var isWidget = __webpack_require__(4);
-var isHook = __webpack_require__(16);
-var isVThunk = __webpack_require__(15);
+var isHook = __webpack_require__(15);
+var isVThunk = __webpack_require__(14);
 
 var parseTag = __webpack_require__(70);
 var softSetHook = __webpack_require__(72);
@@ -31728,7 +31728,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "asyncAction", function() { return asyncAction; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "createAsyncActionGenerator", function() { return createAsyncActionGenerator; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "whenAsync", function() { return whenAsync; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_mobx__ = __webpack_require__(10);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_mobx__ = __webpack_require__(16);
 
 
 var NOOP = function () { };
@@ -32754,11 +32754,11 @@ var _lodash = __webpack_require__(7);
 
 var _lodash2 = _interopRequireDefault(_lodash);
 
-var _htmlparser = __webpack_require__(11);
+var _htmlparser = __webpack_require__(10);
 
 var _htmlparser2 = _interopRequireDefault(_htmlparser);
 
-var _debug = __webpack_require__(13);
+var _debug = __webpack_require__(12);
 
 var _debug2 = _interopRequireDefault(_debug);
 
@@ -33161,7 +33161,7 @@ Object.keys(domLvl1).forEach(function(key) {
 /* 89 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var index = __webpack_require__(11),
+var index = __webpack_require__(10),
     DomHandler = index.DomHandler,
     DomUtils = index.DomUtils;
 
@@ -33278,7 +33278,7 @@ function Cbs(scope){
 	this.scope = scope;
 }
 
-var EVENTS = __webpack_require__(11).EVENTS;
+var EVENTS = __webpack_require__(10).EVENTS;
 
 Object.keys(EVENTS).forEach(function(name){
 	if(EVENTS[name] === 0){
@@ -34091,7 +34091,7 @@ module.exports = PassThrough;
 var Transform = __webpack_require__(49);
 
 /*<replacement>*/
-var util = __webpack_require__(12);
+var util = __webpack_require__(11);
 util.inherits = __webpack_require__(0);
 /*</replacement>*/
 
@@ -34151,7 +34151,7 @@ function ProxyHandler(cbs){
 	this._cbs = cbs || {};
 }
 
-var EVENTS = __webpack_require__(11).EVENTS;
+var EVENTS = __webpack_require__(10).EVENTS;
 Object.keys(EVENTS).forEach(function(name){
 	if(EVENTS[name] === 0){
 		name = "on" + name;
@@ -35070,7 +35070,7 @@ function CollectingHandler(cbs){
 	this.events = [];
 }
 
-var EVENTS = __webpack_require__(11).EVENTS;
+var EVENTS = __webpack_require__(10).EVENTS;
 Object.keys(EVENTS).forEach(function(name){
 	if(EVENTS[name] === 0){
 		name = "on" + name;
@@ -36716,6 +36716,8 @@ var ForDirective = exports.ForDirective = function (_Directive5) {
   _createClass(ForDirective, [{
     key: 'initialised',
     value: function initialised(_ref11) {
+      var _this6 = this;
+
       var contextComponent = _ref11.contextComponent,
           scope = _ref11.scope,
           node = _ref11.node;
@@ -36729,40 +36731,18 @@ var ForDirective = exports.ForDirective = function (_Directive5) {
       if (!_lodash2.default.isArrayLike(value)) return;
 
       var vnodes = [];
-      var _iteratorNormalCompletion = true;
-      var _didIteratorError = false;
-      var _iteratorError = undefined;
-
-      try {
-        for (var _iterator = value[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-          var item = _step.value;
-
-          var clonedNode = _lodash2.default.cloneDeep(node); // can optimise, because i just change directives
-          if (clonedNode instanceof _ast.Component) {
-            // generate new component id
-            clonedNode.componentId = node.componentId + '@' + item.id;
-          }
-          _lodash2.default.remove(clonedNode.directives, function (directive) {
-            return directive instanceof ForDirective;
-          });
-          scope[this.target] = item; // inject for $var in ..
-          vnodes.push(clonedNode.render(contextComponent, scope, { notNewScope: true }));
+      value.forEach(function (item, i) {
+        var clonedNode = _lodash2.default.cloneDeep(node); // can optimise, because i just change directives
+        if (clonedNode instanceof _ast.Component) {
+          // generate new component id
+          clonedNode.componentId = node.componentId + '@' + i;
         }
-      } catch (err) {
-        _didIteratorError = true;
-        _iteratorError = err;
-      } finally {
-        try {
-          if (!_iteratorNormalCompletion && _iterator.return) {
-            _iterator.return();
-          }
-        } finally {
-          if (_didIteratorError) {
-            throw _iteratorError;
-          }
-        }
-      }
-
+        _lodash2.default.remove(clonedNode.directives, function (directive) {
+          return directive instanceof ForDirective;
+        });
+        scope[_this6.target] = item; // inject for $var in ..
+        vnodes.push(clonedNode.render(contextComponent, scope, { notNewScope: true }));
+      });
       return vnodes;
     }
   }]);
@@ -36960,7 +36940,7 @@ var _TodoTextInput = __webpack_require__(53);
 
 var _TodoTextInput2 = _interopRequireDefault(_TodoTextInput);
 
-var _mobx = __webpack_require__(10);
+var _mobx = __webpack_require__(16);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 

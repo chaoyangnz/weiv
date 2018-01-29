@@ -87,16 +87,16 @@ export class ForDirective extends Directive {
     if (!_.isArrayLike(value)) return
 
     const vnodes = []
-    for (const item of value) {
+    value.forEach((item, i) => {
       const clonedNode = _.cloneDeep(node) // can optimise, because i just change directives
       if (clonedNode instanceof Component) {
         // generate new component id
-        clonedNode.componentId = node.componentId + '@' + item.id
+        clonedNode.componentId = node.componentId + '@' + i
       }
       _.remove(clonedNode.directives, directive => directive instanceof ForDirective)
       scope[this.target] = item // inject for $var in ..
       vnodes.push(clonedNode.render(contextComponent, scope, {notNewScope: true}))
-    }
+    })
     return vnodes
   }
 }
