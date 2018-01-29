@@ -11,6 +11,7 @@ for (let i = 0; i < STORE_SIZE; i++) {
   initialState.push({
     text: 'Item' + i,
     completed: false,
+    editing: false,
     id: i,
     // reference to some other todo item, to similate
     // having references to other objects in the state

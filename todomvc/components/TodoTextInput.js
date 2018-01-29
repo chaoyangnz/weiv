@@ -6,7 +6,7 @@ import { Component, observable } from 'weivjs'
          type="text"
          @bind:placeholder="placeholder"
          autofocus="true"
-         @bind:value="value"
+         @bind:value="text || value"
          onblur="handleBlur"
          onchange="handleChange"
          onkeydown="handleSubmit" />

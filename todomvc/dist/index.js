@@ -28960,7 +28960,7 @@ exports.default = exports.SHOW_ACTIVE = exports.SHOW_COMPLETED = exports.SHOW_AL
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _TODO_FILTERS, _desc, _value, _class, _descriptor, _descriptor2;
+var _TODO_FILTERS, _desc, _value, _class, _descriptor, _descriptor2, _descriptor3;
 
 var _mobx = __webpack_require__(16);
 
@@ -29031,6 +29031,8 @@ var AppState = (_class = function () {
 
     _initDefineProp(this, 'todos', _descriptor2, this);
 
+    _initDefineProp(this, 'editing', _descriptor3, this);
+
     this.todos = initialTodos || [];
   }
 
@@ -29061,7 +29063,17 @@ var AppState = (_class = function () {
   }, {
     key: 'editTodo',
     value: function editTodo(id, text) {
-      this.findTodo(id).text = text;
+      var _this = this;
+
+      (0, _mobx.transaction)(function () {
+        _this.findTodo(id).text = text;
+        _this.editing = -1;
+      });
+    }
+  }, {
+    key: 'setEditingTodo',
+    value: function setEditingTodo(id) {
+      this.editing = id;
     }
   }, {
     key: 'completeTodo',
@@ -29072,11 +29084,11 @@ var AppState = (_class = function () {
   }, {
     key: 'completeAll',
     value: function completeAll() {
-      var _this = this;
+      var _this2 = this;
 
       (0, _mobx.transaction)(function () {
-        var allCompleted = _this.completedCount === _this.todos.length;
-        _this.todos.forEach(function (todo) {
+        var allCompleted = _this2.completedCount === _this2.todos.length;
+        _this2.todos.forEach(function (todo) {
           return todo.completed = !allCompleted;
         });
       });
@@ -29122,6 +29134,11 @@ var AppState = (_class = function () {
   enumerable: true,
   initializer: function initializer() {
     return [];
+  }
+}), _descriptor3 = _applyDecoratedDescriptor(_class.prototype, 'editing', [_mobx.observable], {
+  enumerable: true,
+  initializer: function initializer() {
+    return -1;
   }
 }), _applyDecoratedDescriptor(_class.prototype, 'visibleTodos', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'visibleTodos'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'completedCount', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'completedCount'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'activeCount', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'activeCount'), _class.prototype)), _class);
 exports.default = AppState;
@@ -29187,7 +29204,7 @@ function _initializerWarningHelper(descriptor, context) {
 }
 
 var TodoTextInput = (_dec = (0, _weivjs.Component)({
-  template: '\n  <input @bind:class="{edit: editing, newtodo: newtodo}"\n         type="text"\n         @bind:placeholder="placeholder"\n         autofocus="true"\n         @bind:value="value"\n         onblur="handleBlur"\n         onchange="handleChange"\n         onkeydown="handleSubmit" />\n  ',
+  template: '\n  <input @bind:class="{edit: editing, newtodo: newtodo}"\n         type="text"\n         @bind:placeholder="placeholder"\n         autofocus="true"\n         @bind:value="text || value"\n         onblur="handleBlur"\n         onchange="handleChange"\n         onkeydown="handleSubmit" />\n  ',
   props: {
     text: { type: 'string' },
     placeholder: { type: 'string' },
@@ -29262,6 +29279,7 @@ for (var i = 0; i < STORE_SIZE; i++) {
   initialState.push({
     text: 'Item' + i,
     completed: false,
+    editing: false,
     id: i,
     // reference to some other todo item, to similate
     // having references to other objects in the state
@@ -36950,7 +36968,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _dec, _class, _desc, _value, _class2, _descriptor;
+var _dec, _class;
 
 var _weivjs = __webpack_require__(2);
 
@@ -36960,53 +36978,10 @@ var _TodoTextInput2 = _interopRequireDefault(_TodoTextInput);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _initDefineProp(target, property, descriptor, context) {
-  if (!descriptor) return;
-  Object.defineProperty(target, property, {
-    enumerable: descriptor.enumerable,
-    configurable: descriptor.configurable,
-    writable: descriptor.writable,
-    value: descriptor.initializer ? descriptor.initializer.call(context) : void 0
-  });
-}
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) {
-  var desc = {};
-  Object['ke' + 'ys'](descriptor).forEach(function (key) {
-    desc[key] = descriptor[key];
-  });
-  desc.enumerable = !!desc.enumerable;
-  desc.configurable = !!desc.configurable;
-
-  if ('value' in desc || desc.initializer) {
-    desc.writable = true;
-  }
-
-  desc = decorators.slice().reverse().reduce(function (desc, decorator) {
-    return decorator(target, property, desc) || desc;
-  }, desc);
-
-  if (context && desc.initializer !== void 0) {
-    desc.value = desc.initializer ? desc.initializer.call(context) : void 0;
-    desc.initializer = undefined;
-  }
-
-  if (desc.initializer === void 0) {
-    Object['define' + 'Property'](target, property, desc);
-    desc = null;
-  }
-
-  return desc;
-}
-
-function _initializerWarningHelper(descriptor, context) {
-  throw new Error('Decorating class property failed. Please ensure that transform-class-properties is enabled.');
-}
-
 var TodoItem = (_dec = (0, _weivjs.Component)({
-  template: '\n  <li @bind:class="{completed: todo.completed, editing: editing}">\n    <span>\n      <todo-text-input @if="editing"\n                      @bind:text="todo.text"\n                      @bind:editing="editing"\n                      @on:save="handleSave"></todo-text-input>\n      <span class="view" @if="!editing">\n        <input class="toggle"\n              type="checkbox"\n              @bind:checked="todo.completed"\n              onchange="handleToggle" />\n        <label ondblclick="handleDoubleClick">\n          {{todo.text}} {{completed}}\n        </label>\n        <button class="destroy"\n                onclick="handleDelete"></button>\n      </span>\n    </span>\n  </li>\n  ',
+  template: '\n  <li @bind:class="{completed: todo.completed, editing: todo.id == store.editing}">\n    <span>\n      <todo-text-input @if="todo.id == store.editing"\n                      @bind:text="todo.text"\n                      @bind:editing="todo.id == store.editing"\n                      @on:save="handleSave"></todo-text-input>\n      <span class="view" @if="todo.id != store.editing">\n        <input class="toggle"\n              type="checkbox"\n              @bind:checked="todo.completed"\n              onchange="handleToggle" />\n        <label ondblclick="handleDoubleClick">\n          {{todo.text}} {{completed}}\n        </label>\n        <button class="destroy"\n                onclick="handleDelete"></button>\n      </span>\n    </span>\n  </li>\n  ',
   props: {
     store: { type: 'object', required: true },
     todo: { type: 'object', required: true }
@@ -37014,17 +36989,16 @@ var TodoItem = (_dec = (0, _weivjs.Component)({
   components: {
     'todo-text-input': _TodoTextInput2.default
   }
-}), _dec(_class = (_class2 = function () {
+}), _dec(_class = function () {
   function TodoItem() {
     _classCallCheck(this, TodoItem);
-
-    _initDefineProp(this, 'editing', _descriptor, this);
   }
 
   _createClass(TodoItem, [{
     key: 'handleDoubleClick',
     value: function handleDoubleClick() {
-      this.editing = true;
+      this.store.setEditingTodo(this.todo.id);
+      // this.editing = true
     }
   }, {
     key: 'handleSave',
@@ -37048,18 +37022,16 @@ var TodoItem = (_dec = (0, _weivjs.Component)({
     }
   }, {
     key: 'completed',
+
+    // @observable editing = false;
+
     get: function get() {
       return this.todo.other && this.todo.other.completed ? 'Yes!' : ' . ';
     }
   }]);
 
   return TodoItem;
-}(), (_descriptor = _applyDecoratedDescriptor(_class2.prototype, 'editing', [_weivjs.observable], {
-  enumerable: true,
-  initializer: function initializer() {
-    return false;
-  }
-})), _class2)) || _class);
+}()) || _class);
 exports.default = TodoItem;
 module.exports = exports['default'];
 

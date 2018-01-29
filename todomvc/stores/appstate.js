@@ -14,6 +14,8 @@ export default class AppState {
   @observable filter = SHOW_ALL;
   @observable todos = [];
 
+  @observable editing = -1
+
   constructor(initialTodos) {
     this.todos = initialTodos || []
   }
@@ -50,7 +52,14 @@ export default class AppState {
   }
 
   editTodo(id, text) {
-    this.findTodo(id).text = text
+    transaction(() => {
+      this.findTodo(id).text = text
+      this.editing = -1
+    })
+  }
+
+  setEditingTodo(id) {
+    this.editing = id
   }
 
   completeTodo(id) {

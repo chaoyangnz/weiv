@@ -3,13 +3,13 @@ import TodoTextInput from './TodoTextInput'
 
 @Component({
   template: `
-  <li @bind:class="{completed: todo.completed, editing: editing}">
+  <li @bind:class="{completed: todo.completed, editing: todo.id == store.editing}">
     <span>
-      <todo-text-input @if="editing"
+      <todo-text-input @if="todo.id == store.editing"
                       @bind:text="todo.text"
-                      @bind:editing="editing"
+                      @bind:editing="todo.id == store.editing"
                       @on:save="handleSave"></todo-text-input>
-      <span class="view" @if="!editing">
+      <span class="view" @if="todo.id != store.editing">
         <input class="toggle"
               type="checkbox"
               @bind:checked="todo.completed"
@@ -32,14 +32,15 @@ import TodoTextInput from './TodoTextInput'
   }
 })
 class TodoItem {
-  @observable editing = false;
+  // @observable editing = false;
 
   get completed() {
     return this.todo.other && this.todo.other.completed ? 'Yes!' : ' . '
   }
 
   handleDoubleClick() {
-    this.editing = true
+    this.store.setEditingTodo(this.todo.id)
+    // this.editing = true
   }
 
   handleSave(text) {
