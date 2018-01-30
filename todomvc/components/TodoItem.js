@@ -1,6 +1,6 @@
 import { Component, action } from 'weivjs'
 import TodoTextInput from './TodoTextInput'
-import { extendObservable } from 'mobx';
+import { observable } from 'mobx'
 
 @Component({
   template: `
@@ -33,18 +33,15 @@ import { extendObservable } from 'mobx';
   }
 })
 class TodoItem {
-  // @observable editing = false
-
-  constructor() {
-    extendObservable(this, {editing: false})
-  }
+  @observable editing = false
 
   get completed() {
     return this.todo.other && this.todo.other.completed ? 'Yes!' : ' . '
   }
 
   @action handleDoubleClick() {
-    this.editing = true
+    this['editing'] = true
+    // console.error(this)
   }
 
   handleSave(text) {

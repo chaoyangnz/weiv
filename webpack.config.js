@@ -73,12 +73,19 @@ const appConfig = {
   plugins: plugins
 };
 
+let todoIndex;
+if (env === 'build') {
+  todoIndex = 'index.min.js';
+} else {
+  todoIndex = 'index.js';
+}
+
 const todomvcConfig = {
   entry: __dirname + '/todomvc/index.js',
   devtool: 'source-map',
   output: {
     path: __dirname + '/todomvc/dist',
-    filename: 'index.js'
+    filename: todoIndex
   },
   module: {
     rules: [

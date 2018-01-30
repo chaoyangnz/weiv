@@ -3,8 +3,8 @@ import _ from 'lodash'
 import debug from 'debug'
 import VDOM from 'virtual-dom'
 import { EventEmitter } from 'fbemitter'
-import { autorun, isObservable } from 'mobx'
-import { createViewModel } from 'mobx-utils'
+import { autorun, runLazyInitializers } from 'mobx'
+// import { createViewModel } from 'mobx-utils'
 import { parse } from './template'
 import * as weiv from '.'
 
@@ -177,7 +177,7 @@ export function Component(options: Options) {
     mixinPrototype(ComponentClass, options)
 
     const Component = (id: string, parent: any) => {
-      const component = new ComponentClass()
+      let component = new ComponentClass()
       mixinComponent(component, id || ComponentClass.$uniqueid(), parent) // inject internal component properties
       // log('%cNew Component: %o', 'color: white; background-color: forestgreen', component)
       return component

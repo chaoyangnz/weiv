@@ -16,6 +16,7 @@ export class Expression {
 
   eval(contextComponent, scope) {
     let val = Jexl.evaluate(this.ast, scope)
+
     log('Evaluate expression `%s`: %o', this.exp, val)
     // autobind functions
     if (val && typeof val === 'function') {
@@ -116,13 +117,7 @@ export class Node {
 
   @utils.log(false)
   render(contextComponent, superScope, options = {}) {
-    let scope
-    if (options.notNewScope) {
-      scope = superScope
-    } else {
-      scope = {__super: superScope, __tag: this.tagName}
-      Object.setPrototypeOf(scope, superScope)
-    }
+    const scope = {__super: superScope}
 
     let result = this._process(this.directives.map(directive => directive.initialised({contextComponent, scope, node: this})))
     if (result !== true) return result
@@ -164,13 +159,7 @@ export class Component extends Node {
 
   @utils.log(false)
   render(contextComponent, superScope, options = {}) {
-    let scope
-    if (options.notNewScope) {
-      scope = superScope
-    } else {
-      scope = {__super: superScope, __tag: this.tagName}
-      Object.setPrototypeOf(scope, superScope)
-    }
+    const scope = {__super: superScope}
 
     let result = this._process(this.directives.map(directive => directive.initialised({contextComponent, scope, node: this})))
     if (result !== true) return result
@@ -226,13 +215,7 @@ export class Slot extends Node {
 
   @utils.log(false)
   render(contextComponent, superScope, options = {}) { // return multiple vnodes
-    let scope
-    if (options.notNewScope) {
-      scope = superScope
-    } else {
-      scope = {__super: superScope, __tag: this.tagName}
-      Object.setPrototypeOf(scope, superScope)
-    }
+    const scope = {__super: superScope}
 
     let result = this._process(this.directives.map(directive => directive.initialised({contextComponent, scope, node: this})))
     if (result !== true) return result

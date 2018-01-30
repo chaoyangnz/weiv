@@ -140,7 +140,7 @@ Object.defineProperty(exports, 'Component', {
   }
 });
 
-var _directive = __webpack_require__(126);
+var _directive = __webpack_require__(125);
 
 Object.defineProperty(exports, 'Directive', {
   enumerable: true,
@@ -17678,7 +17678,7 @@ function isVirtualNode(x) {
 /***/ (function(module, exports, __webpack_require__) {
 
 var Parser = __webpack_require__(39),
-    DomHandler = __webpack_require__(87);
+    DomHandler = __webpack_require__(86);
 
 function defineProp(name, value){
 	delete module.exports[name];
@@ -17692,22 +17692,22 @@ module.exports = {
 	ElementType: __webpack_require__(6),
 	DomHandler: DomHandler,
 	get FeedHandler(){
-		return defineProp("FeedHandler", __webpack_require__(89));
+		return defineProp("FeedHandler", __webpack_require__(88));
 	},
 	get Stream(){
-		return defineProp("Stream", __webpack_require__(90));
+		return defineProp("Stream", __webpack_require__(89));
 	},
 	get WritableStream(){
 		return defineProp("WritableStream", __webpack_require__(44));
 	},
 	get ProxyHandler(){
-		return defineProp("ProxyHandler", __webpack_require__(105));
+		return defineProp("ProxyHandler", __webpack_require__(104));
 	},
 	get DomUtils(){
-		return defineProp("DomUtils", __webpack_require__(106));
+		return defineProp("DomUtils", __webpack_require__(105));
 	},
 	get CollectingHandler(){
-		return defineProp("CollectingHandler", __webpack_require__(117));
+		return defineProp("CollectingHandler", __webpack_require__(116));
 	},
 	// For legacy support
 	DefaultHandler: DomHandler,
@@ -22267,7 +22267,7 @@ exports.Readable = exports;
 exports.Writable = __webpack_require__(25);
 exports.Duplex = __webpack_require__(5);
 exports.Transform = __webpack_require__(49);
-exports.PassThrough = __webpack_require__(99);
+exports.PassThrough = __webpack_require__(98);
 
 
 /***/ }),
@@ -22285,8 +22285,8 @@ exports.PassThrough = __webpack_require__(99);
 
 
 
-var base64 = __webpack_require__(92)
-var ieee754 = __webpack_require__(93)
+var base64 = __webpack_require__(91)
+var ieee754 = __webpack_require__(92)
 var isArray = __webpack_require__(46)
 
 exports.Buffer = Buffer
@@ -24144,7 +24144,7 @@ util.inherits = __webpack_require__(0);
 
 /*<replacement>*/
 var internalUtil = {
-  deprecate: __webpack_require__(98)
+  deprecate: __webpack_require__(97)
 };
 /*</replacement>*/
 
@@ -24736,7 +24736,7 @@ Writable.prototype._destroy = function (err, cb) {
   this.end();
   cb(err);
 };
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3), __webpack_require__(96).setImmediate, __webpack_require__(1)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3), __webpack_require__(95).setImmediate, __webpack_require__(1)))
 
 /***/ }),
 /* 26 */
@@ -25030,7 +25030,7 @@ var HTML_TAGS = exports.HTML_TAGS = ['a', 'abbr', 'acronym', 'address', 'applet'
 
 var HTML_EVENT_ATTRIBUTES = exports.HTML_EVENT_ATTRIBUTES = ['onblur', 'onchange', 'oncontextmenu', 'onfocus', 'oninput', 'oninvalid', 'onreset', 'onsearch', 'onselect', 'onsubmit', 'onkeydown', 'onkeypress', 'onkeyup', 'onclick', 'ondblclick', 'onmousedown', 'onmousemove', 'onmouseout', 'onmouseover', 'onmouseup', 'onwheel', 'ondrag', 'ondragend', 'ondragenter', 'ondragleave', 'ondragover', 'ondragstart', 'ondrop', 'onscroll', 'oncopy', 'oncut', 'onpaste'];
 
-var BOOLEAN_ATTRIBUTES = exports.BOOLEAN_ATTRIBUTES = [['checked', 'input', { type: 'checkbox' }], ['checked', 'input', { type: 'radio' }], ['selected', 'option'], ['disabled', 'input'], ['disabled', 'textarea'], ['disabled', 'button'], ['disabled', 'select'], ['disabled', 'option'], ['disabled', 'optgroup'], ['readonly', 'input', { type: 'text' }], ['readonly', 'input', { type: 'password' }], ['readonly', 'textarea'], ['multiple', 'select'], ['ismap', 'img'], ['ismap', 'input', { type: 'image' }], ['defer', 'script'], ['noresize', 'frame'], ['nowrap', 'td'], ['nowrap', 'th'], ['noshade', 'hr'], ['compact', 'ul'], ['compact', 'ol'], ['compact', 'dl'], ['compact', 'menu'], ['compact', 'dir']];
+var BOOLEAN_ATTRIBUTES = exports.BOOLEAN_ATTRIBUTES = [['checked', 'input', { type: 'checkbox' }], ['checked', 'input', { type: 'radio' }], ['selected', 'option'], ['disabled', 'input'], ['disabled', 'textarea'], ['disabled', 'button'], ['disabled', 'select'], ['disabled', 'option'], ['disabled', 'optgroup'], ['autofocus', 'input'], ['readonly', 'input', { type: 'text' }], ['readonly', 'input', { type: 'password' }], ['readonly', 'textarea'], ['multiple', 'select'], ['ismap', 'img'], ['ismap', 'input', { type: 'image' }], ['defer', 'script'], ['noresize', 'frame'], ['nowrap', 'td'], ['nowrap', 'th'], ['noshade', 'hr'], ['compact', 'ul'], ['compact', 'ol'], ['compact', 'dl'], ['compact', 'menu'], ['compact', 'dir']];
 
 /***/ }),
 /* 28 */
@@ -26801,7 +26801,7 @@ Tokenizer.prototype._emitPartial = function(value){
 /* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var decodeMap = __webpack_require__(86);
+var decodeMap = __webpack_require__(85);
 
 module.exports = decodeCodePoint;
 
@@ -26892,7 +26892,7 @@ Object.keys(domLvl1).forEach(function(key) {
 module.exports = Stream;
 
 var Parser = __webpack_require__(39),
-    WritableStream = __webpack_require__(91).Writable || __webpack_require__(104).Writable,
+    WritableStream = __webpack_require__(90).Writable || __webpack_require__(103).Writable,
     StringDecoder = __webpack_require__(26).StringDecoder,
     Buffer = __webpack_require__(24).Buffer;
 
@@ -26991,7 +26991,7 @@ util.inherits = __webpack_require__(0);
 /*</replacement>*/
 
 /*<replacement>*/
-var debugUtil = __webpack_require__(94);
+var debugUtil = __webpack_require__(93);
 var debug = void 0;
 if (debugUtil && debugUtil.debuglog) {
   debug = debugUtil.debuglog('stream');
@@ -27000,7 +27000,7 @@ if (debugUtil && debugUtil.debuglog) {
 }
 /*</replacement>*/
 
-var BufferList = __webpack_require__(95);
+var BufferList = __webpack_require__(94);
 var destroyImpl = __webpack_require__(48);
 var StringDecoder;
 
@@ -28269,7 +28269,7 @@ var _virtualDom = __webpack_require__(28);
 
 var _virtualDom2 = _interopRequireDefault(_virtualDom);
 
-var _jexlSync = __webpack_require__(118);
+var _jexlSync = __webpack_require__(117);
 
 var _jexlSync2 = _interopRequireDefault(_jexlSync);
 
@@ -28279,7 +28279,7 @@ var _debug2 = _interopRequireDefault(_debug);
 
 var _html = __webpack_require__(27);
 
-var _utils = __webpack_require__(125);
+var _utils = __webpack_require__(124);
 
 var utils = _interopRequireWildcard(_utils);
 
@@ -28337,6 +28337,7 @@ var Expression = exports.Expression = (_dec = utils.log, (_class = function () {
     key: 'eval',
     value: function _eval(contextComponent, scope) {
       var val = _jexlSync2.default.evaluate(this.ast, scope);
+
       log('Evaluate expression `%s`: %o', this.exp, val);
       // autobind functions
       if (val && typeof val === 'function') {
@@ -28505,13 +28506,7 @@ var Node = exports.Node = (_dec2 = utils.log(false), (_class2 = function () {
 
       var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
-      var scope = void 0;
-      if (options.notNewScope) {
-        scope = superScope;
-      } else {
-        scope = { __super: superScope, __tag: this.tagName };
-        Object.setPrototypeOf(scope, superScope);
-      }
+      var scope = { __super: superScope };
 
       var result = this._process(this.directives.map(function (directive) {
         return directive.initialised({ contextComponent: contextComponent, scope: scope, node: _this });
@@ -28599,13 +28594,7 @@ var Component = exports.Component = (_dec3 = utils.log(false), (_class3 = functi
 
       var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
-      var scope = void 0;
-      if (options.notNewScope) {
-        scope = superScope;
-      } else {
-        scope = { __super: superScope, __tag: this.tagName };
-        Object.setPrototypeOf(scope, superScope);
-      }
+      var scope = { __super: superScope };
 
       var result = this._process(this.directives.map(function (directive) {
         return directive.initialised({ contextComponent: contextComponent, scope: scope, node: _this3 });
@@ -28688,13 +28677,7 @@ var Slot = exports.Slot = (_dec4 = utils.log(false), (_class4 = function (_Node2
 
       var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
       // return multiple vnodes
-      var scope = void 0;
-      if (options.notNewScope) {
-        scope = superScope;
-      } else {
-        scope = { __super: superScope, __tag: this.tagName };
-        Object.setPrototypeOf(scope, superScope);
-      }
+      var scope = { __super: superScope };
 
       var result = this._process(this.directives.map(function (directive) {
         return directive.initialised({ contextComponent: contextComponent, scope: scope, node: _this5 });
@@ -28744,7 +28727,7 @@ var Slot = exports.Slot = (_dec4 = utils.log(false), (_class4 = function (_Node2
  * Handles a subexpression that's used to define a transform argument's value.
  * @param {{type: <string>}} ast The subexpression tree
  */
-exports.argVal = function(ast) {
+exports.argVal = function (ast) {
 	this._cursor.args.push(ast);
 };
 
@@ -28752,7 +28735,7 @@ exports.argVal = function(ast) {
  * Handles new array literals by adding them as a new node in the AST,
  * initialized with an empty array.
  */
-exports.arrayStart = function() {
+exports.arrayStart = function () {
 	this._placeAtCursor({
 		type: 'ArrayLiteral',
 		value: []
@@ -28763,9 +28746,8 @@ exports.arrayStart = function() {
  * Handles a subexpression representing an element of an array literal.
  * @param {{type: <string>}} ast The subexpression tree
  */
-exports.arrayVal = function(ast) {
-	if (ast)
-		this._cursor.value.push(ast);
+exports.arrayVal = function (ast) {
+	if (ast) this._cursor.value.push(ast);
 };
 
 /**
@@ -28773,11 +28755,10 @@ exports.arrayVal = function(ast) {
  * inputs: a left side and a right side.
  * @param {{type: <string>}} token A token object
  */
-exports.binaryOp = function(token) {
+exports.binaryOp = function (token) {
 	var precedence = this._grammar[token.value].precedence || 0,
-		parent = this._cursor._parent;
-	while (parent && parent.operator &&
-			this._grammar[parent.operator].precedence >= precedence) {
+	    parent = this._cursor._parent;
+	while (parent && parent.operator && this._grammar[parent.operator].precedence >= precedence) {
 		this._cursor = parent;
 		parent = parent._parent;
 	}
@@ -28796,15 +28777,10 @@ exports.binaryOp = function(token) {
  * sets values that determine how the following identifier gets placed in the
  * AST.
  */
-exports.dot = function() {
-	this._nextIdentEncapsulate = this._cursor &&
-		(this._cursor.type != 'BinaryExpression' ||
-		(this._cursor.type == 'BinaryExpression' && this._cursor.right)) &&
-		this._cursor.type != 'UnaryExpression';
-	this._nextIdentRelative = !this._cursor ||
-		(this._cursor && !this._nextIdentEncapsulate);
-	if (this._nextIdentRelative)
-		this._relative = true;
+exports.dot = function () {
+	this._nextIdentEncapsulate = this._cursor && (this._cursor.type != 'BinaryExpression' || this._cursor.type == 'BinaryExpression' && this._cursor.right) && this._cursor.type != 'UnaryExpression';
+	this._nextIdentRelative = !this._cursor || this._cursor && !this._nextIdentEncapsulate;
+	if (this._nextIdentRelative) this._relative = true;
 };
 
 /**
@@ -28812,7 +28788,7 @@ exports.dot = function() {
  * identifier chain.
  * @param {{type: <string>}} ast The subexpression tree
  */
-exports.filter = function(ast) {
+exports.filter = function (ast) {
 	this._placeBeforeCursor({
 		type: 'FilterExpression',
 		expr: ast,
@@ -28825,7 +28801,7 @@ exports.filter = function(ast) {
  * Handles identifier tokens by adding them as a new node in the AST.
  * @param {{type: <string>}} token A token object
  */
-exports.identifier = function(token) {
+exports.identifier = function (token) {
 	var node = {
 		type: 'Identifier',
 		value: token.value
@@ -28834,10 +28810,8 @@ exports.identifier = function(token) {
 		node.from = this._cursor;
 		this._placeBeforeCursor(node);
 		this._nextIdentEncapsulate = false;
-	}
-	else {
-		if (this._nextIdentRelative)
-			node.relative = true;
+	} else {
+		if (this._nextIdentRelative) node.relative = true;
 		this._placeAtCursor(node);
 	}
 };
@@ -28847,7 +28821,7 @@ exports.identifier = function(token) {
  * them as a new node in the AST.
  * @param {{type: <string>}} token A token object
  */
-exports.literal = function(token) {
+exports.literal = function (token) {
 	this._placeAtCursor({
 		type: 'Literal',
 		value: token.value
@@ -28858,7 +28832,7 @@ exports.literal = function(token) {
  * Queues a new object literal key to be written once a value is collected.
  * @param {{type: <string>}} token A token object
  */
-exports.objKey = function(token) {
+exports.objKey = function (token) {
 	this._curObjKey = token.value;
 };
 
@@ -28866,7 +28840,7 @@ exports.objKey = function(token) {
  * Handles new object literals by adding them as a new node in the AST,
  * initialized with an empty object.
  */
-exports.objStart = function() {
+exports.objStart = function () {
 	this._placeAtCursor({
 		type: 'ObjectLiteral',
 		value: {}
@@ -28878,7 +28852,7 @@ exports.objStart = function() {
  * literal node currently at the cursor.
  * @param {{type: <string>}} ast The subexpression tree
  */
-exports.objVal = function(ast) {
+exports.objVal = function (ast) {
 	this._cursor.value[this._curObjKey] = ast;
 };
 
@@ -28887,7 +28861,7 @@ exports.objVal = function(ast) {
  * groupEnd elements.
  * @param {{type: <string>}} ast The subexpression tree
  */
-exports.subExpression = function(ast) {
+exports.subExpression = function (ast) {
 	this._placeAtCursor(ast);
 };
 
@@ -28895,7 +28869,7 @@ exports.subExpression = function(ast) {
  * Handles a completed alternate subexpression of a ternary operator.
  * @param {{type: <string>}} ast The subexpression tree
  */
-exports.ternaryEnd = function(ast) {
+exports.ternaryEnd = function (ast) {
 	this._cursor.alternate = ast;
 };
 
@@ -28903,7 +28877,7 @@ exports.ternaryEnd = function(ast) {
  * Handles a completed consequent subexpression of a ternary operator.
  * @param {{type: <string>}} ast The subexpression tree
  */
-exports.ternaryMid = function(ast) {
+exports.ternaryMid = function (ast) {
 	this._cursor.consequent = ast;
 };
 
@@ -28912,7 +28886,7 @@ exports.ternaryMid = function(ast) {
  * AST in a ConditionalExpression node, and using the existing tree as the
  * test element.
  */
-exports.ternaryStart = function() {
+exports.ternaryStart = function () {
 	this._tree = {
 		type: 'ConditionalExpression',
 		test: this._tree
@@ -28925,7 +28899,7 @@ exports.ternaryStart = function() {
  * be applied.
  * @param {{type: <string>}} token A token object
  */
-exports.transform = function(token) {
+exports.transform = function (token) {
 	this._placeBeforeCursor({
 		type: 'Transform',
 		name: token.value,
@@ -28939,13 +28913,12 @@ exports.transform = function(token) {
  * one input: a right side.
  * @param {{type: <string>}} token A token object
  */
-exports.unaryOp = function(token) {
+exports.unaryOp = function (token) {
 	this._placeAtCursor({
 		type: 'UnaryExpression',
 		operator: token.value
 	});
 };
-
 
 /***/ }),
 /* 52 */
@@ -29188,7 +29161,7 @@ function _initializerWarningHelper(descriptor, context) {
 }
 
 var TodoTextInput = (_dec = (0, _weivjs.Component)({
-  template: '\n  <input @bind:class="{edit: editing, newtodo: newtodo}"\n         type="text"\n         @bind:placeholder="placeholder"\n         autofocus="true"\n         @bind:value="text || value"\n         onblur="handleBlur"\n         onchange="handleChange"\n         onkeydown="handleSubmit" />\n  ',
+  template: '\n  <input @bind:class="{edit: editing, newtodo: newtodo}"\n         type="text"\n         @bind:placeholder="placeholder"\n         autofocus\n         @bind:value="text || value"\n         onblur="handleBlur"\n         onchange="handleChange"\n         onkeydown="handleSubmit" />\n  ',
   props: {
     text: { type: 'string' },
     placeholder: { type: 'string' },
@@ -29248,7 +29221,7 @@ var _appstate = __webpack_require__(52);
 
 var _appstate2 = _interopRequireDefault(_appstate);
 
-var _App = __webpack_require__(127);
+var _App = __webpack_require__(126);
 
 var _App2 = _interopRequireDefault(_App);
 
@@ -29307,9 +29280,7 @@ var _fbemitter = __webpack_require__(78);
 
 var _mobx = __webpack_require__(16);
 
-var _mobxUtils = __webpack_require__(83);
-
-var _template = __webpack_require__(84);
+var _template = __webpack_require__(83);
 
 var _2 = __webpack_require__(2);
 
@@ -29319,7 +29290,9 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+// import { createViewModel } from 'mobx-utils'
 var log = (0, _debug2.default)('weiv:render');
+
 
 function $render() {
   var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
@@ -31702,1021 +31675,6 @@ module.exports = emptyFunction;
 
 /***/ }),
 /* 83 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "PENDING", function() { return PENDING; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "FULFILLED", function() { return FULFILLED; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "REJECTED", function() { return REJECTED; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "fromPromise", function() { return fromPromise; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "isPromiseBasedObservable", function() { return isPromiseBasedObservable; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "lazyObservable", function() { return lazyObservable; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "fromResource", function() { return fromResource; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "toStream", function() { return toStream; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "fromStream", function() { return fromStream; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "createViewModel", function() { return createViewModel; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "whenWithTimeout", function() { return whenWithTimeout; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "keepAlive", function() { return keepAlive; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "queueProcessor", function() { return queueProcessor; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "chunkProcessor", function() { return chunkProcessor; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "now", function() { return now; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "NOOP", function() { return NOOP; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "IDENTITY", function() { return IDENTITY; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "invariant", function() { return invariant; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "deprecated", function() { return deprecated; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "asyncAction", function() { return asyncAction; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "createAsyncActionGenerator", function() { return createAsyncActionGenerator; });
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "whenAsync", function() { return whenAsync; });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_mobx__ = __webpack_require__(16);
-
-
-var NOOP = function () { };
-var IDENTITY = function (_) { return _; };
-function invariant(cond, message) {
-    if (message === void 0) { message = "Illegal state"; }
-    if (!cond)
-        throw new Error("[mobx-utils] " + message);
-}
-var deprecatedMessages = [];
-function deprecated(msg) {
-    if (deprecatedMessages.indexOf(msg) !== -1)
-        return;
-    deprecatedMessages.push(msg);
-    console.error("[mobx-utils] Deprecated: " + msg);
-}
-
-var PENDING = "pending";
-var FULFILLED = "fulfilled";
-var REJECTED = "rejected";
-function caseImpl(handlers) {
-    switch (this.state) {
-        case PENDING:
-            return handlers.pending && handlers.pending();
-        case REJECTED:
-            return handlers.rejected && handlers.rejected(this.value);
-        case FULFILLED:
-            return handlers.fulfilled && handlers.fulfilled(this.value);
-    }
-}
-function createObservablePromise(origPromise) {
-    invariant(arguments.length === 1, "fromPromise expects exactly one argument");
-    invariant(typeof origPromise === "function" ||
-        (typeof origPromise === "object" &&
-            origPromise &&
-            typeof origPromise.then === "function"), "Please pass a promise or function to fromPromise");
-    if (typeof origPromise === "function") {
-        // If it is a (reject, resolve function, wrap it)
-        origPromise = new Promise(origPromise);
-    }
-    var promise = new Promise(function (resolve, reject) {
-        origPromise.then(Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["action"])("observableFromPromise-resolve", function (value) {
-            promise.value = value;
-            promise.state = FULFILLED;
-            resolve(value);
-        }), Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["action"])("observableFromPromise-reject", function (reason) {
-            promise.value = reason;
-            promise.state = REJECTED;
-            reject(reason);
-        }));
-    });
-    promise.isPromiseBasedObservable = true;
-    promise.case = caseImpl;
-    Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["extendShallowObservable"])(promise, {
-        value: undefined,
-        state: PENDING
-    });
-    // TODO: remove in next major
-    Object.defineProperty(promise, "promise", {
-        get: function () {
-            deprecated("fromPromise().promise is deprecated. fromPromise now directly returns a promise");
-            return origPromise;
-        }
-    });
-    return promise;
-}
-/**
- * `fromPromise` takes a Promise and returns an object with 3 observable properties that track
- * the status of the promise. The returned object has the following observable properties:
- *  - `value`: either the initial value, the value the Promise resolved to, or the value the Promise was rejected with. use `.state` if you need to be able to tell the difference.
- *  - `state`: one of `"pending"`, `"fulfilled"` or `"rejected"`
- *
- * And the following methods:
- * - `case({fulfilled, rejected, pending})`: maps over the result using the provided handlers, or returns `undefined` if a handler isn't available for the current promise state.
- * - `then((value: TValue) => TResult1 | PromiseLike<TResult1>, [(rejectReason: any) => any])`: chains additional handlers to the provided promise.
- *
- * The returned object implements `PromiseLike<TValue>`, so you can chain additional `Promise` handlers using `then`.
- *
- * Note that the status strings are available as constants:
- * `mobxUtils.PENDING`, `mobxUtils.REJECTED`, `mobxUtil.FULFILLED`
- *
- * Observable promises can be created immediately in a certain state using
- * `fromPromise.reject(reason)` or `fromPromise.resolve(value?)`.
- * The main advantage of `fromPromise.resolve(value)` over `fromPromise(Promise.resolve(value))` is that the first _synchronously_ starts in the desired state.
- *
- * It is possible to directly create a promise using a resolve, reject function:
- * `fromPromise((resolve, reject) => setTimeout(() => resolve(true), 1000))`
- *
- * @example
- * const fetchResult = fromPromise(fetch("http://someurl"))
- *
- * // combine with when..
- * when(
- *   () => fetchResult.state !== "pending"
- *   () => {
- *     console.log("Got ", fetchResult.value)
- *   }
- * )
- *
- * // or a mobx-react component..
- * const myComponent = observer(({ fetchResult }) => {
- *   switch(fetchResult.state) {
- *      case "pending": return <div>Loading...</div>
- *      case "rejected": return <div>Ooops... {fetchResult.value}</div>
- *      case "fulfilled": return <div>Gotcha: {fetchResult.value}</div>
- *   }
- * })
- *
- * // or using the case method instead of switch:
- *
- * const myComponent = observer(({ fetchResult }) =>
- *   fetchResult.case({
- *     pending:   () => <div>Loading...</div>
- *     rejected:  error => <div>Ooops.. {error}</div>
- *     fulfilled: value => <div>Gotcha: {value}</div>
- *   }))
- *
- * // chain additional handler(s) to the resolve/reject:
- *
- * fetchResult.then(
- *   (result) =>  doSomeTransformation(result),
- *   (rejectReason) => console.error('fetchResult was rejected, reason: ' + rejectReason)
- * ).then(
- *   (transformedResult) => console.log('transformed fetchResult: ' + transformedResult)
- * )
- *
- * @param {IThenable<T>} promise The promise which will be observed
- * @returns {IPromiseBasedObservable<T>}
- */
-var fromPromise = createObservablePromise;
-fromPromise.reject = Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["action"])("fromPromise.reject", function (reason) {
-    var p = fromPromise(Promise.reject(reason));
-    p.state = REJECTED;
-    p.value = reason;
-    return p;
-});
-fromPromise.resolve = Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["action"])("fromPromise.resolve", function (value) {
-    if (value === void 0) { value = undefined; }
-    var p = fromPromise(Promise.resolve(value));
-    p.state = FULFILLED;
-    p.value = value;
-    return p;
-});
-/**
- * Returns true if the provided value is a promise-based observable.
- * @param value any
- * @returns {boolean}
- */
-function isPromiseBasedObservable(value) {
-    return value && value.isPromiseBasedObservable === true;
-}
-
-/**
- * `lazyObservable` creates an observable around a `fetch` method that will not be invoked
- * until the observable is needed the first time.
- * The fetch method receives a `sink` callback which can be used to replace the
- * current value of the lazyObservable. It is allowed to call `sink` multiple times
- * to keep the lazyObservable up to date with some external resource.
- *
- * Note that it is the `current()` call itself which is being tracked by MobX,
- * so make sure that you don't dereference to early.
- *
- * @example
- * const userProfile = lazyObservable(
- *   sink => fetch("/myprofile").then(profile => sink(profile))
- * )
- *
- * // use the userProfile in a React component:
- * const Profile = observer(({ userProfile }) =>
- *   userProfile.current() === undefined
- *   ? <div>Loading user profile...</div>
- *   : <div>{userProfile.current().displayName}</div>
- * )
- *
- * // triggers refresh the userProfile
- * userProfile.refresh()
- *
- * @param {(sink: (newValue: T) => void) => void} fetch method that will be called the first time the value of this observable is accessed. The provided sink can be used to produce a new value, synchronously or asynchronously
- * @param {T} [initialValue=undefined] optional initialValue that will be returned from `current` as long as the `sink` has not been called at least once
- * @returns {{
- *     current(): T,
- *     refresh(): T,
- *     reset(): T
- * }}
- */
-function lazyObservable(fetch, initialValue, modifier) {
-    if (initialValue === void 0) { initialValue = undefined; }
-    if (modifier === void 0) { modifier = IDENTITY; }
-    var started = false;
-    var value = __WEBPACK_IMPORTED_MODULE_0_mobx__["observable"].shallowBox(modifier(initialValue));
-    var currentFnc = function () {
-        if (!started) {
-            started = true;
-            fetch(function (newValue) {
-                __WEBPACK_IMPORTED_MODULE_0_mobx__["extras"].allowStateChanges(true, function () {
-                    value.set(newValue);
-                });
-            });
-        }
-        return value.get();
-    };
-    var resetFnc = Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["action"])("lazyObservable-reset", function () {
-        value.set(initialValue);
-        return value.get();
-    });
-    return {
-        current: currentFnc,
-        refresh: function () {
-            if (started) {
-                started = false;
-                return currentFnc();
-            }
-            else {
-                return value.get();
-            }
-        },
-        reset: function () {
-            return resetFnc();
-        }
-    };
-}
-
-/**
- * `fromResource` creates an observable whose current state can be inspected using `.current()`,
- * and which can be kept in sync with some external datasource that can be subscribed to.
- *
- * The created observable will only subscribe to the datasource if it is in use somewhere,
- * (un)subscribing when needed. To enable `fromResource` to do that two callbacks need to be provided,
- * one to subscribe, and one to unsubscribe. The subscribe callback itself will receive a `sink` callback, which can be used
- * to update the current state of the observable, allowing observes to react.
- *
- * Whatever is passed to `sink` will be returned by `current()`. The values passed to the sink will not be converted to
- * observables automatically, but feel free to do so.
- * It is the `current()` call itself which is being tracked,
- * so make sure that you don't dereference to early.
- *
- * For inspiration, an example integration with the apollo-client on [github](https://github.com/apollostack/apollo-client/issues/503#issuecomment-241101379),
- * or the [implementation](https://github.com/mobxjs/mobx-utils/blob/1d17cf7f7f5200937f68cc0b5e7ec7f3f71dccba/src/now.ts#L43-L57) of `mobxUtils.now`
- *
- * The following example code creates an observable that connects to a `dbUserRecord`,
- * which comes from an imaginary database and notifies when it has changed.
- *
- * @example
- * function createObservableUser(dbUserRecord) {
- *   let currentSubscription;
- *   return fromResource(
- *     (sink) => {
- *       // sink the current state
- *       sink(dbUserRecord.fields)
- *       // subscribe to the record, invoke the sink callback whenever new data arrives
- *       currentSubscription = dbUserRecord.onUpdated(() => {
- *         sink(dbUserRecord.fields)
- *       })
- *     },
- *     () => {
- *       // the user observable is not in use at the moment, unsubscribe (for now)
- *       dbUserRecord.unsubscribe(currentSubscription)
- *     }
- *   )
- * }
- *
- * // usage:
- * const myUserObservable = createObservableUser(myDatabaseConnector.query("name = 'Michel'"))
- *
- * // use the observable in autorun
- * autorun(() => {
- *   // printed everytime the database updates its records
- *   console.log(myUserObservable.current().displayName)
- * })
- *
- * // ... or a component
- * const userComponent = observer(({ user }) =>
- *   <div>{user.current().displayName}</div>
- * )
- *
- * @export
- * @template T
- * @param {(sink: (newValue: T) => void) => void} subscriber
- * @param {IDisposer} [unsubscriber=NOOP]
- * @param {T} [initialValue=undefined] the data that will be returned by `get()` until the `sink` has emitted its first data
- * @returns {{
- *     current(): T;
- *     dispose(): void;
- *     isAlive(): boolean;
- * }}
- */
-function fromResource(subscriber, unsubscriber, initialValue) {
-    if (unsubscriber === void 0) { unsubscriber = NOOP; }
-    if (initialValue === void 0) { initialValue = undefined; }
-    var isActive = false;
-    var isDisposed = false;
-    var value = initialValue;
-    var suspender = function () {
-        if (isActive) {
-            isActive = false;
-            unsubscriber();
-        }
-    };
-    var atom = new __WEBPACK_IMPORTED_MODULE_0_mobx__["Atom"]("ResourceBasedObservable", function () {
-        invariant(!isActive && !isDisposed);
-        isActive = true;
-        subscriber(function (newValue) {
-            __WEBPACK_IMPORTED_MODULE_0_mobx__["extras"].allowStateChanges(true, function () {
-                value = newValue;
-                atom.reportChanged();
-            });
-        });
-    }, suspender);
-    return {
-        current: function () {
-            invariant(!isDisposed, "subscribingObservable has already been disposed");
-            var isBeingTracked = atom.reportObserved();
-            if (!isBeingTracked && !isActive)
-                console.warn("Called `get` of an subscribingObservable outside a reaction. Current value will be returned but no new subscription has started");
-            return value;
-        },
-        dispose: function () {
-            isDisposed = true;
-            suspender();
-        },
-        isAlive: function () { return isActive; }
-    };
-}
-
-var __decorate = (undefined && undefined.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-function observableSymbol() {
-    return (typeof Symbol === "function" && Symbol.observable) || "@@observable";
-}
-function self() {
-    return this;
-}
-/**
- * Converts an expression to an observable stream (a.k.a. TC 39 Observable / RxJS observable).
- * The provided expression is tracked by mobx as long as there are subscribers, automatically
- * emitting when new values become available. The expressions respect (trans)actions.
- *
- * @example
- *
- * const user = observable({
- *   firstName: "C.S",
- *   lastName: "Lewis"
- * })
- *
- * Rx.Observable
- *   .from(mobxUtils.toStream(() => user.firstname + user.lastName))
- *   .scan(nameChanges => nameChanges + 1, 0)
- *   .subscribe(nameChanges => console.log("Changed name ", nameChanges, "times"))
- *
- * @export
- * @template T
- * @param {() => T} expression
- * @param {boolean} fireImmediately (by default false)
- * @returns {IObservableStream<T>}
- */
-function toStream(expression, fireImmediately) {
-    if (fireImmediately === void 0) { fireImmediately = false; }
-    var computedValue = Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["computed"])(expression);
-    return _a = {
-            subscribe: function (observer) {
-                return {
-                    unsubscribe: computedValue.observe(typeof observer === "function"
-                        ? function (_a) {
-                            var newValue = _a.newValue;
-                            return observer(newValue);
-                        }
-                        : function (_a) {
-                            var newValue = _a.newValue;
-                            return observer.next(newValue);
-                        }, fireImmediately)
-                };
-            }
-        },
-        _a[observableSymbol()] = self,
-        _a;
-    var _a;
-}
-var StreamListener = /** @class */ (function () {
-    function StreamListener(observable$$1, initialValue) {
-        var _this = this;
-        this.current = undefined;
-        Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["runInAction"])(function () {
-            _this.current = initialValue;
-            _this.subscription = observable$$1.subscribe(_this);
-        });
-    }
-    StreamListener.prototype.dispose = function () {
-        if (this.subscription) {
-            this.subscription.unsubscribe();
-        }
-    };
-    StreamListener.prototype.next = function (value) {
-        this.current = value;
-    };
-    StreamListener.prototype.complete = function () {
-        this.dispose();
-    };
-    StreamListener.prototype.error = function (value) {
-        this.current = value;
-        this.dispose();
-    };
-    __decorate([
-        __WEBPACK_IMPORTED_MODULE_0_mobx__["observable"].ref
-    ], StreamListener.prototype, "current", void 0);
-    __decorate([
-        __WEBPACK_IMPORTED_MODULE_0_mobx__["action"]
-    ], StreamListener.prototype, "next", null);
-    __decorate([
-        __WEBPACK_IMPORTED_MODULE_0_mobx__["action"]
-    ], StreamListener.prototype, "complete", null);
-    __decorate([
-        __WEBPACK_IMPORTED_MODULE_0_mobx__["action"]
-    ], StreamListener.prototype, "error", null);
-    return StreamListener;
-}());
-/**
- *
- * Converts an subscribable, observable stream (TC 39 observable / RxJS stream)
- * into an object which stores the current value (as `current`). The subscription can be cancelled through the `dispose` method.
- * Takes an initial value as second optional argument
- *
- * @example
- * const debouncedClickDelta = MobxUtils.fromStream(Rx.Observable.fromEvent(button, 'click')
- *     .throttleTime(1000)
- *     .map(event => event.clientX)
- *     .scan((count, clientX) => count + clientX, 0)
- * )
- *
- * autorun(() => {
- *     console.log("distance moved", debouncedClickDelta.current)
- * })
- *
- * @export
- * @template T
- * @param {IObservableStream<T>} observable
- * @returns {{
- *     current: T;
- *     dispose(): void;
- * }}
- */
-function fromStream(observable$$1, initialValue) {
-    if (initialValue === void 0) { initialValue = undefined; }
-    return new StreamListener(observable$$1, initialValue);
-}
-
-var __decorate$1 = (undefined && undefined.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
-var RESERVED_NAMES = ["model", "reset", "submit", "isDirty", "isPropertyDirty"];
-var ViewModel = /** @class */ (function () {
-    function ViewModel(model) {
-        var _this = this;
-        this.model = model;
-        this.localValues = __WEBPACK_IMPORTED_MODULE_0_mobx__["observable"].map({});
-        this.isPropertyDirty = function (key) {
-            return _this.localValues.has(key);
-        };
-        invariant(Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["isObservableObject"])(model), "createViewModel expects an observable object");
-        Object.keys(model).forEach(function (key) {
-            invariant(RESERVED_NAMES.indexOf(key) === -1, "The propertyname " + key + " is reserved and cannot be used with viewModels");
-            Object.defineProperty(_this, key, {
-                enumerable: true,
-                configurable: true,
-                get: function () {
-                    if (_this.isPropertyDirty(key))
-                        return _this.localValues.get(key);
-                    else
-                        return _this.model[key];
-                },
-                set: Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["action"])(function (value) {
-                    if (_this.isPropertyDirty(key) || value !== _this.model[key]) {
-                        _this.localValues.set(key, value);
-                    }
-                })
-            });
-        });
-    }
-    Object.defineProperty(ViewModel.prototype, "isDirty", {
-        get: function () {
-            return this.localValues.size > 0;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    ViewModel.prototype.submit = function () {
-        var _this = this;
-        this.localValues.keys().forEach(function (key) {
-            var source = _this.localValues.get(key);
-            var destination = _this.model[key];
-            if (Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["isObservableArray"])(destination)) {
-                destination.replace(source);
-            }
-            else if (Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["isObservableMap"])(destination)) {
-                destination.clear();
-                destination.merge(source);
-            }
-            else {
-                
-                _this.model[key] = source;
-            }
-        });
-        this.localValues.clear();
-    };
-    ViewModel.prototype.reset = function () {
-        this.localValues.clear();
-    };
-    ViewModel.prototype.resetProperty = function (key) {
-        this.localValues.delete(key);
-    };
-    __decorate$1([
-        __WEBPACK_IMPORTED_MODULE_0_mobx__["computed"]
-    ], ViewModel.prototype, "isDirty", null);
-    __decorate$1([
-        __WEBPACK_IMPORTED_MODULE_0_mobx__["action"].bound
-    ], ViewModel.prototype, "submit", null);
-    __decorate$1([
-        __WEBPACK_IMPORTED_MODULE_0_mobx__["action"].bound
-    ], ViewModel.prototype, "reset", null);
-    __decorate$1([
-        __WEBPACK_IMPORTED_MODULE_0_mobx__["action"].bound
-    ], ViewModel.prototype, "resetProperty", null);
-    return ViewModel;
-}());
-/**
- * `createViewModel` takes an object with observable properties (model)
- * and wraps a viewmodel around it. The viewmodel proxies all enumerable property of the original model with the following behavior:
- *  - as long as no new value has been assigned to the viewmodel property, the original property will be returned.
- *  - any future change in the model will be visible in the viewmodel as well unless the viewmodel property was dirty at the time of the attempted change.
- *  - once a new value has been assigned to a property of the viewmodel, that value will be returned during a read of that property in the future. However, the original model remain untouched until `submit()` is called.
- *
- * The viewmodel exposes the following additional methods, besides all the enumerable properties of the model:
- * - `submit()`: copies all the values of the viewmodel to the model and resets the state
- * - `reset()`: resets the state of the viewmodel, abandoning all local modifications
- * - `resetProperty(propName)`: resets the specified property of the viewmodel
- * - `isDirty`: observable property indicating if the viewModel contains any modifications
- * - `isPropertyDirty(propName)`: returns true if the specified property is dirty
- * - `model`: The original model object for which this viewModel was created
- *
- * You may use observable arrays, maps and objects with `createViewModel` but keep in mind to assign fresh instances of those to the viewmodel's properties, otherwise you would end up modifying the properties of the original model.
- * Note that if you read a non-dirty property, viewmodel only proxies the read to the model. You therefore need to assign a fresh instance not only the first time you make the assignment but also after calling `reset()` or `submit()`.
- *
- * @example
- * class Todo {
- *   \@observable title = "Test"
- * }
- *
- * const model = new Todo()
- * const viewModel = createViewModel(model);
- *
- * autorun(() => console.log(viewModel.model.title, ",", viewModel.title))
- * // prints "Test, Test"
- * model.title = "Get coffee"
- * // prints "Get coffee, Get coffee", viewModel just proxies to model
- * viewModel.title = "Get tea"
- * // prints "Get coffee, Get tea", viewModel's title is now dirty, and the local value will be printed
- * viewModel.submit()
- * // prints "Get tea, Get tea", changes submitted from the viewModel to the model, viewModel is proxying again
- * viewModel.title = "Get cookie"
- * // prints "Get tea, Get cookie" // viewModel has diverged again
- * viewModel.reset()
- * // prints "Get tea, Get tea", changes of the viewModel have been abandoned
- *
- * @param {T} model
- * @returns {(T & IViewModel<T>)}
- * ```
- */
-function createViewModel(model) {
-    return new ViewModel(model);
-}
-
-/**
- * Like normal `when`, except that this `when` will automatically dispose if the condition isn't met within a certain amount of time.
- *
- * @example
- * test("expect store to load", t => {
- *   const store = {
- *     items: [],
- *     loaded: false
- *   }
- *   fetchDataForStore((data) => {
- *     store.items = data;
- *     store.loaded = true;
- *   })
- *   whenWithTimeout(
- *     () => store.loaded
- *     () => t.end()
- *     2000,
- *     () => t.fail("store didn't load with 2 secs")
- *   )
- * })
- *
- *
- * @export
- * @param {() => boolean} expr see when, the expression to await
- * @param {() => void} action see when, the action to execut when expr returns truthy
- * @param {number} [timeout=10000] maximum amount when spends waiting before giving up
- * @param {any} [onTimeout=() => {}] the ontimeout handler will be called if the condition wasn't met within the given time
- * @returns {IDisposer} disposer function that can be used to cancel the when prematurely. Neither action or onTimeout will be fired if disposed
- */
-function whenWithTimeout(expr, action$$1, timeout, onTimeout) {
-    if (timeout === void 0) { timeout = 10000; }
-    if (onTimeout === void 0) { onTimeout = function () { }; }
-    var done = false;
-    var handle = setTimeout(function () {
-        if (!done) {
-            disposer();
-            onTimeout();
-        }
-    }, timeout);
-    var disposer = Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["when"])(expr, function () {
-        done = true;
-        clearTimeout(handle);
-        action$$1();
-    });
-    return function () {
-        clearTimeout(handle);
-        disposer();
-    };
-}
-
-/**
- * MobX normally suspends any computed value that is not in use by any reaction,
- * and lazily re-evaluates the expression if needed outside a reaction while not in use.
- * `keepAlive` marks a computed value as always in use, meaning that it will always fresh, but never disposed automatically.
- *
- * @example
- * const obj = observable({
- *   number: 3,
- *   doubler: function() { return this.number * 2 }
- * })
- * const stop = keepAlive(obj, "doubler")
- *
- * @param {Object} target an object that has a computed property, created by `@computed` or `extendObservable`
- * @param {string} property the name of the property to keep alive
- * @returns {IDisposer} stops this keep alive so that the computed value goes back to normal behavior
- */
-/**
- * @example
- * const number = observable(3)
- * const doubler = computed(() => number.get() * 2)
- * const stop = keepAlive(doubler)
- * // doubler will now stay in sync reactively even when there are no further observers
- * stop()
- * // normal behavior, doubler results will be recomputed if not observed but needed, but lazily
- *
- * @param {IComputedValue<any>} computedValue created using the `computed` function
- * @returns {IDisposer} stops this keep alive so that the computed value goes back to normal behavior
- */
-function keepAlive(_1, _2) {
-    var computed$$1 = __WEBPACK_IMPORTED_MODULE_0_mobx__["extras"].getAtom(_1, _2);
-    if (!computed$$1)
-        throw new Error("No computed provided, please provide an object created with `computed(() => expr)` or an object + property name");
-    return computed$$1.observe(function () { });
-}
-
-/**
- * `queueProcessor` takes an observable array, observes it and calls `processor`
- * once for each item added to the observable array, optionally deboucing the action
- *
- * @example
- * const pendingNotifications = observable([])
- * const stop = queueProcessor(pendingNotifications, msg => {
- *   // show Desktop notification
- *   new Notification(msg);
- * })
- *
- * // usage:
- * pendingNotifications.push("test!")
- *
- * @param {T[]} observableArray observable array instance to track
- * @param {(item: T) => void} processor action to call per item
- * @param {number} [debounce=0] optional debounce time in ms. With debounce 0 the processor will run synchronously
- * @returns {IDisposer} stops the processor
- */
-function queueProcessor(observableArray, processor, debounce) {
-    if (debounce === void 0) { debounce = 0; }
-    if (!Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["isObservableArray"])(observableArray))
-        throw new Error("Expected observable array as first argument");
-    if (!Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["isAction"])(processor))
-        processor = Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["action"])("queueProcessor", processor);
-    var runner = function () {
-        // construct a final set
-        var items = observableArray.slice(0);
-        // clear the queue for next iteration
-        Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["runInAction"])(function () { return observableArray.splice(0); });
-        // fire processor
-        items.forEach(processor);
-    };
-    if (debounce > 0)
-        return Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["autorunAsync"])(runner, debounce);
-    else
-        return Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["autorun"])(runner);
-}
-
-/**
- * `chunkProcessor` takes an observable array, observes it and calls `processor`
- * once for a chunk of items added to the observable array, optionally deboucing the action.
- * The maximum chunk size can be limited by number.
- * This allows both, splitting larger into smaller chunks or (when debounced) combining smaller
- * chunks and/or single items into reasonable chunks of work.
- *
- * @example
- * const trackedActions = observable([])
- * const stop = chunkProcessor(trackedActions, chunkOfMax10Items => {
- *   sendTrackedActionsToServer(chunkOfMax10Items);
- * }, 100, 10)
- *
- * // usage:
- * trackedActions.push("scrolled")
- * trackedActions.push("hoveredButton")
- * // when both pushes happen within 100ms, there will be only one call to server
- *
- * @param {T[]} observableArray observable array instance to track
- * @param {(item: T[]) => void} processor action to call per item
- * @param {number} [debounce=0] optional debounce time in ms. With debounce 0 the processor will run synchronously
- * @param {number} [maxChunkSize=0] optionally do not call on full array but smaller chunks. With 0 it will process the full array.
- * @returns {IDisposer} stops the processor
- */
-function chunkProcessor(observableArray, processor, debounce, maxChunkSize) {
-    if (debounce === void 0) { debounce = 0; }
-    if (maxChunkSize === void 0) { maxChunkSize = 0; }
-    if (!Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["isObservableArray"])(observableArray))
-        throw new Error("Expected observable array as first argument");
-    if (!Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["isAction"])(processor))
-        processor = Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["action"])("chunkProcessor", processor);
-    var runner = function () {
-        var _loop_1 = function () {
-            var chunkSize = maxChunkSize === 0
-                ? observableArray.length
-                : Math.min(observableArray.length, maxChunkSize);
-            // construct a final set
-            var items = observableArray.slice(0, chunkSize);
-            // clear the slice for next iteration
-            Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["runInAction"])(function () { return observableArray.splice(0, chunkSize); });
-            // fire processor
-            processor(items);
-        };
-        while (observableArray.length > 0) {
-            _loop_1();
-        }
-    };
-    if (debounce > 0)
-        return Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["autorunAsync"])(runner, debounce);
-    else
-        return Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["autorun"])(runner);
-}
-
-var tickers = {};
-/**
- * Returns the current date time as epoch number.
- * The date time is read from an observable which is updated automatically after the given interval.
- * So basically it treats time as an observable.
- *
- * The function takes an interval as parameter, which indicates how often `now()` will return a new value.
- * If no interval is given, it will update each second. If "frame" is specified, it will update each time a
- * `requestAnimationFrame` is available.
- *
- * Multiple clocks with the same interval will automatically be synchronized.
- *
- * Countdown example: https://jsfiddle.net/mweststrate/na0qdmkw/
- *
- * @example
- *
- * const start = Date.now()
- *
- * autorun(() => {
- *   console.log("Seconds elapsed: ", (mobxUtils.now() - start) / 1000)
- * })
- *
- *
- * @export
- * @param {(number | "frame")} [interval=1000] interval in milliseconds about how often the interval should update
- * @returns
- */
-function now(interval) {
-    if (interval === void 0) { interval = 1000; }
-    if (!__WEBPACK_IMPORTED_MODULE_0_mobx__["extras"].isComputingDerivation()) {
-        // See #40
-        return Date.now();
-    }
-    if (!tickers[interval]) {
-        if (typeof interval === "number")
-            tickers[interval] = createIntervalTicker(interval);
-        else
-            tickers[interval] = createAnimationFrameTicker();
-    }
-    return tickers[interval].current();
-}
-function createIntervalTicker(interval) {
-    var subscriptionHandle;
-    return fromResource(function (sink) {
-        subscriptionHandle = setInterval(function () { return sink(Date.now()); }, interval);
-    }, function () {
-        clearInterval(subscriptionHandle);
-    }, Date.now());
-}
-function createAnimationFrameTicker() {
-    var frameBasedTicker = fromResource(function (sink) {
-        function scheduleTick() {
-            window.requestAnimationFrame(function () {
-                sink(Date.now());
-                if (frameBasedTicker.isAlive())
-                    scheduleTick();
-            });
-        }
-        scheduleTick();
-    }, function () { }, Date.now());
-    return frameBasedTicker;
-}
-
-var __assign = (undefined && undefined.__assign) || Object.assign || function(t) {
-    for (var s, i = 1, n = arguments.length; i < n; i++) {
-        s = arguments[i];
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-            t[p] = s[p];
-    }
-    return t;
-};
-/**
- * `asyncAction` takes a generator function and automatically wraps all parts of the process in actions. See the examples below.
- * `asyncAction` can be used both as decorator or to wrap functions.
- *
- * - It is important that `asyncAction should always be used with a generator function (recognizable as `function*` or `*name` syntax)
- * - Each yield statement should return a Promise. The generator function will continue as soon as the promise settles, with the settled value
- * - When the generator function finishes, you can return a normal value. The `asyncAction` wrapped function will always produce a promise delivering that value.
- *
- * When using the mobx devTools, an asyncAction will emit `action` events with names like:
- * * `"fetchUsers - runid: 6 - init"`
- * * `"fetchUsers - runid: 6 - yield 0"`
- * * `"fetchUsers - runid: 6 - yield 1"`
- *
- * The `runId` represents the generator instance. In other words, if `fetchUsers` is invoked multiple times concurrently, the events with the same `runid` belong toghether.
- * The `yield` number indicates the progress of the generator. `init` indicates spawning (it won't do anything, but you can find the original arguments of the `asyncAction` here).
- * `yield 0` ... `yield n` indicates the code block that is now being executed. `yield 0` is before the first `yield`, `yield 1` after the first one etc. Note that yield numbers are not determined lexically but by the runtime flow.
- *
- * `asyncActions` requires `Promise` and `generators` to be available on the target environment. Polyfill `Promise` if needed. Both TypeScript and Babel can compile generator functions down to ES5.
- *
- * @example
- * import {asyncAction} from "mobx-utils"
- *
- * let users = []
- *
- * const fetchUsers = asyncAction("fetchUsers", function* (url) {
- *   const start = Date.now()
- *   const data = yield window.fetch(url)
- *   users = yield data.json()
- *   return start - Date.now()
- * })
- *
- * fetchUsers("http://users.com").then(time => {
- *   console.dir("Got users", users, "in ", time, "ms")
- * })
- *
- * @example
- * import {asyncAction} from "mobx-utils"
- *
- * mobx.useStrict(true) // don't allow state modifications outside actions
- *
- * class Store {
- * 	\@observable githubProjects = []
- * 	\@state = "pending" // "pending" / "done" / "error"
- *
- * 	\@asyncAction
- * 	*fetchProjects() { // <- note the star, this a generator function!
- * 		this.githubProjects = []
- * 		this.state = "pending"
- * 		try {
- * 			const projects = yield fetchGithubProjectsSomehow() // yield instead of await
- * 			const filteredProjects = somePreprocessing(projects)
- * 			// the asynchronous blocks will automatically be wrapped actions
- * 			this.state = "done"
- * 			this.githubProjects = filteredProjects
- * 		} catch (error) {
- * 			this.state = "error"
- * 		}
- * 	}
- * }
- *
- * @export
- * @returns {Promise}
- */
-function asyncAction(arg1, arg2) {
-    // decorator
-    if (typeof arguments[1] === "string") {
-        var name_1 = arguments[1];
-        var descriptor_1 = arguments[2];
-        if (descriptor_1 && descriptor_1.value) {
-            return Object.assign({}, descriptor_1, {
-                value: createAsyncActionGenerator(name_1, descriptor_1.value)
-            });
-        }
-        else {
-            return Object.assign({}, descriptor_1, {
-                set: function (v) {
-                    Object.defineProperty(this, name_1, __assign({}, descriptor_1, { value: asyncAction(name_1, v) }));
-                }
-            });
-        }
-    }
-    // direct invocation
-    var generator = typeof arg1 === "string" ? arg2 : arg1;
-    var name = typeof arg1 === "string" ? arg1 : generator.name || "<unnamed async action>";
-    invariant(typeof generator === "function", "asyncAction expects function as first arg, got: " + generator);
-    return createAsyncActionGenerator(name, generator);
-}
-var generatorId = 0;
-function createAsyncActionGenerator(name, generator) {
-    // Implementation based on https://github.com/tj/co/blob/master/index.js
-    return function () {
-        var ctx = this;
-        var args = arguments;
-        return new Promise(function (resolve, reject) {
-            var runId = ++generatorId;
-            var stepId = 0;
-            var gen = Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["action"])(name + " - runid: " + runId + " - init", generator).apply(ctx, args);
-            onFulfilled(undefined); // kick off the process
-            function onFulfilled(res) {
-                var ret;
-                try {
-                    ret = Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["action"])(name + " - runid: " + runId + " - yield " + stepId++, gen.next).call(gen, res);
-                }
-                catch (e) {
-                    return reject(e);
-                }
-                next(ret);
-                return null;
-            }
-            function onRejected(err) {
-                var ret;
-                try {
-                    ret = Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["action"])(name + " - runid: " + runId + " - yield " + stepId++, gen.throw).call(gen, err);
-                }
-                catch (e) {
-                    return reject(e);
-                }
-                next(ret);
-            }
-            function next(ret) {
-                if (ret.done)
-                    return resolve(ret.value);
-                // TODO: support more type of values? See https://github.com/tj/co/blob/249bbdc72da24ae44076afd716349d2089b31c4c/index.js#L100
-                invariant(ret.value && typeof ret.value.then === "function", "Only promises can be yielded to asyncAction, got: " + ret);
-                return ret.value.then(onFulfilled, onRejected);
-            }
-        });
-    };
-}
-
-/**
- * Like normal `when`, except that this `when` will return a promise that resolves when the expression becomes truthy
- *
- * @example
- * await whenAsync(() => !state.someBoolean)
- *
- * @export
- * @param {() => boolean} fn see when, the expression to await
- * @param {number} timeout maximum amount of time to wait, before the promise rejects
- * @returns Promise for when an observable eventually matches some condition. Rejects if timeout is provided and has expired
- */
-function whenAsync(fn, timeout) {
-    if (timeout === void 0) { timeout = 0; }
-    return new Promise(function (resolve, reject) {
-        var timeoutHandle;
-        var disposer = Object(__WEBPACK_IMPORTED_MODULE_0_mobx__["when"])(fn, function () {
-            if (timeout > 0)
-                clearTimeout(timeoutHandle);
-            resolve();
-        });
-        if (timeout > 0)
-            setTimeout(function () {
-                disposer();
-                reject(new Error("TIMEOUT"));
-            }, timeout);
-    });
-}
-
-
-
-
-/***/ }),
-/* 84 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -32726,7 +31684,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _parser = __webpack_require__(85);
+var _parser = __webpack_require__(84);
 
 Object.defineProperty(exports, 'parse', {
   enumerable: true,
@@ -32736,7 +31694,7 @@ Object.defineProperty(exports, 'parse', {
 });
 
 /***/ }),
-/* 85 */
+/* 84 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -32903,20 +31861,20 @@ function parse(template, contextComponentClass) {
 }
 
 /***/ }),
-/* 86 */
+/* 85 */
 /***/ (function(module, exports) {
 
 module.exports = {"0":65533,"128":8364,"130":8218,"131":402,"132":8222,"133":8230,"134":8224,"135":8225,"136":710,"137":8240,"138":352,"139":8249,"140":338,"142":381,"145":8216,"146":8217,"147":8220,"148":8221,"149":8226,"150":8211,"151":8212,"152":732,"153":8482,"154":353,"155":8250,"156":339,"158":382,"159":376}
 
 /***/ }),
-/* 87 */
+/* 86 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var ElementType = __webpack_require__(6);
 
 var re_whitespace = /\s+/g;
 var NodePrototype = __webpack_require__(43);
-var ElementPrototype = __webpack_require__(88);
+var ElementPrototype = __webpack_require__(87);
 
 function DomHandler(callback, options, elementCB){
 	if(typeof callback === "object"){
@@ -33132,7 +32090,7 @@ module.exports = DomHandler;
 
 
 /***/ }),
-/* 88 */
+/* 87 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // DOM-Level-1-compliant structure
@@ -33158,7 +32116,7 @@ Object.keys(domLvl1).forEach(function(key) {
 
 
 /***/ }),
-/* 89 */
+/* 88 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var index = __webpack_require__(10),
@@ -33259,7 +32217,7 @@ module.exports = FeedHandler;
 
 
 /***/ }),
-/* 90 */
+/* 89 */
 /***/ (function(module, exports, __webpack_require__) {
 
 module.exports = Stream;
@@ -33299,7 +32257,7 @@ Object.keys(EVENTS).forEach(function(name){
 });
 
 /***/ }),
-/* 91 */
+/* 90 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // Copyright Joyent, Inc. and other Node contributors.
@@ -33330,10 +32288,10 @@ var inherits = __webpack_require__(0);
 
 inherits(Stream, EE);
 Stream.Readable = __webpack_require__(23);
-Stream.Writable = __webpack_require__(100);
-Stream.Duplex = __webpack_require__(101);
-Stream.Transform = __webpack_require__(102);
-Stream.PassThrough = __webpack_require__(103);
+Stream.Writable = __webpack_require__(99);
+Stream.Duplex = __webpack_require__(100);
+Stream.Transform = __webpack_require__(101);
+Stream.PassThrough = __webpack_require__(102);
 
 // Backwards-compat with node 0.4.x
 Stream.Stream = Stream;
@@ -33432,7 +32390,7 @@ Stream.prototype.pipe = function(dest, options) {
 
 
 /***/ }),
-/* 92 */
+/* 91 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -33553,7 +32511,7 @@ function fromByteArray (uint8) {
 
 
 /***/ }),
-/* 93 */
+/* 92 */
 /***/ (function(module, exports) {
 
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
@@ -33643,13 +32601,13 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
 
 
 /***/ }),
-/* 94 */
+/* 93 */
 /***/ (function(module, exports) {
 
 /* (ignored) */
 
 /***/ }),
-/* 95 */
+/* 94 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -33729,7 +32687,7 @@ module.exports = function () {
 }();
 
 /***/ }),
-/* 96 */
+/* 95 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var apply = Function.prototype.apply;
@@ -33782,13 +32740,13 @@ exports._unrefActive = exports.active = function(item) {
 };
 
 // setimmediate attaches itself to the global object
-__webpack_require__(97);
+__webpack_require__(96);
 exports.setImmediate = setImmediate;
 exports.clearImmediate = clearImmediate;
 
 
 /***/ }),
-/* 97 */
+/* 96 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global, process) {(function (global, undefined) {
@@ -33981,7 +32939,7 @@ exports.clearImmediate = clearImmediate;
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1), __webpack_require__(3)))
 
 /***/ }),
-/* 98 */
+/* 97 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global) {
@@ -34055,7 +33013,7 @@ function config (name) {
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
 
 /***/ }),
-/* 99 */
+/* 98 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -34108,41 +33066,41 @@ PassThrough.prototype._transform = function (chunk, encoding, cb) {
 };
 
 /***/ }),
-/* 100 */
+/* 99 */
 /***/ (function(module, exports, __webpack_require__) {
 
 module.exports = __webpack_require__(25);
 
 
 /***/ }),
-/* 101 */
+/* 100 */
 /***/ (function(module, exports, __webpack_require__) {
 
 module.exports = __webpack_require__(5);
 
 
 /***/ }),
-/* 102 */
+/* 101 */
 /***/ (function(module, exports, __webpack_require__) {
 
 module.exports = __webpack_require__(23).Transform
 
 
 /***/ }),
-/* 103 */
+/* 102 */
 /***/ (function(module, exports, __webpack_require__) {
 
 module.exports = __webpack_require__(23).PassThrough
 
 
 /***/ }),
-/* 104 */
+/* 103 */
 /***/ (function(module, exports) {
 
 /* (ignored) */
 
 /***/ }),
-/* 105 */
+/* 104 */
 /***/ (function(module, exports, __webpack_require__) {
 
 module.exports = ProxyHandler;
@@ -34174,18 +33132,18 @@ Object.keys(EVENTS).forEach(function(name){
 });
 
 /***/ }),
-/* 106 */
+/* 105 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var DomUtils = module.exports;
 
 [
-	__webpack_require__(107),
+	__webpack_require__(106),
+	__webpack_require__(111),
 	__webpack_require__(112),
 	__webpack_require__(113),
 	__webpack_require__(114),
-	__webpack_require__(115),
-	__webpack_require__(116)
+	__webpack_require__(115)
 ].forEach(function(ext){
 	Object.keys(ext).forEach(function(key){
 		DomUtils[key] = ext[key].bind(DomUtils);
@@ -34194,11 +33152,11 @@ var DomUtils = module.exports;
 
 
 /***/ }),
-/* 107 */
+/* 106 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var ElementType = __webpack_require__(6),
-    getOuterHTML = __webpack_require__(108),
+    getOuterHTML = __webpack_require__(107),
     isTag = ElementType.isTag;
 
 module.exports = {
@@ -34223,14 +33181,14 @@ function getText(elem){
 
 
 /***/ }),
-/* 108 */
+/* 107 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /*
   Module dependencies
 */
 var ElementType = __webpack_require__(6);
-var entities = __webpack_require__(109);
+var entities = __webpack_require__(108);
 
 /*
   Boolean Attributes
@@ -34407,11 +33365,11 @@ function renderComment(elem) {
 
 
 /***/ }),
-/* 109 */
+/* 108 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var encode = __webpack_require__(110),
-    decode = __webpack_require__(111);
+var encode = __webpack_require__(109),
+    decode = __webpack_require__(110);
 
 exports.decode = function(data, level){
 	return (!level || level <= 0 ? decode.XML : decode.HTML)(data);
@@ -34446,7 +33404,7 @@ exports.escape = encode.escape;
 
 
 /***/ }),
-/* 110 */
+/* 109 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var inverseXML = getInverseObj(__webpack_require__(22)),
@@ -34525,7 +33483,7 @@ exports.escape = escapeXML;
 
 
 /***/ }),
-/* 111 */
+/* 110 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var entityMap = __webpack_require__(21),
@@ -34602,7 +33560,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 112 */
+/* 111 */
 /***/ (function(module, exports) {
 
 var getChildren = exports.getChildren = function(elem){
@@ -34632,7 +33590,7 @@ exports.getName = function(elem){
 
 
 /***/ }),
-/* 113 */
+/* 112 */
 /***/ (function(module, exports) {
 
 exports.removeElement = function(elem){
@@ -34715,7 +33673,7 @@ exports.prepend = function(elem, prev){
 
 
 /***/ }),
-/* 114 */
+/* 113 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var isTag = __webpack_require__(6).isTag;
@@ -34820,7 +33778,7 @@ function findAll(test, rootElems){
 
 
 /***/ }),
-/* 115 */
+/* 114 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var ElementType = __webpack_require__(6);
@@ -34913,7 +33871,7 @@ exports.getElementsByTagType = function(type, element, recurse, limit){
 
 
 /***/ }),
-/* 116 */
+/* 115 */
 /***/ (function(module, exports) {
 
 // removeSubsets
@@ -35060,7 +34018,7 @@ exports.uniqueSort = function(nodes) {
 
 
 /***/ }),
-/* 117 */
+/* 116 */
 /***/ (function(module, exports, __webpack_require__) {
 
 module.exports = CollectingHandler;
@@ -35121,7 +34079,7 @@ CollectingHandler.prototype.restart = function(){
 
 
 /***/ }),
-/* 118 */
+/* 117 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /*
@@ -35129,10 +34087,10 @@ CollectingHandler.prototype.restart = function(){
  * Copyright (c) 2017 Tom Shawver
  */
 
-var Evaluator = __webpack_require__(119),
-	Lexer = __webpack_require__(121),
-	Parser = __webpack_require__(122),
-	defaultGrammar = __webpack_require__(124).elements;
+var Evaluator = __webpack_require__(118),
+    Lexer = __webpack_require__(120),
+    Parser = __webpack_require__(121),
+    defaultGrammar = __webpack_require__(123).elements;
 
 /**
  * Jexl is the Javascript Expression Language, capable of parsing and
@@ -35141,9 +34099,9 @@ var Evaluator = __webpack_require__(119),
  * @constructor
  */
 function Jexl() {
-	this._customGrammar = null;
-	this._lexer = null;
-	this._transforms = {};
+  this._customGrammar = null;
+  this._lexer = null;
+  this._transforms = {};
 }
 
 /**
@@ -35162,12 +34120,12 @@ function Jexl() {
  *      on either side of the operator. It should return either the resulting
  *      value, or a Promise that resolves with the resulting value.
  */
-Jexl.prototype.addBinaryOp = function(operator, precedence, fn) {
-	this._addGrammarElement(operator, {
-		type: 'binaryOp',
-		precedence: precedence,
-		eval: fn
-	});
+Jexl.prototype.addBinaryOp = function (operator, precedence, fn) {
+  this._addGrammarElement(operator, {
+    type: 'binaryOp',
+    precedence: precedence,
+    eval: fn
+  });
 };
 
 /**
@@ -35179,12 +34137,12 @@ Jexl.prototype.addBinaryOp = function(operator, precedence, fn) {
  *      operator. It should return either the resulting value, or a Promise
  *      that resolves with the resulting value.
  */
-Jexl.prototype.addUnaryOp = function(operator, fn) {
-	this._addGrammarElement(operator, {
-		type: 'unaryOp',
-		weight: Infinity,
-		eval: fn
-	});
+Jexl.prototype.addUnaryOp = function (operator, fn) {
+  this._addGrammarElement(operator, {
+    type: 'unaryOp',
+    weight: Infinity,
+    eval: fn
+  });
 };
 
 /**
@@ -35199,8 +34157,8 @@ Jexl.prototype.addUnaryOp = function(operator, fn) {
  *            if the transform fails, or a null first argument and the
  *            transformed value as the second argument on success.
  */
-Jexl.prototype.addTransform = function(name, fn) {
-	this._transforms[name] = fn;
+Jexl.prototype.addTransform = function (name, fn) {
+  this._transforms[name] = fn;
 };
 
 /**
@@ -35208,11 +34166,10 @@ Jexl.prototype.addTransform = function(name, fn) {
  * accepts a map of one or more transform names to their transform function.
  * @param {{}} map A map of transform names to transform functions
  */
-Jexl.prototype.addTransforms = function(map) {
-	for (var key in map) {
-		if (map.hasOwnProperty(key))
-			this._transforms[key] = map[key];
-	}
+Jexl.prototype.addTransforms = function (map) {
+  for (var key in map) {
+    if (map.hasOwnProperty(key)) this._transforms[key] = map[key];
+  }
 };
 
 /**
@@ -35220,8 +34177,8 @@ Jexl.prototype.addTransforms = function(map) {
  * @param {string} name The name of the transform function
  * @returns {function} The transform function
  */
-Jexl.prototype.getTransform = function(name) {
-	return this._transforms[name];
+Jexl.prototype.getTransform = function (name) {
+  return this._transforms[name];
 };
 
 /**
@@ -35237,56 +34194,52 @@ Jexl.prototype.getTransform = function(name) {
  *      if a callback is supplied, the returned promise will already have
  *      a '.catch' attached to it in order to pass the error to the callback.
  */
-Jexl.prototype.eval = function(expression, context, cb) {
-	if (typeof context === 'function') {
-		cb = context;
-		context = {};
-	}
-	else if (!context)
-		context = {};
-	try {
-		var called = false;
-		var val = this._eval(expression, context);
-	} catch(err) {
-		if (!called)
-				setTimeout(cb.bind(null, err), 0);
-	}
-	
-	if (cb) {
-		// setTimeout is used for the callback to break out of the Promise's
-		// try/catch in case the callback throws.
-		called = true;
-		setTimeout(cb.bind(null, null, val), 0);
-		return val
-	}
-	return val;
-	// var valPromise = this._eval(expression, context);
-	// if (cb) {
-	// 	// setTimeout is used for the callback to break out of the Promise's
-	// 	// try/catch in case the callback throws.
-	// 	var called = false;
-	// 	return valPromise.then(function(val) {
-	// 		called = true;
-	// 		setTimeout(cb.bind(null, null, val), 0);
-	// 	}).catch(function(err) {
-	// 		if (!called)
-	// 			setTimeout(cb.bind(null, err), 0);
-	// 	});
-	// }
-	// return valPromise;
+Jexl.prototype.eval = function (expression, context, cb) {
+  if (typeof context === 'function') {
+    cb = context;
+    context = {};
+  } else if (!context) context = {};
+  try {
+    var called = false;
+    var val = this._eval(expression, context);
+  } catch (err) {
+    if (!called) setTimeout(cb.bind(null, err), 0);
+  }
+
+  if (cb) {
+    // setTimeout is used for the callback to break out of the Promise's
+    // try/catch in case the callback throws.
+    called = true;
+    setTimeout(cb.bind(null, null, val), 0);
+    return val;
+  }
+  return val;
+  // var valPromise = this._eval(expression, context);
+  // if (cb) {
+  // 	// setTimeout is used for the callback to break out of the Promise's
+  // 	// try/catch in case the callback throws.
+  // 	var called = false;
+  // 	return valPromise.then(function(val) {
+  // 		called = true;
+  // 		setTimeout(cb.bind(null, null, val), 0);
+  // 	}).catch(function(err) {
+  // 		if (!called)
+  // 			setTimeout(cb.bind(null, err), 0);
+  // 	});
+  // }
+  // return valPromise;
 };
 
 /**
  * Removes a binary or unary operator from the Jexl grammar.
  * @param {string} operator The operator string to be removed
  */
-Jexl.prototype.removeOp = function(operator) {
-	var grammar = this._getCustomGrammar();
-	if (grammar[operator] && (grammar[operator].type == 'binaryOp' ||
-			grammar[operator].type == 'unaryOp')) {
-		delete grammar[operator];
-		this._lexer = null;
-	}
+Jexl.prototype.removeOp = function (operator) {
+  var grammar = this._getCustomGrammar();
+  if (grammar[operator] && (grammar[operator].type == 'binaryOp' || grammar[operator].type == 'unaryOp')) {
+    delete grammar[operator];
+    this._lexer = null;
+  }
 };
 
 /**
@@ -35297,10 +34250,10 @@ Jexl.prototype.removeOp = function(operator) {
  *      grammar element
  * @private
  */
-Jexl.prototype._addGrammarElement = function(str, obj) {
-	var grammar = this._getCustomGrammar();
-	grammar[str] = obj;
-	this._lexer = null;
+Jexl.prototype._addGrammarElement = function (str, obj) {
+  var grammar = this._getCustomGrammar();
+  grammar[str] = obj;
+  this._lexer = null;
 };
 
 /**
@@ -35311,17 +34264,17 @@ Jexl.prototype._addGrammarElement = function(str, obj) {
  * @returns {Promise<*>} resolves with the result of the evaluation.
  * @private
  */
-Jexl.prototype._eval = function(exp, context) {
-	var self = this,
-		grammar = this._getGrammar(),
-		parser = new Parser(grammar),
-		evaluator = new Evaluator(grammar, this._transforms, context);
-		parser.addTokens(self._getLexer().tokenize(exp));
-		return evaluator.eval(parser.complete());
-	// return Promise.resolve().then(function() {
-	// 	parser.addTokens(self._getLexer().tokenize(exp));
-	// 	return evaluator.eval(parser.complete());
-	// });
+Jexl.prototype._eval = function (exp, context) {
+  var self = this,
+      grammar = this._getGrammar(),
+      parser = new Parser(grammar),
+      evaluator = new Evaluator(grammar, this._transforms, context);
+  parser.addTokens(self._getLexer().tokenize(exp));
+  return evaluator.eval(parser.complete());
+  // return Promise.resolve().then(function() {
+  // 	parser.addTokens(self._getLexer().tokenize(exp));
+  // 	return evaluator.eval(parser.complete());
+  // });
 };
 
 /**
@@ -35331,15 +34284,14 @@ Jexl.prototype._eval = function(exp, context) {
  * @returns {{}} a customizable grammar map.
  * @private
  */
-Jexl.prototype._getCustomGrammar = function() {
-	if (!this._customGrammar) {
-		this._customGrammar = {};
-		for (var key in defaultGrammar) {
-			if (defaultGrammar.hasOwnProperty(key))
-				this._customGrammar[key] = defaultGrammar[key];
-		}
-	}
-	return this._customGrammar;
+Jexl.prototype._getCustomGrammar = function () {
+  if (!this._customGrammar) {
+    this._customGrammar = {};
+    for (var key in defaultGrammar) {
+      if (defaultGrammar.hasOwnProperty(key)) this._customGrammar[key] = defaultGrammar[key];
+    }
+  }
+  return this._customGrammar;
 };
 
 /**
@@ -35349,8 +34301,8 @@ Jexl.prototype._getCustomGrammar = function() {
  * @returns {{}} the grammar map currently in use.
  * @private
  */
-Jexl.prototype._getGrammar = function() {
-	return this._customGrammar || defaultGrammar;
+Jexl.prototype._getGrammar = function () {
+  return this._customGrammar || defaultGrammar;
 };
 
 /**
@@ -35359,31 +34311,29 @@ Jexl.prototype._getGrammar = function() {
  *      appropriate to this Jexl instance.
  * @private
  */
-Jexl.prototype._getLexer = function() {
-	if (!this._lexer)
-		this._lexer = new Lexer(this._getGrammar());
-	return this._lexer;
+Jexl.prototype._getLexer = function () {
+  if (!this._lexer) this._lexer = new Lexer(this._getGrammar());
+  return this._lexer;
 };
 
 Jexl.prototype.parse = function (exp) {
-  const grammar = this._getGrammar()
-  const parser = new Parser(grammar)
+  const grammar = this._getGrammar();
+  const parser = new Parser(grammar);
   parser.addTokens(this._getLexer().tokenize(exp));
-  return parser.complete()
-}
+  return parser.complete();
+};
 
 Jexl.prototype.evaluate = function (parserTree, data) {
-	const grammar = this._getGrammar()
-  const evaluator = new Evaluator(grammar, {}, data)
-  return evaluator.eval(parserTree)
-}
+  const grammar = this._getGrammar();
+  const evaluator = new Evaluator(grammar, {}, data);
+  return evaluator.eval(parserTree);
+};
 
 module.exports = new Jexl();
 module.exports.Jexl = Jexl;
 
-
 /***/ }),
-/* 119 */
+/* 118 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /*
@@ -35391,7 +34341,7 @@ module.exports.Jexl = Jexl;
  * Copyright (c) 2017 Tom Shawver
  */
 
-var handlers = __webpack_require__(120);
+var handlers = __webpack_require__(119);
 
 /**
  * The Evaluator takes a Jexl expression tree as generated by the
@@ -35423,11 +34373,11 @@ var handlers = __webpack_require__(120);
  *      to resolve the value of a relative identifier.
  * @constructor
  */
-var Evaluator = function(grammar, transforms, context, relativeContext) {
-	this._grammar = grammar;
-	this._transforms = transforms || {};
-	this._context = context || {};
-	this._relContext = relativeContext || this._context;
+var Evaluator = function (grammar, transforms, context, relativeContext) {
+  this._grammar = grammar;
+  this._transforms = transforms || {};
+  this._context = context || {};
+  this._relContext = relativeContext || this._context;
 };
 
 /**
@@ -35435,12 +34385,12 @@ var Evaluator = function(grammar, transforms, context, relativeContext) {
  * @param {{}} ast An expression tree object
  * @returns {Promise<*>} resolves with the resulting value of the expression.
  */
-Evaluator.prototype.eval = function(ast) {
-	var self = this;
-	return handlers[ast.type].call(this, ast);
-	// return Promise.resolve().then(function() {
-	// 	return handlers[ast.type].call(self, ast);
-	// });
+Evaluator.prototype.eval = function (ast) {
+  var self = this;
+  return handlers[ast.type].call(this, ast);
+  // return Promise.resolve().then(function() {
+  // 	return handlers[ast.type].call(self, ast);
+  // });
 };
 
 /**
@@ -35450,13 +34400,13 @@ Evaluator.prototype.eval = function(ast) {
  * @param {Array<string>} arr An array of expression strings to be evaluated
  * @returns {Promise<Array<{}>>} resolves with the result array
  */
-Evaluator.prototype.evalArray = function(arr) {
-	return arr.map(function(elem) {
-		return this.eval(elem);
-	}, this)
-	// return Promise.all(arr.map(function(elem) {
-	// 	return this.eval(elem);
-	// }, this));
+Evaluator.prototype.evalArray = function (arr) {
+  return arr.map(function (elem) {
+    return this.eval(elem);
+  }, this);
+  // return Promise.all(arr.map(function(elem) {
+  // 	return this.eval(elem);
+  // }, this));
 };
 
 /**
@@ -35467,25 +34417,25 @@ Evaluator.prototype.evalArray = function(arr) {
  *      evaluated
  * @returns {Promise<{}>} resolves with the result map.
  */
-Evaluator.prototype.evalMap = function(map) {
-	var keys = Object.keys(map),
-		result = {};
-		const vals = keys.map(function(key) {
-			return this.eval(map[key]);
-		}, this)
-		vals.forEach(function(val, idx) {
-			result[keys[idx]] = val;
-		});
-		return result;
-	// var asts = keys.map(function(key) {
-	// 	return this.eval(map[key]);
-	// }, this);
-	// return Promise.all(asts).then(function(vals) {
-	// 	vals.forEach(function(val, idx) {
-	// 		result[keys[idx]] = val;
-	// 	});
-	// 	return result;
-	// });
+Evaluator.prototype.evalMap = function (map) {
+  var keys = Object.keys(map),
+      result = {};
+  const vals = keys.map(function (key) {
+    return this.eval(map[key]);
+  }, this);
+  vals.forEach(function (val, idx) {
+    result[keys[idx]] = val;
+  });
+  return result;
+  // var asts = keys.map(function(key) {
+  // 	return this.eval(map[key]);
+  // }, this);
+  // return Promise.all(asts).then(function(vals) {
+  // 	vals.forEach(function(val, idx) {
+  // 		result[keys[idx]] = val;
+  // 	});
+  // 	return result;
+  // });
 };
 
 /**
@@ -35507,37 +34457,34 @@ Evaluator.prototype.evalMap = function(map) {
  *      expression filter.
  * @private
  */
-Evaluator.prototype._filterRelative = function(subject, expr) {
-	var values = [];
-	if (!Array.isArray(subject))
-		subject = [subject];
-	subject.forEach(function(elem) {
-		var evalInst = new Evaluator(this._grammar, this._transforms,
-			this._context, elem);
-			values.push(evalInst.eval(expr));
-	}, this);
-	var results = [];
-	values.forEach(function(value, idx) {
-		if (value)
-			results.push(subject[idx]);
-	});
-	return results;
-	// var promises = [];
-	// if (!Array.isArray(subject))
-	// 	subject = [subject];
-	// subject.forEach(function(elem) {
-	// 	var evalInst = new Evaluator(this._grammar, this._transforms,
-	// 		this._context, elem);
-	// 	promises.push(evalInst.eval(expr));
-	// }, this);
-	// return Promise.all(promises).then(function(values) {
-	// 	var results = [];
-	// 	values.forEach(function(value, idx) {
-	// 		if (value)
-	// 			results.push(subject[idx]);
-	// 	});
-	// 	return results;
-	// });
+Evaluator.prototype._filterRelative = function (subject, expr) {
+  var values = [];
+  if (!Array.isArray(subject)) subject = [subject];
+  subject.forEach(function (elem) {
+    var evalInst = new Evaluator(this._grammar, this._transforms, this._context, elem);
+    values.push(evalInst.eval(expr));
+  }, this);
+  var results = [];
+  values.forEach(function (value, idx) {
+    if (value) results.push(subject[idx]);
+  });
+  return results;
+  // var promises = [];
+  // if (!Array.isArray(subject))
+  // 	subject = [subject];
+  // subject.forEach(function(elem) {
+  // 	var evalInst = new Evaluator(this._grammar, this._transforms,
+  // 		this._context, elem);
+  // 	promises.push(evalInst.eval(expr));
+  // }, this);
+  // return Promise.all(promises).then(function(values) {
+  // 	var results = [];
+  // 	values.forEach(function(value, idx) {
+  // 		if (value)
+  // 			results.push(subject[idx]);
+  // 	});
+  // 	return results;
+  // });
 };
 
 /**
@@ -35555,23 +34502,21 @@ Evaluator.prototype._filterRelative = function(subject, expr) {
  * @returns {Promise<*>} resolves with the value of the drill-down.
  * @private
  */
-Evaluator.prototype._filterStatic = function(subject, expr) {
-	const res = this.eval(expr)
-	if (typeof res === 'boolean')
-		return res ? subject : undefined;
-	return subject[res];
-	// return this.eval(expr).then(function(res) {
-	// 	if (typeof res === 'boolean')
-	// 		return res ? subject : undefined;
-	// 	return subject[res];
-	// });
+Evaluator.prototype._filterStatic = function (subject, expr) {
+  const res = this.eval(expr);
+  if (typeof res === 'boolean') return res ? subject : undefined;
+  return subject[res];
+  // return this.eval(expr).then(function(res) {
+  // 	if (typeof res === 'boolean')
+  // 		return res ? subject : undefined;
+  // 	return subject[res];
+  // });
 };
 
 module.exports = Evaluator;
 
-
 /***/ }),
-/* 120 */
+/* 119 */
 /***/ (function(module, exports) {
 
 /*
@@ -35587,7 +34532,7 @@ module.exports = Evaluator;
  * @returns {Promise.<[]>} resolves to a map contained evaluated values.
  * @private
  */
-exports.ArrayLiteral = function(ast) {
+exports.ArrayLiteral = function (ast) {
 	return this.evalArray(ast.value);
 };
 
@@ -35600,12 +34545,9 @@ exports.ArrayLiteral = function(ast) {
  * @returns {Promise<*>} resolves with the value of the BinaryExpression.
  * @private
  */
-exports.BinaryExpression = function(ast) {
+exports.BinaryExpression = function (ast) {
 	var self = this;
-	const arr = [
-		this.eval(ast.left),
-		this.eval(ast.right)
-	]
+	const arr = [this.eval(ast.left), this.eval(ast.right)];
 	return self._grammar[ast.operator].eval(arr[0], arr[1]);
 	// return Promise.all([
 	// 	this.eval(ast.left),
@@ -35625,12 +34567,11 @@ exports.BinaryExpression = function(ast) {
  *      the top node
  * @private
  */
-exports.ConditionalExpression = function(ast) {
+exports.ConditionalExpression = function (ast) {
 	var self = this;
-	const res = this.eval(ast.test)
+	const res = this.eval(ast.test);
 	if (res) {
-		if (ast.consequent)
-			return self.eval(ast.consequent);
+		if (ast.consequent) return self.eval(ast.consequent);
 		return res;
 	}
 	return self.eval(ast.alternate);
@@ -35652,11 +34593,10 @@ exports.ConditionalExpression = function(ast) {
  * @returns {Promise<*>} resolves with the value of the FilterExpression.
  * @private
  */
-exports.FilterExpression = function(ast) {
+exports.FilterExpression = function (ast) {
 	var self = this;
-	const subject = this.eval(ast.subject)
-	if (ast.relative)
-		return self._filterRelative(subject, ast.expr);
+	const subject = this.eval(ast.subject);
+	if (ast.relative) return self._filterRelative(subject, ast.expr);
 	return self._filterStatic(subject, ast.expr);
 	// return this.eval(ast.subject).then(function(subject) {
 	// 	if (ast.relative)
@@ -35675,18 +34615,23 @@ exports.FilterExpression = function(ast) {
  *      will resolve with the identifier's value.
  * @private
  */
-exports.Identifier = function(ast) {
+exports.Identifier = function (ast) {
 	if (ast.from) {
-		const context = this.eval(ast.from)
-		if (context === undefined)
-			return undefined;
-		if (Array.isArray(context))
-			context = context[0];
+		const context = this.eval(ast.from);
+		if (context === undefined) return undefined;
+		if (Array.isArray(context)) context = context[0];
 		return context[ast.value];
-	}
-	else {
-		return ast.relative ? this._relContext[ast.value] :
-			this._context[ast.value];
+	} else {
+		let context = ast.relative ? this._relContext : this._context;
+		while (context) {
+			if (ast.value in context) {
+				return context[ast.value];
+			}
+			context = context.__super;
+		}
+		return undefined;
+		// return ast.relative ? this._relContext[ast.value] :
+		// 	this._context[ast.value];
 	}
 	// if (ast.from) {
 	// 	return this.eval(ast.from).then(function(context) {
@@ -35710,7 +34655,7 @@ exports.Identifier = function(ast) {
  * @returns {string|number|boolean} The value of the Literal node
  * @private
  */
-exports.Literal = function(ast) {
+exports.Literal = function (ast) {
 	return ast.value;
 };
 
@@ -35722,7 +34667,7 @@ exports.Literal = function(ast) {
  * @returns {Promise<{}>} resolves to a map contained evaluated values.
  * @private
  */
-exports.ObjectLiteral = function(ast) {
+exports.ObjectLiteral = function (ast) {
 	return this.evalMap(ast.value);
 };
 
@@ -35735,14 +34680,10 @@ exports.ObjectLiteral = function(ast) {
  *      will resolve with the transformed value.
  * @private
  */
-exports.Transform = function(ast) {
+exports.Transform = function (ast) {
 	var transform = this._transforms[ast.name];
-	if (!transform)
-		throw new Error("Transform '" + ast.name + "' is not defined.");
-	const arr =	[
-		this.eval(ast.subject),
-		this.evalArray(ast.args || [])
-	]
+	if (!transform) throw new Error("Transform '" + ast.name + "' is not defined.");
+	const arr = [this.eval(ast.subject), this.evalArray(ast.args || [])];
 	return transform.apply(null, [arr[0]].concat(arr[1]));
 	// return Promise.all([
 	// 	this.eval(ast.subject),
@@ -35760,18 +34701,17 @@ exports.Transform = function(ast) {
  * @returns {Promise<*>} resolves with the value of the UnaryExpression.
  * @constructor
  */
-exports.UnaryExpression = function(ast) {
+exports.UnaryExpression = function (ast) {
 	var self = this;
-	const right = this.eval(ast.right)
+	const right = this.eval(ast.right);
 	return self._grammar[ast.operator].eval(right);
 	// return this.eval(ast.right).then(function(right) {
 	// 	return self._grammar[ast.operator].eval(right);
 	// });
 };
 
-
 /***/ }),
-/* 121 */
+/* 120 */
 /***/ (function(module, exports) {
 
 /*
@@ -35780,26 +34720,21 @@ exports.UnaryExpression = function(ast) {
  */
 
 var numericRegex = /^-?(?:(?:[0-9]*\.[0-9]+)|[0-9]+)$/,
-	identRegex = /^[a-zA-Z_\$][a-zA-Z0-9_\$]*$/,
-	escEscRegex = /\\\\/,
-	preOpRegexElems = [
-		// Strings
-		"'(?:(?:\\\\')?[^'])*'",
-		'"(?:(?:\\\\")?[^"])*"',
-		// Whitespace
-		'\\s+',
-		// Booleans
-		'\\btrue\\b',
-		'\\bfalse\\b'
-	],
-	postOpRegexElems = [
-		// Identifiers
-		'\\b[a-zA-Z_\\$][a-zA-Z0-9_\\$]*\\b',
-		// Numerics (without negative symbol)
-		'(?:(?:[0-9]*\\.[0-9]+)|[0-9]+)'
-	],
-	minusNegatesAfter = ['binaryOp', 'unaryOp', 'openParen', 'openBracket',
-		'question', 'colon'];
+    identRegex = /^[a-zA-Z_\$][a-zA-Z0-9_\$]*$/,
+    escEscRegex = /\\\\/,
+    preOpRegexElems = [
+// Strings
+"'(?:(?:\\\\')?[^'])*'", '"(?:(?:\\\\")?[^"])*"',
+// Whitespace
+'\\s+',
+// Booleans
+'\\btrue\\b', '\\bfalse\\b'],
+    postOpRegexElems = [
+// Identifiers
+'\\b[a-zA-Z_\\$][a-zA-Z0-9_\\$]*\\b',
+// Numerics (without negative symbol)
+'(?:(?:[0-9]*\\.[0-9]+)|[0-9]+)'],
+    minusNegatesAfter = ['binaryOp', 'unaryOp', 'openParen', 'openBracket', 'question', 'colon'];
 
 /**
  * Lexer is a collection of stateless, statically-accessed functions for the
@@ -35812,7 +34747,7 @@ var numericRegex = /^-?(?:(?:[0-9]*\.[0-9]+)|[0-9]+)$/,
  * @type {{}}
  */
 function Lexer(grammar) {
-	this._grammar = grammar;
+  this._grammar = grammar;
 }
 
 /**
@@ -35821,12 +34756,12 @@ function Lexer(grammar) {
  * @returns {Array<string>} An array of substrings defining the functional
  *      elements of the expression.
  */
-Lexer.prototype.getElements = function(str) {
-	var regex = this._getSplitRegex();
-	return str.split(regex).filter(function(elem) {
-		// Remove empty strings
-		return elem;
-	});
+Lexer.prototype.getElements = function (str) {
+  var regex = this._getSplitRegex();
+  return str.split(regex).filter(function (elem) {
+    // Remove empty strings
+    return elem;
+  });
 };
 
 /**
@@ -35839,28 +34774,23 @@ Lexer.prototype.getElements = function(str) {
  *      converted to tokens
  * @returns {Array<{type, value, raw}>} an array of token objects.
  */
-Lexer.prototype.getTokens = function(elements) {
-	var tokens = [],
-		negate = false;
-	for (var i = 0; i < elements.length; i++) {
-		if (this._isWhitespace(elements[i])) {
-			if (tokens.length)
-				tokens[tokens.length - 1].raw += elements[i];
-		}
-		else if (elements[i] === '-' && this._isNegative(tokens))
-			negate = true;
-		else {
-			if (negate) {
-				elements[i] = '-' + elements[i];
-				negate = false;
-			}
-			tokens.push(this._createToken(elements[i]));
-		}
-	}
-	// Catch a - at the end of the string. Let the parser handle that issue.
-	if (negate)
-		tokens.push(this._createToken('-'));
-	return tokens;
+Lexer.prototype.getTokens = function (elements) {
+  var tokens = [],
+      negate = false;
+  for (var i = 0; i < elements.length; i++) {
+    if (this._isWhitespace(elements[i])) {
+      if (tokens.length) tokens[tokens.length - 1].raw += elements[i];
+    } else if (elements[i] === '-' && this._isNegative(tokens)) negate = true;else {
+      if (negate) {
+        elements[i] = '-' + elements[i];
+        negate = false;
+      }
+      tokens.push(this._createToken(elements[i]));
+    }
+  }
+  // Catch a - at the end of the string. Let the parser handle that issue.
+  if (negate) tokens.push(this._createToken('-'));
+  return tokens;
 };
 
 /**
@@ -35891,9 +34821,9 @@ Lexer.prototype.getTokens = function(elements) {
  * @returns {Array<{type, value, raw}>} an array of token objects.
  * @throws {Error} if the provided string contains an invalid token.
  */
-Lexer.prototype.tokenize = function(str) {
-	var elements = this.getElements(str);
-	return this.getTokens(elements);
+Lexer.prototype.tokenize = function (str) {
+  var elements = this.getElements(str);
+  return this.getTokens(elements);
 };
 
 /**
@@ -35905,25 +34835,14 @@ Lexer.prototype.tokenize = function(str) {
  * @throws {Error} if the provided string is not a valid expression element.
  * @private
  */
-Lexer.prototype._createToken = function(element) {
-	var token = {
-		type: 'literal',
-		value: element,
-		raw: element
-	};
-	if (element[0] == '"' || element[0] == "'")
-		token.value = this._unquote(element);
-	else if (element.match(numericRegex))
-		token.value = parseFloat(element);
-	else if (element === 'true' || element === 'false')
-		token.value = element === 'true';
-	else if (this._grammar[element])
-		token.type = this._grammar[element].type;
-	else if (element.match(identRegex))
-		token.type = 'identifier';
-	else
-		throw new Error("Invalid expression token: " + element);
-	return token;
+Lexer.prototype._createToken = function (element) {
+  var token = {
+    type: 'literal',
+    value: element,
+    raw: element
+  };
+  if (element[0] == '"' || element[0] == "'") token.value = this._unquote(element);else if (element.match(numericRegex)) token.value = parseFloat(element);else if (element === 'true' || element === 'false') token.value = element === 'true';else if (this._grammar[element]) token.type = this._grammar[element].type;else if (element.match(identRegex)) token.type = 'identifier';else throw new Error("Invalid expression token: " + element);
+  return token;
 };
 
 /**
@@ -35934,11 +34853,10 @@ Lexer.prototype._createToken = function(element) {
  * @see https://developer.mozilla.org/en/docs/Web/JavaScript/Guide/Regular_Expressions
  * @private
  */
-Lexer.prototype._escapeRegExp = function(str) {
-	str = str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-	if (str.match(identRegex))
-		str = '\\b' + str + '\\b';
-	return str;
+Lexer.prototype._escapeRegExp = function (str) {
+  str = str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  if (str.match(identRegex)) str = '\\b' + str + '\\b';
+  return str;
 };
 
 /**
@@ -35947,22 +34865,18 @@ Lexer.prototype._escapeRegExp = function(str) {
  * @returns {RegExp} An element-splitting RegExp object
  * @private
  */
-Lexer.prototype._getSplitRegex = function() {
-	if (!this._splitRegex) {
-		var elemArray = Object.keys(this._grammar);
-		// Sort by most characters to least, then regex escape each
-		elemArray = elemArray.sort(function(a ,b) {
-			return b.length - a.length;
-		}).map(function(elem) {
-			return this._escapeRegExp(elem);
-		}, this);
-		this._splitRegex = new RegExp('(' + [
-			preOpRegexElems.join('|'),
-			elemArray.join('|'),
-			postOpRegexElems.join('|')
-		].join('|') + ')');
-	}
-	return this._splitRegex;
+Lexer.prototype._getSplitRegex = function () {
+  if (!this._splitRegex) {
+    var elemArray = Object.keys(this._grammar);
+    // Sort by most characters to least, then regex escape each
+    elemArray = elemArray.sort(function (a, b) {
+      return b.length - a.length;
+    }).map(function (elem) {
+      return this._escapeRegExp(elem);
+    }, this);
+    this._splitRegex = new RegExp('(' + [preOpRegexElems.join('|'), elemArray.join('|'), postOpRegexElems.join('|')].join('|') + ')');
+  }
+  return this._splitRegex;
 };
 
 /**
@@ -35974,12 +34888,11 @@ Lexer.prototype._getSplitRegex = function() {
  *      symbol; false otherwise
  * @private
  */
-Lexer.prototype._isNegative = function(tokens) {
-	if (!tokens.length)
-		return true;
-	return minusNegatesAfter.some(function(type) {
-		return type === tokens[tokens.length - 1].type;
-	});
+Lexer.prototype._isNegative = function (tokens) {
+  if (!tokens.length) return true;
+  return minusNegatesAfter.some(function (type) {
+    return type === tokens[tokens.length - 1].type;
+  });
 };
 
 /**
@@ -35991,8 +34904,8 @@ Lexer.prototype._isNegative = function(tokens) {
  * @private
  */
 var _whitespaceRegex = /^\s*$/;
-Lexer.prototype._isWhitespace = function(str) {
-	return _whitespaceRegex.test(str);
+Lexer.prototype._isWhitespace = function (str) {
+  return _whitespaceRegex.test(str);
 };
 
 /**
@@ -36006,19 +34919,16 @@ Lexer.prototype._isWhitespace = function(str) {
  *      properly processed.
  * @private
  */
-Lexer.prototype._unquote = function(str) {
-	var quote = str[0],
-		escQuoteRegex = new RegExp('\\\\' + quote, 'g');
-	return str.substr(1, str.length - 2)
-		.replace(escQuoteRegex, quote)
-		.replace(escEscRegex, '\\');
+Lexer.prototype._unquote = function (str) {
+  var quote = str[0],
+      escQuoteRegex = new RegExp('\\\\' + quote, 'g');
+  return str.substr(1, str.length - 2).replace(escQuoteRegex, quote).replace(escEscRegex, '\\');
 };
 
 module.exports = Lexer;
 
-
 /***/ }),
-/* 122 */
+/* 121 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /*
@@ -36027,7 +34937,7 @@ module.exports = Lexer;
  */
 
 var handlers = __webpack_require__(51),
-	states = __webpack_require__(123).states;
+    states = __webpack_require__(122).states;
 
 /**
  * The Parser is a state machine that converts tokens from the {@link Lexer}
@@ -36048,12 +34958,12 @@ var handlers = __webpack_require__(51),
  * @constructor
  */
 function Parser(grammar, prefix, stopMap) {
-	this._grammar = grammar;
-	this._state = 'expectOperand';
-	this._tree = null;
-	this._exprStr = prefix || '';
-	this._relative = false;
-	this._stopMap = stopMap || {};
+  this._grammar = grammar;
+  this._state = 'expectOperand';
+  this._tree = null;
+  this._exprStr = prefix || '';
+  this._relative = false;
+  this._stopMap = stopMap || {};
 }
 
 /**
@@ -36066,40 +34976,29 @@ function Parser(grammar, prefix, stopMap) {
  * @returns {boolean|*} the stopState value if this parser encountered a token
  *      in the stopState mapb; false if tokens can continue.
  */
-Parser.prototype.addToken = function(token) {
-	if (this._state == 'complete')
-		throw new Error('Cannot add a new token to a completed Parser');
-	var state = states[this._state],
-		startExpr = this._exprStr;
-	this._exprStr += token.raw;
-	if (state.subHandler) {
-		if (!this._subParser)
-			this._startSubExpression(startExpr);
-		var stopState = this._subParser.addToken(token);
-		if (stopState) {
-			this._endSubExpression();
-			if (this._parentStop)
-				return stopState;
-			this._state = stopState;
-		}
-	}
-	else if (state.tokenTypes[token.type]) {
-		var typeOpts = state.tokenTypes[token.type],
-			handleFunc = handlers[token.type];
-		if (typeOpts.handler)
-			handleFunc = typeOpts.handler;
-		if (handleFunc)
-			handleFunc.call(this, token);
-		if (typeOpts.toState)
-			this._state = typeOpts.toState;
-	}
-	else if (this._stopMap[token.type])
-		return this._stopMap[token.type];
-	else {
-		throw new Error('Token ' + token.raw + ' (' + token.type +
-			') unexpected in expression: ' + this._exprStr);
-	}
-	return false;
+Parser.prototype.addToken = function (token) {
+  if (this._state == 'complete') throw new Error('Cannot add a new token to a completed Parser');
+  var state = states[this._state],
+      startExpr = this._exprStr;
+  this._exprStr += token.raw;
+  if (state.subHandler) {
+    if (!this._subParser) this._startSubExpression(startExpr);
+    var stopState = this._subParser.addToken(token);
+    if (stopState) {
+      this._endSubExpression();
+      if (this._parentStop) return stopState;
+      this._state = stopState;
+    }
+  } else if (state.tokenTypes[token.type]) {
+    var typeOpts = state.tokenTypes[token.type],
+        handleFunc = handlers[token.type];
+    if (typeOpts.handler) handleFunc = typeOpts.handler;
+    if (handleFunc) handleFunc.call(this, token);
+    if (typeOpts.toState) this._state = typeOpts.toState;
+  } else if (this._stopMap[token.type]) return this._stopMap[token.type];else {
+    throw new Error('Token ' + token.raw + ' (' + token.type + ') unexpected in expression: ' + this._exprStr);
+  }
+  return false;
 };
 
 /**
@@ -36108,8 +35007,8 @@ Parser.prototype.addToken = function(token) {
  * @param {Array<{type: <string>}>} tokens An array of tokens, as provided by
  *      the {@link Lexer#tokenize} function.
  */
-Parser.prototype.addTokens = function(tokens) {
-	tokens.forEach(this.addToken, this);
+Parser.prototype.addTokens = function (tokens) {
+  tokens.forEach(this.addToken, this);
 };
 
 /**
@@ -36120,21 +35019,19 @@ Parser.prototype.addTokens = function(tokens) {
  * @throws {Error} if the parser is not in a state where it's legal to end
  *      the expression, indicating that the expression is incomplete
  */
-Parser.prototype.complete = function() {
-	if (this._cursor && !states[this._state].completable)
-		throw new Error('Unexpected end of expression: ' + this._exprStr);
-	if (this._subParser)
-		this._endSubExpression();
-	this._state = 'complete';
-	return this._cursor ? this._tree : null;
+Parser.prototype.complete = function () {
+  if (this._cursor && !states[this._state].completable) throw new Error('Unexpected end of expression: ' + this._exprStr);
+  if (this._subParser) this._endSubExpression();
+  this._state = 'complete';
+  return this._cursor ? this._tree : null;
 };
 
 /**
  * Indicates whether the expression tree contains a relative path identifier.
  * @returns {boolean} true if a relative identifier exists; false otherwise.
  */
-Parser.prototype.isRelative = function() {
-	return this._relative;
+Parser.prototype.isRelative = function () {
+  return this._relative;
 };
 
 /**
@@ -36142,9 +35039,9 @@ Parser.prototype.isRelative = function() {
  * to the subHandler configured in the current state.
  * @private
  */
-Parser.prototype._endSubExpression = function() {
-	states[this._state].subHandler.call(this, this._subParser.complete());
-	this._subParser = null;
+Parser.prototype._endSubExpression = function () {
+  states[this._state].subHandler.call(this, this._subParser.complete());
+  this._subParser = null;
 };
 
 /**
@@ -36154,14 +35051,12 @@ Parser.prototype._endSubExpression = function() {
  * @param {{type: <string>}} node A node to be added to the AST
  * @private
  */
-Parser.prototype._placeAtCursor = function(node) {
-	if (!this._cursor)
-		this._tree = node;
-	else {
-		this._cursor.right = node;
-		this._setParent(node, this._cursor);
-	}
-	this._cursor = node;
+Parser.prototype._placeAtCursor = function (node) {
+  if (!this._cursor) this._tree = node;else {
+    this._cursor.right = node;
+    this._setParent(node, this._cursor);
+  }
+  this._cursor = node;
 };
 
 /**
@@ -36172,9 +35067,9 @@ Parser.prototype._placeAtCursor = function(node) {
  * @param {{type: <string>}} node A node to be added to the AST
  * @private
  */
-Parser.prototype._placeBeforeCursor = function(node) {
-	this._cursor = this._cursor._parent;
-	this._placeAtCursor(node);
+Parser.prototype._placeBeforeCursor = function (node) {
+  this._cursor = this._cursor._parent;
+  this._placeAtCursor(node);
 };
 
 /**
@@ -36186,11 +35081,11 @@ Parser.prototype._placeBeforeCursor = function(node) {
  *      parent of the new node
  * @private
  */
-Parser.prototype._setParent = function(node, parent) {
-	Object.defineProperty(node, '_parent', {
-		value: parent,
-		writable: true
-	});
+Parser.prototype._setParent = function (node, parent) {
+  Object.defineProperty(node, '_parent', {
+    value: parent,
+    writable: true
+  });
 };
 
 /**
@@ -36199,20 +35094,19 @@ Parser.prototype._setParent = function(node, parent) {
  * @param {string} [exprStr] The expression string to prefix to the new Parser
  * @private
  */
-Parser.prototype._startSubExpression = function(exprStr) {
-	var endStates = states[this._state].endStates;
-	if (!endStates) {
-		this._parentStop = true;
-		endStates = this._stopMap;
-	}
-	this._subParser = new Parser(this._grammar, exprStr, endStates);
+Parser.prototype._startSubExpression = function (exprStr) {
+  var endStates = states[this._state].endStates;
+  if (!endStates) {
+    this._parentStop = true;
+    endStates = this._stopMap;
+  }
+  this._subParser = new Parser(this._grammar, exprStr, endStates);
 };
 
 module.exports = Parser;
 
-
 /***/ }),
-/* 123 */
+/* 122 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /*
@@ -36257,72 +35151,72 @@ var h = __webpack_require__(51);
 exports.states = {
 	expectOperand: {
 		tokenTypes: {
-			literal: {toState: 'expectBinOp'},
-			identifier: {toState: 'identifier'},
+			literal: { toState: 'expectBinOp' },
+			identifier: { toState: 'identifier' },
 			unaryOp: {},
-			openParen: {toState: 'subExpression'},
-			openCurl: {toState: 'expectObjKey', handler: h.objStart},
-			dot: {toState: 'traverse'},
-			openBracket: {toState: 'arrayVal', handler: h.arrayStart}
+			openParen: { toState: 'subExpression' },
+			openCurl: { toState: 'expectObjKey', handler: h.objStart },
+			dot: { toState: 'traverse' },
+			openBracket: { toState: 'arrayVal', handler: h.arrayStart }
 		}
 	},
 	expectBinOp: {
 		tokenTypes: {
-			binaryOp: {toState: 'expectOperand'},
-			pipe: {toState: 'expectTransform'},
-			dot: {toState: 'traverse'},
-			question: {toState: 'ternaryMid', handler: h.ternaryStart}
+			binaryOp: { toState: 'expectOperand' },
+			pipe: { toState: 'expectTransform' },
+			dot: { toState: 'traverse' },
+			question: { toState: 'ternaryMid', handler: h.ternaryStart }
 		},
 		completable: true
 	},
 	expectTransform: {
 		tokenTypes: {
-			identifier: {toState: 'postTransform', handler: h.transform}
+			identifier: { toState: 'postTransform', handler: h.transform }
 		}
 	},
 	expectObjKey: {
 		tokenTypes: {
-			identifier: {toState: 'expectKeyValSep', handler: h.objKey},
-			closeCurl: {toState: 'expectBinOp'}
+			identifier: { toState: 'expectKeyValSep', handler: h.objKey },
+			closeCurl: { toState: 'expectBinOp' }
 		}
 	},
 	expectKeyValSep: {
 		tokenTypes: {
-			colon: {toState: 'objVal'}
+			colon: { toState: 'objVal' }
 		}
 	},
 	postTransform: {
 		tokenTypes: {
-			openParen: {toState: 'argVal'},
-			binaryOp: {toState: 'expectOperand'},
-			dot: {toState: 'traverse'},
-			openBracket: {toState: 'filter'},
-			pipe: {toState: 'expectTransform'}
+			openParen: { toState: 'argVal' },
+			binaryOp: { toState: 'expectOperand' },
+			dot: { toState: 'traverse' },
+			openBracket: { toState: 'filter' },
+			pipe: { toState: 'expectTransform' }
 		},
 		completable: true
 	},
 	postTransformArgs: {
 		tokenTypes: {
-			binaryOp: {toState: 'expectOperand'},
-			dot: {toState: 'traverse'},
-			openBracket: {toState: 'filter'},
-			pipe: {toState: 'expectTransform'}
+			binaryOp: { toState: 'expectOperand' },
+			dot: { toState: 'traverse' },
+			openBracket: { toState: 'filter' },
+			pipe: { toState: 'expectTransform' }
 		},
 		completable: true
 	},
 	identifier: {
 		tokenTypes: {
-			binaryOp: {toState: 'expectOperand'},
-			dot: {toState: 'traverse'},
-			openBracket: {toState: 'filter'},
-			pipe: {toState: 'expectTransform'},
-			question: {toState: 'ternaryMid', handler: h.ternaryStart}
+			binaryOp: { toState: 'expectOperand' },
+			dot: { toState: 'traverse' },
+			openBracket: { toState: 'filter' },
+			pipe: { toState: 'expectTransform' },
+			question: { toState: 'ternaryMid', handler: h.ternaryStart }
 		},
 		completable: true
 	},
 	traverse: {
 		tokenTypes: {
-			'identifier': {toState: 'identifier'}
+			'identifier': { toState: 'identifier' }
 		}
 	},
 	filter: {
@@ -36370,9 +35264,8 @@ exports.states = {
 	}
 };
 
-
 /***/ }),
-/* 124 */
+/* 123 */
 /***/ (function(module, exports) {
 
 /*
@@ -36386,65 +35279,95 @@ exports.states = {
  * @type {{}}
  */
 exports.elements = {
-	'.': {type: 'dot'},
-	'[': {type: 'openBracket'},
-	']': {type: 'closeBracket'},
-	'|': {type: 'pipe'},
-	'{': {type: 'openCurl'},
-	'}': {type: 'closeCurl'},
-	':': {type: 'colon'},
-	',': {type: 'comma'},
-	'(': {type: 'openParen'},
-	')': {type: 'closeParen'},
-	'?': {type: 'question'},
-	'+': {type: 'binaryOp', precedence: 30,
-		eval: function(left, right) { return left + right; }},
-	'-': {type: 'binaryOp', precedence: 30,
-		eval: function(left, right) { return left - right; }},
-	'*': {type: 'binaryOp', precedence: 40,
-		eval: function(left, right) { return left * right; }},
-	'/': {type: 'binaryOp', precedence: 40,
-		eval: function(left, right) { return left / right; }},
-	'//': {type: 'binaryOp', precedence: 40,
-		eval: function(left, right) { return Math.floor(left / right); }},
-	'%': {type: 'binaryOp', precedence: 50,
-		eval: function(left, right) { return left % right; }},
-	'^': {type: 'binaryOp', precedence: 50,
-		eval: function(left, right) { return Math.pow(left, right); }},
-	'==': {type: 'binaryOp', precedence: 20,
-		eval: function(left, right) { return left == right; }},
-	'!=': {type: 'binaryOp', precedence: 20,
-		eval: function(left, right) { return left != right; }},
-	'>': {type: 'binaryOp', precedence: 20,
-		eval: function(left, right) { return left > right; }},
-	'>=': {type: 'binaryOp', precedence: 20,
-		eval: function(left, right) { return left >= right; }},
-	'<': {type: 'binaryOp', precedence: 20,
-		eval: function(left, right) { return left < right; }},
-	'<=': {type: 'binaryOp', precedence: 20,
-		eval: function(left, right) { return left <= right; }},
-	'&&': {type: 'binaryOp', precedence: 10,
-		eval: function(left, right) { return left && right; }},
-	'||': {type: 'binaryOp', precedence: 10,
-		eval: function(left, right) { return left || right; }},
-	'in': {type: 'binaryOp', precedence: 20,
-		eval: function(left, right) {
-			if (typeof right === 'string')
-				return right.indexOf(left) !== -1;
+	'.': { type: 'dot' },
+	'[': { type: 'openBracket' },
+	']': { type: 'closeBracket' },
+	'|': { type: 'pipe' },
+	'{': { type: 'openCurl' },
+	'}': { type: 'closeCurl' },
+	':': { type: 'colon' },
+	',': { type: 'comma' },
+	'(': { type: 'openParen' },
+	')': { type: 'closeParen' },
+	'?': { type: 'question' },
+	'+': { type: 'binaryOp', precedence: 30,
+		eval: function (left, right) {
+			return left + right;
+		} },
+	'-': { type: 'binaryOp', precedence: 30,
+		eval: function (left, right) {
+			return left - right;
+		} },
+	'*': { type: 'binaryOp', precedence: 40,
+		eval: function (left, right) {
+			return left * right;
+		} },
+	'/': { type: 'binaryOp', precedence: 40,
+		eval: function (left, right) {
+			return left / right;
+		} },
+	'//': { type: 'binaryOp', precedence: 40,
+		eval: function (left, right) {
+			return Math.floor(left / right);
+		} },
+	'%': { type: 'binaryOp', precedence: 50,
+		eval: function (left, right) {
+			return left % right;
+		} },
+	'^': { type: 'binaryOp', precedence: 50,
+		eval: function (left, right) {
+			return Math.pow(left, right);
+		} },
+	'==': { type: 'binaryOp', precedence: 20,
+		eval: function (left, right) {
+			return left == right;
+		} },
+	'!=': { type: 'binaryOp', precedence: 20,
+		eval: function (left, right) {
+			return left != right;
+		} },
+	'>': { type: 'binaryOp', precedence: 20,
+		eval: function (left, right) {
+			return left > right;
+		} },
+	'>=': { type: 'binaryOp', precedence: 20,
+		eval: function (left, right) {
+			return left >= right;
+		} },
+	'<': { type: 'binaryOp', precedence: 20,
+		eval: function (left, right) {
+			return left < right;
+		} },
+	'<=': { type: 'binaryOp', precedence: 20,
+		eval: function (left, right) {
+			return left <= right;
+		} },
+	'&&': { type: 'binaryOp', precedence: 10,
+		eval: function (left, right) {
+			return left && right;
+		} },
+	'||': { type: 'binaryOp', precedence: 10,
+		eval: function (left, right) {
+			return left || right;
+		} },
+	'in': { type: 'binaryOp', precedence: 20,
+		eval: function (left, right) {
+			if (typeof right === 'string') return right.indexOf(left) !== -1;
 			if (Array.isArray(right)) {
-				return right.some(function(elem) {
+				return right.some(function (elem) {
 					return elem == left;
 				});
 			}
 			return false;
-		}},
-	'!': {type: 'unaryOp', precedence: Infinity,
-		eval: function(right) { return !right; }}
+		} },
+	'!': { type: 'unaryOp', precedence: Infinity,
+		eval: function (right) {
+			return !right;
+		} }
 };
 
-
 /***/ }),
-/* 125 */
+/* 124 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -36488,7 +35411,7 @@ function log() {
 }
 
 /***/ }),
-/* 126 */
+/* 125 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -36751,7 +35674,7 @@ var ForDirective = exports.ForDirective = function (_Directive5) {
 }(Directive);
 
 /***/ }),
-/* 127 */
+/* 126 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -36765,11 +35688,11 @@ var _dec, _class;
 
 var _weivjs = __webpack_require__(2);
 
-var _Header = __webpack_require__(128);
+var _Header = __webpack_require__(127);
 
 var _Header2 = _interopRequireDefault(_Header);
 
-var _MainSection = __webpack_require__(129);
+var _MainSection = __webpack_require__(128);
 
 var _MainSection2 = _interopRequireDefault(_MainSection);
 
@@ -36793,7 +35716,7 @@ exports.default = App;
 module.exports = exports['default'];
 
 /***/ }),
-/* 128 */
+/* 127 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -36818,7 +35741,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var Header = (_dec = (0, _weivjs.Component)({
-  template: '\n  <header class="header">\n    <h1>todos</h1>\n    <todo-text-input newtodo="true"\n                   @on:save="handleSave"\n                   placeholder="What needs to be done?" />\n  </header>\n  ',
+  template: '\n  <header class="header">\n    <h1>todos</h1>\n    <todo-text-input @bind:newtodo="true"\n                   @on:save="handleSave"\n                   placeholder="What needs to be done?" />\n  </header>\n  ',
   props: {
     store: { type: 'any', required: true }
   },
@@ -36845,7 +35768,7 @@ exports.default = Header;
 module.exports = exports['default'];
 
 /***/ }),
-/* 129 */
+/* 128 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -36861,11 +35784,11 @@ var _dec, _class, _dec2, _class2, _dec3, _class3;
 
 var _weivjs = __webpack_require__(2);
 
-var _TodoItem = __webpack_require__(130);
+var _TodoItem = __webpack_require__(129);
 
 var _TodoItem2 = _interopRequireDefault(_TodoItem);
 
-var _Footer = __webpack_require__(131);
+var _Footer = __webpack_require__(130);
 
 var _Footer2 = _interopRequireDefault(_Footer);
 
@@ -36920,7 +35843,7 @@ exports.default = MainSection;
 module.exports = exports['default'];
 
 /***/ }),
-/* 130 */
+/* 129 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -36932,7 +35855,7 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _dec, _class, _desc, _value, _class2;
+var _dec, _class, _desc, _value, _class2, _descriptor;
 
 var _weivjs = __webpack_require__(2);
 
@@ -36943,6 +35866,16 @@ var _TodoTextInput2 = _interopRequireDefault(_TodoTextInput);
 var _mobx = __webpack_require__(16);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _initDefineProp(target, property, descriptor, context) {
+  if (!descriptor) return;
+  Object.defineProperty(target, property, {
+    enumerable: descriptor.enumerable,
+    configurable: descriptor.configurable,
+    writable: descriptor.writable,
+    value: descriptor.initializer ? descriptor.initializer.call(context) : void 0
+  });
+}
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -36975,6 +35908,10 @@ function _applyDecoratedDescriptor(target, property, decorators, descriptor, con
   return desc;
 }
 
+function _initializerWarningHelper(descriptor, context) {
+  throw new Error('Decorating class property failed. Please ensure that transform-class-properties is enabled.');
+}
+
 var TodoItem = (_dec = (0, _weivjs.Component)({
   template: '\n  <li @bind:class="{completed: todo.completed, editing: editing}">\n    <span>\n      <todo-text-input @if="editing"\n                      @bind:text="todo.text"\n                      @bind:editing="editing"\n                      @on:save="handleSave"></todo-text-input>\n      <span class="view" @if="!editing">\n        <input class="toggle"\n              type="checkbox"\n              @bind:checked="todo.completed"\n              onchange="handleToggle" />\n        <label ondblclick="handleDoubleClick">\n          {{todo.text}} {{completed}}\n        </label>\n        <button class="destroy"\n                onclick="handleDelete"></button>\n      </span>\n    </span>\n  </li>\n  ',
   props: {
@@ -36985,18 +35922,17 @@ var TodoItem = (_dec = (0, _weivjs.Component)({
     'todo-text-input': _TodoTextInput2.default
   }
 }), _dec(_class = (_class2 = function () {
-  // @observable editing = false
-
   function TodoItem() {
     _classCallCheck(this, TodoItem);
 
-    (0, _mobx.extendObservable)(this, { editing: false });
+    _initDefineProp(this, 'editing', _descriptor, this);
   }
 
   _createClass(TodoItem, [{
     key: 'handleDoubleClick',
     value: function handleDoubleClick() {
-      this.editing = true;
+      this['editing'] = true;
+      // console.error(this)
     }
   }, {
     key: 'handleSave',
@@ -37026,12 +35962,17 @@ var TodoItem = (_dec = (0, _weivjs.Component)({
   }]);
 
   return TodoItem;
-}(), (_applyDecoratedDescriptor(_class2.prototype, 'handleDoubleClick', [_weivjs.action], Object.getOwnPropertyDescriptor(_class2.prototype, 'handleDoubleClick'), _class2.prototype)), _class2)) || _class);
+}(), (_descriptor = _applyDecoratedDescriptor(_class2.prototype, 'editing', [_mobx.observable], {
+  enumerable: true,
+  initializer: function initializer() {
+    return false;
+  }
+}), _applyDecoratedDescriptor(_class2.prototype, 'handleDoubleClick', [_weivjs.action], Object.getOwnPropertyDescriptor(_class2.prototype, 'handleDoubleClick'), _class2.prototype)), _class2)) || _class);
 exports.default = TodoItem;
 module.exports = exports['default'];
 
 /***/ }),
-/* 131 */
+/* 130 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";

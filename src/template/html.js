@@ -162,6 +162,7 @@ export const BOOLEAN_ATTRIBUTES = [
   ['disabled', 'select'],
   ['disabled', 'option'],
   ['disabled', 'optgroup'],
+  ['autofocus', 'input'],
   ['readonly', 'input', {type: 'text'}],
   ['readonly', 'input', {type: 'password'}],
   ['readonly', 'textarea'],

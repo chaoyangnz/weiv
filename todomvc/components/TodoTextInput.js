@@ -5,7 +5,7 @@ import { Component, observable } from 'weivjs'
   <input @bind:class="{edit: editing, newtodo: newtodo}"
          type="text"
          @bind:placeholder="placeholder"
-         autofocus="true"
+         autofocus
          @bind:value="text || value"
          onblur="handleBlur"
          onchange="handleChange"
