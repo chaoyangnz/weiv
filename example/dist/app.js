@@ -28506,7 +28506,7 @@ var Node = exports.Node = (_dec2 = utils.log(false), (_class2 = function () {
 
       var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
-      var scope = { __super: superScope };
+      var scope = { $super: superScope };
 
       var result = this._process(this.directives.map(function (directive) {
         return directive.initialised({ contextComponent: contextComponent, scope: scope, node: _this });
@@ -28594,7 +28594,7 @@ var Component = exports.Component = (_dec3 = utils.log(false), (_class3 = functi
 
       var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
-      var scope = { __super: superScope };
+      var scope = { $super: superScope };
 
       var result = this._process(this.directives.map(function (directive) {
         return directive.initialised({ contextComponent: contextComponent, scope: scope, node: _this3 });
@@ -28677,7 +28677,7 @@ var Slot = exports.Slot = (_dec4 = utils.log(false), (_class4 = function (_Node2
 
       var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
       // return multiple vnodes
-      var scope = { __super: superScope };
+      var scope = { $super: superScope };
 
       var result = this._process(this.directives.map(function (directive) {
         return directive.initialised({ contextComponent: contextComponent, scope: scope, node: _this5 });
@@ -29028,7 +29028,7 @@ var Todo = exports.Todo = (_dec = (0, _weivjs.Component)({
   }
 })), _class2)) || _class);
 var App = exports.App = (_dec2 = (0, _weivjs.Component)({
-  template: '\n  <div @var:i="100">\n    <h1 @bind:title="counter">{{firstName}} {{lastName}}</h1><p>{{blogURL}}</p>\n    <div @if="counter < 5">Location: {{location.city}} - {{location.country}}</div>\n    <p>Countdown: {{counter}}</p>\n    <button onclick="minus" style="width: 80px">\u2796</button>\n    <button @on:click="plus" style="width: 80px">\u2795</button>\n    <p>Tip: When counter is less than 5, location will be shown.</p>\n    <ol>\n      <li @for:i="[1,2,3]">\n      {{i}} - {{__super.i}}\n      </li>\n    </ol>\n    <todo @bind:a="counter" @on:save="onSave">\n      <div>this is a default slot</div>\n      <li slot="item">item1</li>\n      <li slot="item">item2</li>\n      <span>another default slot</span>\n      <p>show var value: {{i}}</p>\n    </todo>\n  </div>\n  ',
+  template: '\n  <div @var:i="100">\n    <h1 @bind:title="counter">{{firstName}} {{lastName}}</h1><p>{{blogURL}}</p>\n    <div @if="counter < 5">Location: {{location.city}} - {{location.country}}</div>\n    <p>Countdown: {{counter}}</p>\n    <button onclick="minus" style="width: 80px">\u2796</button>\n    <button @on:click="plus" style="width: 80px">\u2795</button>\n    <p>Tip: When counter is less than 5, location will be shown.</p>\n    <ol>\n      <li @for:i="[1,2,3]">\n      {{i}} - {{$super.i}}\n      </li>\n    </ol>\n    <todo @bind:a="counter" @on:save="onSave">\n      <div>this is a default slot</div>\n      <li slot="item">item1</li>\n      <li slot="item">item2</li>\n      <span>another default slot</span>\n      <p>show var value: {{i}}</p>\n    </todo>\n  </div>\n  ',
   components: { 'todo': Todo }
 }), _dec2(_class4 = (_class5 = function () {
   function App() {
@@ -34026,7 +34026,9 @@ Jexl.prototype.eval = function (expression, context, cb) {
     var called = false;
     var val = this._eval(expression, context);
   } catch (err) {
-    if (!called) setTimeout(cb.bind(null, err), 0);
+    throw err;
+    // if (!called)
+    // 		setTimeout(cb.bind(null, err), 0);
   }
 
   if (cb) {
@@ -34450,7 +34452,7 @@ exports.Identifier = function (ast) {
 			if (ast.value in context) {
 				return context[ast.value];
 			}
-			context = context.__super;
+			context = context.$super;
 		}
 		return undefined;
 		// return ast.relative ? this._relContext[ast.value] :
@@ -34554,7 +34556,8 @@ var numericRegex = /^-?(?:(?:[0-9]*\.[0-9]+)|[0-9]+)$/,
 '\\btrue\\b', '\\bfalse\\b'],
     postOpRegexElems = [
 // Identifiers
-'\\b[a-zA-Z_\\$][a-zA-Z0-9_\\$]*\\b',
+'([^a-zA-Z0-9_\\$])[a-zA-Z_\\$][a-zA-Z0-9_\\$]*([^a-zA-Z0-9_\\$])',
+// '\\b[a-zA-Z_\\$][a-zA-Z0-9_\\$]*\\b',
 // Numerics (without negative symbol)
 '(?:(?:[0-9]*\\.[0-9]+)|[0-9]+)'],
     minusNegatesAfter = ['binaryOp', 'unaryOp', 'openParen', 'openBracket', 'question', 'colon'];
@@ -35478,7 +35481,8 @@ var ForDirective = exports.ForDirective = function (_Directive5) {
 
       var vnodes = [];
       value.forEach(function (item, i) {
-        var clonedNode = _lodash2.default.cloneDeep(node); // can optimise, because i just change directives
+        var clonedNode = _lodash2.default.clone(node); // can optimise, because i just change directives
+        clonedNode.directives = _lodash2.default.clone(node.directives);
         if (clonedNode instanceof _ast.Component) {
           // generate new component id
           clonedNode.componentId = node.componentId + '@' + i;

@@ -117,7 +117,7 @@ export class Node {
 
   @utils.log(false)
   render(contextComponent, superScope, options = {}) {
-    const scope = {__super: superScope}
+    const scope = {$super: superScope}
 
     let result = this._process(this.directives.map(directive => directive.initialised({contextComponent, scope, node: this})))
     if (result !== true) return result
@@ -159,7 +159,7 @@ export class Component extends Node {
 
   @utils.log(false)
   render(contextComponent, superScope, options = {}) {
-    const scope = {__super: superScope}
+    const scope = {$super: superScope}
 
     let result = this._process(this.directives.map(directive => directive.initialised({contextComponent, scope, node: this})))
     if (result !== true) return result
@@ -215,7 +215,7 @@ export class Slot extends Node {
 
   @utils.log(false)
   render(contextComponent, superScope, options = {}) { // return multiple vnodes
-    const scope = {__super: superScope}
+    const scope = {$super: superScope}
 
     let result = this._process(this.directives.map(directive => directive.initialised({contextComponent, scope, node: this})))
     if (result !== true) return result

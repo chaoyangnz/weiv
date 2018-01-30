@@ -88,7 +88,8 @@ export class ForDirective extends Directive {
 
     const vnodes = []
     value.forEach((item, i) => {
-      const clonedNode = _.cloneDeep(node) // can optimise, because i just change directives
+      const clonedNode = _.clone(node) // can optimise, because i just change directives
+      clonedNode.directives = _.clone(node.directives)
       if (clonedNode instanceof Component) {
         // generate new component id
         clonedNode.componentId = node.componentId + '@' + i

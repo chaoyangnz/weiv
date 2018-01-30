@@ -28506,7 +28506,7 @@ var Node = exports.Node = (_dec2 = utils.log(false), (_class2 = function () {
 
       var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
-      var scope = { __super: superScope };
+      var scope = { $super: superScope };
 
       var result = this._process(this.directives.map(function (directive) {
         return directive.initialised({ contextComponent: contextComponent, scope: scope, node: _this });
@@ -28594,7 +28594,7 @@ var Component = exports.Component = (_dec3 = utils.log(false), (_class3 = functi
 
       var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
-      var scope = { __super: superScope };
+      var scope = { $super: superScope };
 
       var result = this._process(this.directives.map(function (directive) {
         return directive.initialised({ contextComponent: contextComponent, scope: scope, node: _this3 });
@@ -28677,7 +28677,7 @@ var Slot = exports.Slot = (_dec4 = utils.log(false), (_class4 = function (_Node2
 
       var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
       // return multiple vnodes
-      var scope = { __super: superScope };
+      var scope = { $super: superScope };
 
       var result = this._process(this.directives.map(function (directive) {
         return directive.initialised({ contextComponent: contextComponent, scope: scope, node: _this5 });
@@ -34203,7 +34203,9 @@ Jexl.prototype.eval = function (expression, context, cb) {
     var called = false;
     var val = this._eval(expression, context);
   } catch (err) {
-    if (!called) setTimeout(cb.bind(null, err), 0);
+    throw err;
+    // if (!called)
+    // 		setTimeout(cb.bind(null, err), 0);
   }
 
   if (cb) {
@@ -34627,7 +34629,7 @@ exports.Identifier = function (ast) {
 			if (ast.value in context) {
 				return context[ast.value];
 			}
-			context = context.__super;
+			context = context.$super;
 		}
 		return undefined;
 		// return ast.relative ? this._relContext[ast.value] :
@@ -34731,7 +34733,8 @@ var numericRegex = /^-?(?:(?:[0-9]*\.[0-9]+)|[0-9]+)$/,
 '\\btrue\\b', '\\bfalse\\b'],
     postOpRegexElems = [
 // Identifiers
-'\\b[a-zA-Z_\\$][a-zA-Z0-9_\\$]*\\b',
+'([^a-zA-Z0-9_\\$])[a-zA-Z_\\$][a-zA-Z0-9_\\$]*([^a-zA-Z0-9_\\$])',
+// '\\b[a-zA-Z_\\$][a-zA-Z0-9_\\$]*\\b',
 // Numerics (without negative symbol)
 '(?:(?:[0-9]*\\.[0-9]+)|[0-9]+)'],
     minusNegatesAfter = ['binaryOp', 'unaryOp', 'openParen', 'openBracket', 'question', 'colon'];
@@ -35655,7 +35658,8 @@ var ForDirective = exports.ForDirective = function (_Directive5) {
 
       var vnodes = [];
       value.forEach(function (item, i) {
-        var clonedNode = _lodash2.default.cloneDeep(node); // can optimise, because i just change directives
+        var clonedNode = _lodash2.default.clone(node); // can optimise, because i just change directives
+        clonedNode.directives = _lodash2.default.clone(node.directives);
         if (clonedNode instanceof _ast.Component) {
           // generate new component id
           clonedNode.componentId = node.componentId + '@' + i;
