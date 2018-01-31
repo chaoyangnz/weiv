@@ -28385,43 +28385,48 @@ var Node = exports.Node = (_dec2 = utils.log(false), (_class2 = function () {
     this.directives = []; // @command:(target).(params..) -> expression
     this.children = []; // children nodes
     this.parent = null;
-    var _iteratorNormalCompletion = true;
-    var _didIteratorError = false;
-    var _iteratorError = undefined;
-
-    try {
-      for (var _iterator = Object.keys(attributes)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-        var name = _step.value;
-
-        if (name.match(/@[^@]+/)) {
-          // directive prefix: @
-          var directive = this._parseDirective(name, attributes[name]);
-          if (directive) this.directives.push(directive);
-        } else if (_lodash2.default.includes(_html.HTML_EVENT_ATTRIBUTES, name)) {
-          this.properties[name] = new Expression(attributes[name]);
-        } else if (name === 'class') {
-          this.properties['className'] = attributes[name];
-        } else {
-          this.properties[name] = attributes[name];
-        }
-      }
-    } catch (err) {
-      _didIteratorError = true;
-      _iteratorError = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion && _iterator.return) {
-          _iterator.return();
-        }
-      } finally {
-        if (_didIteratorError) {
-          throw _iteratorError;
-        }
-      }
-    }
+    this._parsePropertiesAndDirectives(attributes);
   }
 
   _createClass(Node, [{
+    key: '_parsePropertiesAndDirectives',
+    value: function _parsePropertiesAndDirectives(attributes) {
+      var _iteratorNormalCompletion = true;
+      var _didIteratorError = false;
+      var _iteratorError = undefined;
+
+      try {
+        for (var _iterator = Object.keys(attributes)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+          var name = _step.value;
+
+          if (name.match(/@[^@]+/)) {
+            // directive prefix: @
+            var directive = this._parseDirective(name, attributes[name]);
+            if (directive) this.directives.push(directive);
+          } else if (_lodash2.default.includes(_html.HTML_EVENT_ATTRIBUTES, name)) {
+            this.properties[name] = new Expression(attributes[name]);
+          } else if (name === 'class') {
+            this.properties['className'] = attributes[name];
+          } else {
+            this.properties[name] = attributes[name];
+          }
+        }
+      } catch (err) {
+        _didIteratorError = true;
+        _iteratorError = err;
+      } finally {
+        try {
+          if (!_iteratorNormalCompletion && _iterator.return) {
+            _iterator.return();
+          }
+        } finally {
+          if (_didIteratorError) {
+            throw _iteratorError;
+          }
+        }
+      }
+    }
+  }, {
     key: '_parseDirective',
     value: function _parseDirective(name, exp) {
       var pattern = /@(\w+)(:(\w+)((\.\w+)*))?/;
@@ -28504,8 +28509,6 @@ var Node = exports.Node = (_dec2 = utils.log(false), (_class2 = function () {
     value: function render(contextComponent, superScope) {
       var _this = this;
 
-      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-
       var scope = { $super: superScope };
 
       var result = this._process(this.directives.map(function (directive) {
@@ -28548,6 +28551,8 @@ var Component = exports.Component = (_dec3 = utils.log(false), (_class3 = functi
 
     _this2.componentClass = componentClass;
     _this2.componentId = componentClass.$original.$uniqueid();
+    _this2.properties = {};
+    _this2.directives = [];
     var _iteratorNormalCompletion3 = true;
     var _didIteratorError3 = false;
     var _iteratorError3 = undefined;
@@ -28591,8 +28596,6 @@ var Component = exports.Component = (_dec3 = utils.log(false), (_class3 = functi
     key: 'render',
     value: function render(contextComponent, superScope) {
       var _this3 = this;
-
-      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
 
       var scope = { $super: superScope };
 
@@ -28675,7 +28678,6 @@ var Slot = exports.Slot = (_dec4 = utils.log(false), (_class4 = function (_Node2
     value: function render(contextComponent, superScope) {
       var _this5 = this;
 
-      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
       // return multiple vnodes
       var scope = { $super: superScope };
 
@@ -35490,8 +35492,9 @@ var ForDirective = exports.ForDirective = function (_Directive5) {
         _lodash2.default.remove(clonedNode.directives, function (directive) {
           return directive instanceof ForDirective;
         });
+        scope['$index'] = i;
         scope[_this6.target] = item; // inject for $var in ..
-        vnodes.push(clonedNode.render(contextComponent, scope, { notNewScope: true }));
+        vnodes.push(clonedNode.render(contextComponent, scope));
       });
       return vnodes;
     }

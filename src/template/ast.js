@@ -52,6 +52,10 @@ export class Node {
     this.directives = [] // @command:(target).(params..) -> expression
     this.children = [] // children nodes
     this.parent = null
+    this._parsePropertiesAndDirectives(attributes)
+  }
+
+  _parsePropertiesAndDirectives(attributes) {
     for (let name of Object.keys(attributes)) {
       if (name.match(/@[^@]+/)) { // directive prefix: @
         const directive = this._parseDirective(name, attributes[name])
@@ -116,7 +120,7 @@ export class Node {
   }
 
   @utils.log(false)
-  render(contextComponent, superScope, options = {}) {
+  render(contextComponent, superScope) {
     const scope = {$super: superScope}
 
     let result = this._process(this.directives.map(directive => directive.initialised({contextComponent, scope, node: this})))
@@ -142,6 +146,8 @@ export class Component extends Node {
     super(contextComponentClass, tagName, attributes)
     this.componentClass = componentClass
     this.componentId = componentClass.$original.$uniqueid()
+    this.properties = {}
+    this.directives = []
     for (let name of Object.keys(attributes)) {
       if (name.match(/@[^@]+/)) { // directive prefix: @
         const directive = this._parseDirective(name, attributes[name])
@@ -158,7 +164,7 @@ export class Component extends Node {
   }
 
   @utils.log(false)
-  render(contextComponent, superScope, options = {}) {
+  render(contextComponent, superScope) {
     const scope = {$super: superScope}
 
     let result = this._process(this.directives.map(directive => directive.initialised({contextComponent, scope, node: this})))
@@ -214,7 +220,7 @@ export class Slot extends Node {
   }
 
   @utils.log(false)
-  render(contextComponent, superScope, options = {}) { // return multiple vnodes
+  render(contextComponent, superScope) { // return multiple vnodes
     const scope = {$super: superScope}
 
     let result = this._process(this.directives.map(directive => directive.initialised({contextComponent, scope, node: this})))
