@@ -28729,7 +28729,7 @@ var Slot = exports.Slot = (_dec4 = utils.log(false), (_class4 = function (_Node2
  * Handles a subexpression that's used to define a transform argument's value.
  * @param {{type: <string>}} ast The subexpression tree
  */
-exports.argVal = function (ast) {
+exports.argVal = function(ast) {
 	this._cursor.args.push(ast);
 };
 
@@ -28737,7 +28737,7 @@ exports.argVal = function (ast) {
  * Handles new array literals by adding them as a new node in the AST,
  * initialized with an empty array.
  */
-exports.arrayStart = function () {
+exports.arrayStart = function() {
 	this._placeAtCursor({
 		type: 'ArrayLiteral',
 		value: []
@@ -28748,8 +28748,9 @@ exports.arrayStart = function () {
  * Handles a subexpression representing an element of an array literal.
  * @param {{type: <string>}} ast The subexpression tree
  */
-exports.arrayVal = function (ast) {
-	if (ast) this._cursor.value.push(ast);
+exports.arrayVal = function(ast) {
+	if (ast)
+		this._cursor.value.push(ast);
 };
 
 /**
@@ -28757,10 +28758,11 @@ exports.arrayVal = function (ast) {
  * inputs: a left side and a right side.
  * @param {{type: <string>}} token A token object
  */
-exports.binaryOp = function (token) {
+exports.binaryOp = function(token) {
 	var precedence = this._grammar[token.value].precedence || 0,
-	    parent = this._cursor._parent;
-	while (parent && parent.operator && this._grammar[parent.operator].precedence >= precedence) {
+		parent = this._cursor._parent;
+	while (parent && parent.operator &&
+			this._grammar[parent.operator].precedence >= precedence) {
 		this._cursor = parent;
 		parent = parent._parent;
 	}
@@ -28779,10 +28781,15 @@ exports.binaryOp = function (token) {
  * sets values that determine how the following identifier gets placed in the
  * AST.
  */
-exports.dot = function () {
-	this._nextIdentEncapsulate = this._cursor && (this._cursor.type != 'BinaryExpression' || this._cursor.type == 'BinaryExpression' && this._cursor.right) && this._cursor.type != 'UnaryExpression';
-	this._nextIdentRelative = !this._cursor || this._cursor && !this._nextIdentEncapsulate;
-	if (this._nextIdentRelative) this._relative = true;
+exports.dot = function() {
+	this._nextIdentEncapsulate = this._cursor &&
+		(this._cursor.type != 'BinaryExpression' ||
+		(this._cursor.type == 'BinaryExpression' && this._cursor.right)) &&
+		this._cursor.type != 'UnaryExpression';
+	this._nextIdentRelative = !this._cursor ||
+		(this._cursor && !this._nextIdentEncapsulate);
+	if (this._nextIdentRelative)
+		this._relative = true;
 };
 
 /**
@@ -28790,7 +28797,7 @@ exports.dot = function () {
  * identifier chain.
  * @param {{type: <string>}} ast The subexpression tree
  */
-exports.filter = function (ast) {
+exports.filter = function(ast) {
 	this._placeBeforeCursor({
 		type: 'FilterExpression',
 		expr: ast,
@@ -28803,7 +28810,7 @@ exports.filter = function (ast) {
  * Handles identifier tokens by adding them as a new node in the AST.
  * @param {{type: <string>}} token A token object
  */
-exports.identifier = function (token) {
+exports.identifier = function(token) {
 	var node = {
 		type: 'Identifier',
 		value: token.value
@@ -28812,8 +28819,10 @@ exports.identifier = function (token) {
 		node.from = this._cursor;
 		this._placeBeforeCursor(node);
 		this._nextIdentEncapsulate = false;
-	} else {
-		if (this._nextIdentRelative) node.relative = true;
+	}
+	else {
+		if (this._nextIdentRelative)
+			node.relative = true;
 		this._placeAtCursor(node);
 	}
 };
@@ -28823,7 +28832,7 @@ exports.identifier = function (token) {
  * them as a new node in the AST.
  * @param {{type: <string>}} token A token object
  */
-exports.literal = function (token) {
+exports.literal = function(token) {
 	this._placeAtCursor({
 		type: 'Literal',
 		value: token.value
@@ -28834,7 +28843,7 @@ exports.literal = function (token) {
  * Queues a new object literal key to be written once a value is collected.
  * @param {{type: <string>}} token A token object
  */
-exports.objKey = function (token) {
+exports.objKey = function(token) {
 	this._curObjKey = token.value;
 };
 
@@ -28842,7 +28851,7 @@ exports.objKey = function (token) {
  * Handles new object literals by adding them as a new node in the AST,
  * initialized with an empty object.
  */
-exports.objStart = function () {
+exports.objStart = function() {
 	this._placeAtCursor({
 		type: 'ObjectLiteral',
 		value: {}
@@ -28854,7 +28863,7 @@ exports.objStart = function () {
  * literal node currently at the cursor.
  * @param {{type: <string>}} ast The subexpression tree
  */
-exports.objVal = function (ast) {
+exports.objVal = function(ast) {
 	this._cursor.value[this._curObjKey] = ast;
 };
 
@@ -28863,7 +28872,7 @@ exports.objVal = function (ast) {
  * groupEnd elements.
  * @param {{type: <string>}} ast The subexpression tree
  */
-exports.subExpression = function (ast) {
+exports.subExpression = function(ast) {
 	this._placeAtCursor(ast);
 };
 
@@ -28871,7 +28880,7 @@ exports.subExpression = function (ast) {
  * Handles a completed alternate subexpression of a ternary operator.
  * @param {{type: <string>}} ast The subexpression tree
  */
-exports.ternaryEnd = function (ast) {
+exports.ternaryEnd = function(ast) {
 	this._cursor.alternate = ast;
 };
 
@@ -28879,7 +28888,7 @@ exports.ternaryEnd = function (ast) {
  * Handles a completed consequent subexpression of a ternary operator.
  * @param {{type: <string>}} ast The subexpression tree
  */
-exports.ternaryMid = function (ast) {
+exports.ternaryMid = function(ast) {
 	this._cursor.consequent = ast;
 };
 
@@ -28888,7 +28897,7 @@ exports.ternaryMid = function (ast) {
  * AST in a ConditionalExpression node, and using the existing tree as the
  * test element.
  */
-exports.ternaryStart = function () {
+exports.ternaryStart = function() {
 	this._tree = {
 		type: 'ConditionalExpression',
 		test: this._tree
@@ -28901,7 +28910,7 @@ exports.ternaryStart = function () {
  * be applied.
  * @param {{type: <string>}} token A token object
  */
-exports.transform = function (token) {
+exports.transform = function(token) {
 	this._placeBeforeCursor({
 		type: 'Transform',
 		name: token.value,
@@ -28915,12 +28924,13 @@ exports.transform = function (token) {
  * one input: a right side.
  * @param {{type: <string>}} token A token object
  */
-exports.unaryOp = function (token) {
+exports.unaryOp = function(token) {
 	this._placeAtCursor({
 		type: 'UnaryExpression',
 		operator: token.value
 	});
 };
+
 
 /***/ }),
 /* 52 */
@@ -34090,9 +34100,9 @@ CollectingHandler.prototype.restart = function(){
  */
 
 var Evaluator = __webpack_require__(118),
-    Lexer = __webpack_require__(120),
-    Parser = __webpack_require__(121),
-    defaultGrammar = __webpack_require__(123).elements;
+	Lexer = __webpack_require__(120),
+	Parser = __webpack_require__(121),
+	defaultGrammar = __webpack_require__(123).elements;
 
 /**
  * Jexl is the Javascript Expression Language, capable of parsing and
@@ -34101,9 +34111,9 @@ var Evaluator = __webpack_require__(118),
  * @constructor
  */
 function Jexl() {
-  this._customGrammar = null;
-  this._lexer = null;
-  this._transforms = {};
+	this._customGrammar = null;
+	this._lexer = null;
+	this._transforms = {};
 }
 
 /**
@@ -34122,12 +34132,12 @@ function Jexl() {
  *      on either side of the operator. It should return either the resulting
  *      value, or a Promise that resolves with the resulting value.
  */
-Jexl.prototype.addBinaryOp = function (operator, precedence, fn) {
-  this._addGrammarElement(operator, {
-    type: 'binaryOp',
-    precedence: precedence,
-    eval: fn
-  });
+Jexl.prototype.addBinaryOp = function(operator, precedence, fn) {
+	this._addGrammarElement(operator, {
+		type: 'binaryOp',
+		precedence: precedence,
+		eval: fn
+	});
 };
 
 /**
@@ -34139,12 +34149,12 @@ Jexl.prototype.addBinaryOp = function (operator, precedence, fn) {
  *      operator. It should return either the resulting value, or a Promise
  *      that resolves with the resulting value.
  */
-Jexl.prototype.addUnaryOp = function (operator, fn) {
-  this._addGrammarElement(operator, {
-    type: 'unaryOp',
-    weight: Infinity,
-    eval: fn
-  });
+Jexl.prototype.addUnaryOp = function(operator, fn) {
+	this._addGrammarElement(operator, {
+		type: 'unaryOp',
+		weight: Infinity,
+		eval: fn
+	});
 };
 
 /**
@@ -34159,8 +34169,8 @@ Jexl.prototype.addUnaryOp = function (operator, fn) {
  *            if the transform fails, or a null first argument and the
  *            transformed value as the second argument on success.
  */
-Jexl.prototype.addTransform = function (name, fn) {
-  this._transforms[name] = fn;
+Jexl.prototype.addTransform = function(name, fn) {
+	this._transforms[name] = fn;
 };
 
 /**
@@ -34168,10 +34178,11 @@ Jexl.prototype.addTransform = function (name, fn) {
  * accepts a map of one or more transform names to their transform function.
  * @param {{}} map A map of transform names to transform functions
  */
-Jexl.prototype.addTransforms = function (map) {
-  for (var key in map) {
-    if (map.hasOwnProperty(key)) this._transforms[key] = map[key];
-  }
+Jexl.prototype.addTransforms = function(map) {
+	for (var key in map) {
+		if (map.hasOwnProperty(key))
+			this._transforms[key] = map[key];
+	}
 };
 
 /**
@@ -34179,8 +34190,8 @@ Jexl.prototype.addTransforms = function (map) {
  * @param {string} name The name of the transform function
  * @returns {function} The transform function
  */
-Jexl.prototype.getTransform = function (name) {
-  return this._transforms[name];
+Jexl.prototype.getTransform = function(name) {
+	return this._transforms[name];
 };
 
 /**
@@ -34196,54 +34207,57 @@ Jexl.prototype.getTransform = function (name) {
  *      if a callback is supplied, the returned promise will already have
  *      a '.catch' attached to it in order to pass the error to the callback.
  */
-Jexl.prototype.eval = function (expression, context, cb) {
-  if (typeof context === 'function') {
-    cb = context;
-    context = {};
-  } else if (!context) context = {};
-  try {
-    var called = false;
-    var val = this._eval(expression, context);
-  } catch (err) {
-    throw err;
-    // if (!called)
-    // 		setTimeout(cb.bind(null, err), 0);
-  }
-
-  if (cb) {
-    // setTimeout is used for the callback to break out of the Promise's
-    // try/catch in case the callback throws.
-    called = true;
-    setTimeout(cb.bind(null, null, val), 0);
-    return val;
-  }
-  return val;
-  // var valPromise = this._eval(expression, context);
-  // if (cb) {
-  // 	// setTimeout is used for the callback to break out of the Promise's
-  // 	// try/catch in case the callback throws.
-  // 	var called = false;
-  // 	return valPromise.then(function(val) {
-  // 		called = true;
-  // 		setTimeout(cb.bind(null, null, val), 0);
-  // 	}).catch(function(err) {
-  // 		if (!called)
-  // 			setTimeout(cb.bind(null, err), 0);
-  // 	});
-  // }
-  // return valPromise;
+Jexl.prototype.eval = function(expression, context, cb) {
+	if (typeof context === 'function') {
+		cb = context;
+		context = {};
+	}
+	else if (!context)
+		context = {};
+	try {
+		var called = false;
+		var val = this._eval(expression, context);
+	} catch(err) {
+		throw err
+		// if (!called)
+		// 		setTimeout(cb.bind(null, err), 0);
+	}
+	
+	if (cb) {
+		// setTimeout is used for the callback to break out of the Promise's
+		// try/catch in case the callback throws.
+		called = true;
+		setTimeout(cb.bind(null, null, val), 0);
+		return val
+	}
+	return val;
+	// var valPromise = this._eval(expression, context);
+	// if (cb) {
+	// 	// setTimeout is used for the callback to break out of the Promise's
+	// 	// try/catch in case the callback throws.
+	// 	var called = false;
+	// 	return valPromise.then(function(val) {
+	// 		called = true;
+	// 		setTimeout(cb.bind(null, null, val), 0);
+	// 	}).catch(function(err) {
+	// 		if (!called)
+	// 			setTimeout(cb.bind(null, err), 0);
+	// 	});
+	// }
+	// return valPromise;
 };
 
 /**
  * Removes a binary or unary operator from the Jexl grammar.
  * @param {string} operator The operator string to be removed
  */
-Jexl.prototype.removeOp = function (operator) {
-  var grammar = this._getCustomGrammar();
-  if (grammar[operator] && (grammar[operator].type == 'binaryOp' || grammar[operator].type == 'unaryOp')) {
-    delete grammar[operator];
-    this._lexer = null;
-  }
+Jexl.prototype.removeOp = function(operator) {
+	var grammar = this._getCustomGrammar();
+	if (grammar[operator] && (grammar[operator].type == 'binaryOp' ||
+			grammar[operator].type == 'unaryOp')) {
+		delete grammar[operator];
+		this._lexer = null;
+	}
 };
 
 /**
@@ -34254,10 +34268,10 @@ Jexl.prototype.removeOp = function (operator) {
  *      grammar element
  * @private
  */
-Jexl.prototype._addGrammarElement = function (str, obj) {
-  var grammar = this._getCustomGrammar();
-  grammar[str] = obj;
-  this._lexer = null;
+Jexl.prototype._addGrammarElement = function(str, obj) {
+	var grammar = this._getCustomGrammar();
+	grammar[str] = obj;
+	this._lexer = null;
 };
 
 /**
@@ -34268,17 +34282,17 @@ Jexl.prototype._addGrammarElement = function (str, obj) {
  * @returns {Promise<*>} resolves with the result of the evaluation.
  * @private
  */
-Jexl.prototype._eval = function (exp, context) {
-  var self = this,
-      grammar = this._getGrammar(),
-      parser = new Parser(grammar),
-      evaluator = new Evaluator(grammar, this._transforms, context);
-  parser.addTokens(self._getLexer().tokenize(exp));
-  return evaluator.eval(parser.complete());
-  // return Promise.resolve().then(function() {
-  // 	parser.addTokens(self._getLexer().tokenize(exp));
-  // 	return evaluator.eval(parser.complete());
-  // });
+Jexl.prototype._eval = function(exp, context) {
+	var self = this,
+		grammar = this._getGrammar(),
+		parser = new Parser(grammar),
+		evaluator = new Evaluator(grammar, this._transforms, context);
+		parser.addTokens(self._getLexer().tokenize(exp));
+		return evaluator.eval(parser.complete());
+	// return Promise.resolve().then(function() {
+	// 	parser.addTokens(self._getLexer().tokenize(exp));
+	// 	return evaluator.eval(parser.complete());
+	// });
 };
 
 /**
@@ -34288,14 +34302,15 @@ Jexl.prototype._eval = function (exp, context) {
  * @returns {{}} a customizable grammar map.
  * @private
  */
-Jexl.prototype._getCustomGrammar = function () {
-  if (!this._customGrammar) {
-    this._customGrammar = {};
-    for (var key in defaultGrammar) {
-      if (defaultGrammar.hasOwnProperty(key)) this._customGrammar[key] = defaultGrammar[key];
-    }
-  }
-  return this._customGrammar;
+Jexl.prototype._getCustomGrammar = function() {
+	if (!this._customGrammar) {
+		this._customGrammar = {};
+		for (var key in defaultGrammar) {
+			if (defaultGrammar.hasOwnProperty(key))
+				this._customGrammar[key] = defaultGrammar[key];
+		}
+	}
+	return this._customGrammar;
 };
 
 /**
@@ -34305,8 +34320,8 @@ Jexl.prototype._getCustomGrammar = function () {
  * @returns {{}} the grammar map currently in use.
  * @private
  */
-Jexl.prototype._getGrammar = function () {
-  return this._customGrammar || defaultGrammar;
+Jexl.prototype._getGrammar = function() {
+	return this._customGrammar || defaultGrammar;
 };
 
 /**
@@ -34315,26 +34330,28 @@ Jexl.prototype._getGrammar = function () {
  *      appropriate to this Jexl instance.
  * @private
  */
-Jexl.prototype._getLexer = function () {
-  if (!this._lexer) this._lexer = new Lexer(this._getGrammar());
-  return this._lexer;
+Jexl.prototype._getLexer = function() {
+	if (!this._lexer)
+		this._lexer = new Lexer(this._getGrammar());
+	return this._lexer;
 };
 
 Jexl.prototype.parse = function (exp) {
-  const grammar = this._getGrammar();
-  const parser = new Parser(grammar);
+  const grammar = this._getGrammar()
+  const parser = new Parser(grammar)
   parser.addTokens(this._getLexer().tokenize(exp));
-  return parser.complete();
-};
+  return parser.complete()
+}
 
 Jexl.prototype.evaluate = function (parserTree, data) {
-  const grammar = this._getGrammar();
-  const evaluator = new Evaluator(grammar, {}, data);
-  return evaluator.eval(parserTree);
-};
+	const grammar = this._getGrammar()
+  const evaluator = new Evaluator(grammar, {}, data)
+  return evaluator.eval(parserTree)
+}
 
 module.exports = new Jexl();
 module.exports.Jexl = Jexl;
+
 
 /***/ }),
 /* 118 */
@@ -34377,11 +34394,11 @@ var handlers = __webpack_require__(119);
  *      to resolve the value of a relative identifier.
  * @constructor
  */
-var Evaluator = function (grammar, transforms, context, relativeContext) {
-  this._grammar = grammar;
-  this._transforms = transforms || {};
-  this._context = context || {};
-  this._relContext = relativeContext || this._context;
+var Evaluator = function(grammar, transforms, context, relativeContext) {
+	this._grammar = grammar;
+	this._transforms = transforms || {};
+	this._context = context || {};
+	this._relContext = relativeContext || this._context;
 };
 
 /**
@@ -34389,12 +34406,12 @@ var Evaluator = function (grammar, transforms, context, relativeContext) {
  * @param {{}} ast An expression tree object
  * @returns {Promise<*>} resolves with the resulting value of the expression.
  */
-Evaluator.prototype.eval = function (ast) {
-  var self = this;
-  return handlers[ast.type].call(this, ast);
-  // return Promise.resolve().then(function() {
-  // 	return handlers[ast.type].call(self, ast);
-  // });
+Evaluator.prototype.eval = function(ast) {
+	var self = this;
+	return handlers[ast.type].call(this, ast);
+	// return Promise.resolve().then(function() {
+	// 	return handlers[ast.type].call(self, ast);
+	// });
 };
 
 /**
@@ -34404,13 +34421,13 @@ Evaluator.prototype.eval = function (ast) {
  * @param {Array<string>} arr An array of expression strings to be evaluated
  * @returns {Promise<Array<{}>>} resolves with the result array
  */
-Evaluator.prototype.evalArray = function (arr) {
-  return arr.map(function (elem) {
-    return this.eval(elem);
-  }, this);
-  // return Promise.all(arr.map(function(elem) {
-  // 	return this.eval(elem);
-  // }, this));
+Evaluator.prototype.evalArray = function(arr) {
+	return arr.map(function(elem) {
+		return this.eval(elem);
+	}, this)
+	// return Promise.all(arr.map(function(elem) {
+	// 	return this.eval(elem);
+	// }, this));
 };
 
 /**
@@ -34421,25 +34438,25 @@ Evaluator.prototype.evalArray = function (arr) {
  *      evaluated
  * @returns {Promise<{}>} resolves with the result map.
  */
-Evaluator.prototype.evalMap = function (map) {
-  var keys = Object.keys(map),
-      result = {};
-  const vals = keys.map(function (key) {
-    return this.eval(map[key]);
-  }, this);
-  vals.forEach(function (val, idx) {
-    result[keys[idx]] = val;
-  });
-  return result;
-  // var asts = keys.map(function(key) {
-  // 	return this.eval(map[key]);
-  // }, this);
-  // return Promise.all(asts).then(function(vals) {
-  // 	vals.forEach(function(val, idx) {
-  // 		result[keys[idx]] = val;
-  // 	});
-  // 	return result;
-  // });
+Evaluator.prototype.evalMap = function(map) {
+	var keys = Object.keys(map),
+		result = {};
+		const vals = keys.map(function(key) {
+			return this.eval(map[key]);
+		}, this)
+		vals.forEach(function(val, idx) {
+			result[keys[idx]] = val;
+		});
+		return result;
+	// var asts = keys.map(function(key) {
+	// 	return this.eval(map[key]);
+	// }, this);
+	// return Promise.all(asts).then(function(vals) {
+	// 	vals.forEach(function(val, idx) {
+	// 		result[keys[idx]] = val;
+	// 	});
+	// 	return result;
+	// });
 };
 
 /**
@@ -34461,34 +34478,37 @@ Evaluator.prototype.evalMap = function (map) {
  *      expression filter.
  * @private
  */
-Evaluator.prototype._filterRelative = function (subject, expr) {
-  var values = [];
-  if (!Array.isArray(subject)) subject = [subject];
-  subject.forEach(function (elem) {
-    var evalInst = new Evaluator(this._grammar, this._transforms, this._context, elem);
-    values.push(evalInst.eval(expr));
-  }, this);
-  var results = [];
-  values.forEach(function (value, idx) {
-    if (value) results.push(subject[idx]);
-  });
-  return results;
-  // var promises = [];
-  // if (!Array.isArray(subject))
-  // 	subject = [subject];
-  // subject.forEach(function(elem) {
-  // 	var evalInst = new Evaluator(this._grammar, this._transforms,
-  // 		this._context, elem);
-  // 	promises.push(evalInst.eval(expr));
-  // }, this);
-  // return Promise.all(promises).then(function(values) {
-  // 	var results = [];
-  // 	values.forEach(function(value, idx) {
-  // 		if (value)
-  // 			results.push(subject[idx]);
-  // 	});
-  // 	return results;
-  // });
+Evaluator.prototype._filterRelative = function(subject, expr) {
+	var values = [];
+	if (!Array.isArray(subject))
+		subject = [subject];
+	subject.forEach(function(elem) {
+		var evalInst = new Evaluator(this._grammar, this._transforms,
+			this._context, elem);
+			values.push(evalInst.eval(expr));
+	}, this);
+	var results = [];
+	values.forEach(function(value, idx) {
+		if (value)
+			results.push(subject[idx]);
+	});
+	return results;
+	// var promises = [];
+	// if (!Array.isArray(subject))
+	// 	subject = [subject];
+	// subject.forEach(function(elem) {
+	// 	var evalInst = new Evaluator(this._grammar, this._transforms,
+	// 		this._context, elem);
+	// 	promises.push(evalInst.eval(expr));
+	// }, this);
+	// return Promise.all(promises).then(function(values) {
+	// 	var results = [];
+	// 	values.forEach(function(value, idx) {
+	// 		if (value)
+	// 			results.push(subject[idx]);
+	// 	});
+	// 	return results;
+	// });
 };
 
 /**
@@ -34506,18 +34526,20 @@ Evaluator.prototype._filterRelative = function (subject, expr) {
  * @returns {Promise<*>} resolves with the value of the drill-down.
  * @private
  */
-Evaluator.prototype._filterStatic = function (subject, expr) {
-  const res = this.eval(expr);
-  if (typeof res === 'boolean') return res ? subject : undefined;
-  return subject[res];
-  // return this.eval(expr).then(function(res) {
-  // 	if (typeof res === 'boolean')
-  // 		return res ? subject : undefined;
-  // 	return subject[res];
-  // });
+Evaluator.prototype._filterStatic = function(subject, expr) {
+	const res = this.eval(expr)
+	if (typeof res === 'boolean')
+		return res ? subject : undefined;
+	return subject[res];
+	// return this.eval(expr).then(function(res) {
+	// 	if (typeof res === 'boolean')
+	// 		return res ? subject : undefined;
+	// 	return subject[res];
+	// });
 };
 
 module.exports = Evaluator;
+
 
 /***/ }),
 /* 119 */
@@ -34536,7 +34558,7 @@ module.exports = Evaluator;
  * @returns {Promise.<[]>} resolves to a map contained evaluated values.
  * @private
  */
-exports.ArrayLiteral = function (ast) {
+exports.ArrayLiteral = function(ast) {
 	return this.evalArray(ast.value);
 };
 
@@ -34549,9 +34571,12 @@ exports.ArrayLiteral = function (ast) {
  * @returns {Promise<*>} resolves with the value of the BinaryExpression.
  * @private
  */
-exports.BinaryExpression = function (ast) {
+exports.BinaryExpression = function(ast) {
 	var self = this;
-	const arr = [this.eval(ast.left), this.eval(ast.right)];
+	const arr = [
+		this.eval(ast.left),
+		this.eval(ast.right)
+	]
 	return self._grammar[ast.operator].eval(arr[0], arr[1]);
 	// return Promise.all([
 	// 	this.eval(ast.left),
@@ -34571,11 +34596,12 @@ exports.BinaryExpression = function (ast) {
  *      the top node
  * @private
  */
-exports.ConditionalExpression = function (ast) {
+exports.ConditionalExpression = function(ast) {
 	var self = this;
-	const res = this.eval(ast.test);
+	const res = this.eval(ast.test)
 	if (res) {
-		if (ast.consequent) return self.eval(ast.consequent);
+		if (ast.consequent)
+			return self.eval(ast.consequent);
 		return res;
 	}
 	return self.eval(ast.alternate);
@@ -34597,10 +34623,11 @@ exports.ConditionalExpression = function (ast) {
  * @returns {Promise<*>} resolves with the value of the FilterExpression.
  * @private
  */
-exports.FilterExpression = function (ast) {
+exports.FilterExpression = function(ast) {
 	var self = this;
-	const subject = this.eval(ast.subject);
-	if (ast.relative) return self._filterRelative(subject, ast.expr);
+	const subject = this.eval(ast.subject)
+	if (ast.relative)
+		return self._filterRelative(subject, ast.expr);
 	return self._filterStatic(subject, ast.expr);
 	// return this.eval(ast.subject).then(function(subject) {
 	// 	if (ast.relative)
@@ -34619,21 +34646,24 @@ exports.FilterExpression = function (ast) {
  *      will resolve with the identifier's value.
  * @private
  */
-exports.Identifier = function (ast) {
+exports.Identifier = function(ast) {
 	if (ast.from) {
-		const context = this.eval(ast.from);
-		if (context === undefined) return undefined;
-		if (Array.isArray(context)) context = context[0];
+		const context = this.eval(ast.from)
+		if (context === undefined)
+			return undefined;
+		if (Array.isArray(context)) 
+			context = context[0];
 		return context[ast.value];
-	} else {
-		let context = ast.relative ? this._relContext : this._context;
+	}
+	else {
+		let context = ast.relative ? this._relContext : this._context
 		while (context) {
 			if (ast.value in context) {
-				return context[ast.value];
+				return context[ast.value]
 			}
-			context = context.$super;
+			context = context.$super
 		}
-		return undefined;
+		return undefined
 		// return ast.relative ? this._relContext[ast.value] :
 		// 	this._context[ast.value];
 	}
@@ -34659,7 +34689,7 @@ exports.Identifier = function (ast) {
  * @returns {string|number|boolean} The value of the Literal node
  * @private
  */
-exports.Literal = function (ast) {
+exports.Literal = function(ast) {
 	return ast.value;
 };
 
@@ -34671,7 +34701,7 @@ exports.Literal = function (ast) {
  * @returns {Promise<{}>} resolves to a map contained evaluated values.
  * @private
  */
-exports.ObjectLiteral = function (ast) {
+exports.ObjectLiteral = function(ast) {
 	return this.evalMap(ast.value);
 };
 
@@ -34684,10 +34714,14 @@ exports.ObjectLiteral = function (ast) {
  *      will resolve with the transformed value.
  * @private
  */
-exports.Transform = function (ast) {
+exports.Transform = function(ast) {
 	var transform = this._transforms[ast.name];
-	if (!transform) throw new Error("Transform '" + ast.name + "' is not defined.");
-	const arr = [this.eval(ast.subject), this.evalArray(ast.args || [])];
+	if (!transform)
+		throw new Error("Transform '" + ast.name + "' is not defined.");
+	const arr =	[
+		this.eval(ast.subject),
+		this.evalArray(ast.args || [])
+	]
 	return transform.apply(null, [arr[0]].concat(arr[1]));
 	// return Promise.all([
 	// 	this.eval(ast.subject),
@@ -34705,14 +34739,15 @@ exports.Transform = function (ast) {
  * @returns {Promise<*>} resolves with the value of the UnaryExpression.
  * @constructor
  */
-exports.UnaryExpression = function (ast) {
+exports.UnaryExpression = function(ast) {
 	var self = this;
-	const right = this.eval(ast.right);
+	const right = this.eval(ast.right)
 	return self._grammar[ast.operator].eval(right);
 	// return this.eval(ast.right).then(function(right) {
 	// 	return self._grammar[ast.operator].eval(right);
 	// });
 };
+
 
 /***/ }),
 /* 120 */
@@ -34724,22 +34759,27 @@ exports.UnaryExpression = function (ast) {
  */
 
 var numericRegex = /^-?(?:(?:[0-9]*\.[0-9]+)|[0-9]+)$/,
-    identRegex = /^[a-zA-Z_\$][a-zA-Z0-9_\$]*$/,
-    escEscRegex = /\\\\/,
-    preOpRegexElems = [
-// Strings
-"'(?:(?:\\\\')?[^'])*'", '"(?:(?:\\\\")?[^"])*"',
-// Whitespace
-'\\s+',
-// Booleans
-'\\btrue\\b', '\\bfalse\\b'],
-    postOpRegexElems = [
-// Identifiers
-'([^a-zA-Z0-9_\\$])[a-zA-Z_\\$][a-zA-Z0-9_\\$]*([^a-zA-Z0-9_\\$])',
-// '\\b[a-zA-Z_\\$][a-zA-Z0-9_\\$]*\\b',
-// Numerics (without negative symbol)
-'(?:(?:[0-9]*\\.[0-9]+)|[0-9]+)'],
-    minusNegatesAfter = ['binaryOp', 'unaryOp', 'openParen', 'openBracket', 'question', 'colon'];
+	identRegex = /^[a-zA-Z_\$][a-zA-Z0-9_\$]*$/,
+	escEscRegex = /\\\\/,
+	preOpRegexElems = [
+		// Strings
+		"'(?:(?:\\\\')?[^'])*'",
+		'"(?:(?:\\\\")?[^"])*"',
+		// Whitespace
+		'\\s+',
+		// Booleans
+		'\\btrue\\b',
+		'\\bfalse\\b'
+	],
+	postOpRegexElems = [
+		// Identifiers
+		'([^a-zA-Z0-9_\\$])[a-zA-Z_\\$][a-zA-Z0-9_\\$]*([^a-zA-Z0-9_\\$])',
+		// '\\b[a-zA-Z_\\$][a-zA-Z0-9_\\$]*\\b',
+		// Numerics (without negative symbol)
+		'(?:(?:[0-9]*\\.[0-9]+)|[0-9]+)'
+	],
+	minusNegatesAfter = ['binaryOp', 'unaryOp', 'openParen', 'openBracket',
+		'question', 'colon'];
 
 /**
  * Lexer is a collection of stateless, statically-accessed functions for the
@@ -34752,7 +34792,7 @@ var numericRegex = /^-?(?:(?:[0-9]*\.[0-9]+)|[0-9]+)$/,
  * @type {{}}
  */
 function Lexer(grammar) {
-  this._grammar = grammar;
+	this._grammar = grammar;
 }
 
 /**
@@ -34761,12 +34801,12 @@ function Lexer(grammar) {
  * @returns {Array<string>} An array of substrings defining the functional
  *      elements of the expression.
  */
-Lexer.prototype.getElements = function (str) {
-  var regex = this._getSplitRegex();
-  return str.split(regex).filter(function (elem) {
-    // Remove empty strings
-    return elem;
-  });
+Lexer.prototype.getElements = function(str) {
+	var regex = this._getSplitRegex();
+	return str.split(regex).filter(function(elem) {
+		// Remove empty strings
+		return elem;
+	});
 };
 
 /**
@@ -34779,23 +34819,28 @@ Lexer.prototype.getElements = function (str) {
  *      converted to tokens
  * @returns {Array<{type, value, raw}>} an array of token objects.
  */
-Lexer.prototype.getTokens = function (elements) {
-  var tokens = [],
-      negate = false;
-  for (var i = 0; i < elements.length; i++) {
-    if (this._isWhitespace(elements[i])) {
-      if (tokens.length) tokens[tokens.length - 1].raw += elements[i];
-    } else if (elements[i] === '-' && this._isNegative(tokens)) negate = true;else {
-      if (negate) {
-        elements[i] = '-' + elements[i];
-        negate = false;
-      }
-      tokens.push(this._createToken(elements[i]));
-    }
-  }
-  // Catch a - at the end of the string. Let the parser handle that issue.
-  if (negate) tokens.push(this._createToken('-'));
-  return tokens;
+Lexer.prototype.getTokens = function(elements) {
+	var tokens = [],
+		negate = false;
+	for (var i = 0; i < elements.length; i++) {
+		if (this._isWhitespace(elements[i])) {
+			if (tokens.length)
+				tokens[tokens.length - 1].raw += elements[i];
+		}
+		else if (elements[i] === '-' && this._isNegative(tokens))
+			negate = true;
+		else {
+			if (negate) {
+				elements[i] = '-' + elements[i];
+				negate = false;
+			}
+			tokens.push(this._createToken(elements[i]));
+		}
+	}
+	// Catch a - at the end of the string. Let the parser handle that issue.
+	if (negate)
+		tokens.push(this._createToken('-'));
+	return tokens;
 };
 
 /**
@@ -34826,9 +34871,9 @@ Lexer.prototype.getTokens = function (elements) {
  * @returns {Array<{type, value, raw}>} an array of token objects.
  * @throws {Error} if the provided string contains an invalid token.
  */
-Lexer.prototype.tokenize = function (str) {
-  var elements = this.getElements(str);
-  return this.getTokens(elements);
+Lexer.prototype.tokenize = function(str) {
+	var elements = this.getElements(str);
+	return this.getTokens(elements);
 };
 
 /**
@@ -34840,14 +34885,25 @@ Lexer.prototype.tokenize = function (str) {
  * @throws {Error} if the provided string is not a valid expression element.
  * @private
  */
-Lexer.prototype._createToken = function (element) {
-  var token = {
-    type: 'literal',
-    value: element,
-    raw: element
-  };
-  if (element[0] == '"' || element[0] == "'") token.value = this._unquote(element);else if (element.match(numericRegex)) token.value = parseFloat(element);else if (element === 'true' || element === 'false') token.value = element === 'true';else if (this._grammar[element]) token.type = this._grammar[element].type;else if (element.match(identRegex)) token.type = 'identifier';else throw new Error("Invalid expression token: " + element);
-  return token;
+Lexer.prototype._createToken = function(element) {
+	var token = {
+		type: 'literal',
+		value: element,
+		raw: element
+	};
+	if (element[0] == '"' || element[0] == "'")
+		token.value = this._unquote(element);
+	else if (element.match(numericRegex))
+		token.value = parseFloat(element);
+	else if (element === 'true' || element === 'false')
+		token.value = element === 'true';
+	else if (this._grammar[element])
+		token.type = this._grammar[element].type;
+	else if (element.match(identRegex))
+		token.type = 'identifier';
+	else
+		throw new Error("Invalid expression token: " + element);
+	return token;
 };
 
 /**
@@ -34858,10 +34914,11 @@ Lexer.prototype._createToken = function (element) {
  * @see https://developer.mozilla.org/en/docs/Web/JavaScript/Guide/Regular_Expressions
  * @private
  */
-Lexer.prototype._escapeRegExp = function (str) {
-  str = str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  if (str.match(identRegex)) str = '\\b' + str + '\\b';
-  return str;
+Lexer.prototype._escapeRegExp = function(str) {
+	str = str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+	if (str.match(identRegex))
+		str = '\\b' + str + '\\b';
+	return str;
 };
 
 /**
@@ -34870,18 +34927,22 @@ Lexer.prototype._escapeRegExp = function (str) {
  * @returns {RegExp} An element-splitting RegExp object
  * @private
  */
-Lexer.prototype._getSplitRegex = function () {
-  if (!this._splitRegex) {
-    var elemArray = Object.keys(this._grammar);
-    // Sort by most characters to least, then regex escape each
-    elemArray = elemArray.sort(function (a, b) {
-      return b.length - a.length;
-    }).map(function (elem) {
-      return this._escapeRegExp(elem);
-    }, this);
-    this._splitRegex = new RegExp('(' + [preOpRegexElems.join('|'), elemArray.join('|'), postOpRegexElems.join('|')].join('|') + ')');
-  }
-  return this._splitRegex;
+Lexer.prototype._getSplitRegex = function() {
+	if (!this._splitRegex) {
+		var elemArray = Object.keys(this._grammar);
+		// Sort by most characters to least, then regex escape each
+		elemArray = elemArray.sort(function(a ,b) {
+			return b.length - a.length;
+		}).map(function(elem) {
+			return this._escapeRegExp(elem);
+		}, this);
+		this._splitRegex = new RegExp('(' + [
+			preOpRegexElems.join('|'),
+			elemArray.join('|'),
+			postOpRegexElems.join('|')
+		].join('|') + ')');
+	}
+	return this._splitRegex;
 };
 
 /**
@@ -34893,11 +34954,12 @@ Lexer.prototype._getSplitRegex = function () {
  *      symbol; false otherwise
  * @private
  */
-Lexer.prototype._isNegative = function (tokens) {
-  if (!tokens.length) return true;
-  return minusNegatesAfter.some(function (type) {
-    return type === tokens[tokens.length - 1].type;
-  });
+Lexer.prototype._isNegative = function(tokens) {
+	if (!tokens.length)
+		return true;
+	return minusNegatesAfter.some(function(type) {
+		return type === tokens[tokens.length - 1].type;
+	});
 };
 
 /**
@@ -34909,8 +34971,8 @@ Lexer.prototype._isNegative = function (tokens) {
  * @private
  */
 var _whitespaceRegex = /^\s*$/;
-Lexer.prototype._isWhitespace = function (str) {
-  return _whitespaceRegex.test(str);
+Lexer.prototype._isWhitespace = function(str) {
+	return _whitespaceRegex.test(str);
 };
 
 /**
@@ -34924,13 +34986,16 @@ Lexer.prototype._isWhitespace = function (str) {
  *      properly processed.
  * @private
  */
-Lexer.prototype._unquote = function (str) {
-  var quote = str[0],
-      escQuoteRegex = new RegExp('\\\\' + quote, 'g');
-  return str.substr(1, str.length - 2).replace(escQuoteRegex, quote).replace(escEscRegex, '\\');
+Lexer.prototype._unquote = function(str) {
+	var quote = str[0],
+		escQuoteRegex = new RegExp('\\\\' + quote, 'g');
+	return str.substr(1, str.length - 2)
+		.replace(escQuoteRegex, quote)
+		.replace(escEscRegex, '\\');
 };
 
 module.exports = Lexer;
+
 
 /***/ }),
 /* 121 */
@@ -34942,7 +35007,7 @@ module.exports = Lexer;
  */
 
 var handlers = __webpack_require__(51),
-    states = __webpack_require__(122).states;
+	states = __webpack_require__(122).states;
 
 /**
  * The Parser is a state machine that converts tokens from the {@link Lexer}
@@ -34963,12 +35028,12 @@ var handlers = __webpack_require__(51),
  * @constructor
  */
 function Parser(grammar, prefix, stopMap) {
-  this._grammar = grammar;
-  this._state = 'expectOperand';
-  this._tree = null;
-  this._exprStr = prefix || '';
-  this._relative = false;
-  this._stopMap = stopMap || {};
+	this._grammar = grammar;
+	this._state = 'expectOperand';
+	this._tree = null;
+	this._exprStr = prefix || '';
+	this._relative = false;
+	this._stopMap = stopMap || {};
 }
 
 /**
@@ -34981,29 +35046,40 @@ function Parser(grammar, prefix, stopMap) {
  * @returns {boolean|*} the stopState value if this parser encountered a token
  *      in the stopState mapb; false if tokens can continue.
  */
-Parser.prototype.addToken = function (token) {
-  if (this._state == 'complete') throw new Error('Cannot add a new token to a completed Parser');
-  var state = states[this._state],
-      startExpr = this._exprStr;
-  this._exprStr += token.raw;
-  if (state.subHandler) {
-    if (!this._subParser) this._startSubExpression(startExpr);
-    var stopState = this._subParser.addToken(token);
-    if (stopState) {
-      this._endSubExpression();
-      if (this._parentStop) return stopState;
-      this._state = stopState;
-    }
-  } else if (state.tokenTypes[token.type]) {
-    var typeOpts = state.tokenTypes[token.type],
-        handleFunc = handlers[token.type];
-    if (typeOpts.handler) handleFunc = typeOpts.handler;
-    if (handleFunc) handleFunc.call(this, token);
-    if (typeOpts.toState) this._state = typeOpts.toState;
-  } else if (this._stopMap[token.type]) return this._stopMap[token.type];else {
-    throw new Error('Token ' + token.raw + ' (' + token.type + ') unexpected in expression: ' + this._exprStr);
-  }
-  return false;
+Parser.prototype.addToken = function(token) {
+	if (this._state == 'complete')
+		throw new Error('Cannot add a new token to a completed Parser');
+	var state = states[this._state],
+		startExpr = this._exprStr;
+	this._exprStr += token.raw;
+	if (state.subHandler) {
+		if (!this._subParser)
+			this._startSubExpression(startExpr);
+		var stopState = this._subParser.addToken(token);
+		if (stopState) {
+			this._endSubExpression();
+			if (this._parentStop)
+				return stopState;
+			this._state = stopState;
+		}
+	}
+	else if (state.tokenTypes[token.type]) {
+		var typeOpts = state.tokenTypes[token.type],
+			handleFunc = handlers[token.type];
+		if (typeOpts.handler)
+			handleFunc = typeOpts.handler;
+		if (handleFunc)
+			handleFunc.call(this, token);
+		if (typeOpts.toState)
+			this._state = typeOpts.toState;
+	}
+	else if (this._stopMap[token.type])
+		return this._stopMap[token.type];
+	else {
+		throw new Error('Token ' + token.raw + ' (' + token.type +
+			') unexpected in expression: ' + this._exprStr);
+	}
+	return false;
 };
 
 /**
@@ -35012,8 +35088,8 @@ Parser.prototype.addToken = function (token) {
  * @param {Array<{type: <string>}>} tokens An array of tokens, as provided by
  *      the {@link Lexer#tokenize} function.
  */
-Parser.prototype.addTokens = function (tokens) {
-  tokens.forEach(this.addToken, this);
+Parser.prototype.addTokens = function(tokens) {
+	tokens.forEach(this.addToken, this);
 };
 
 /**
@@ -35024,19 +35100,21 @@ Parser.prototype.addTokens = function (tokens) {
  * @throws {Error} if the parser is not in a state where it's legal to end
  *      the expression, indicating that the expression is incomplete
  */
-Parser.prototype.complete = function () {
-  if (this._cursor && !states[this._state].completable) throw new Error('Unexpected end of expression: ' + this._exprStr);
-  if (this._subParser) this._endSubExpression();
-  this._state = 'complete';
-  return this._cursor ? this._tree : null;
+Parser.prototype.complete = function() {
+	if (this._cursor && !states[this._state].completable)
+		throw new Error('Unexpected end of expression: ' + this._exprStr);
+	if (this._subParser)
+		this._endSubExpression();
+	this._state = 'complete';
+	return this._cursor ? this._tree : null;
 };
 
 /**
  * Indicates whether the expression tree contains a relative path identifier.
  * @returns {boolean} true if a relative identifier exists; false otherwise.
  */
-Parser.prototype.isRelative = function () {
-  return this._relative;
+Parser.prototype.isRelative = function() {
+	return this._relative;
 };
 
 /**
@@ -35044,9 +35122,9 @@ Parser.prototype.isRelative = function () {
  * to the subHandler configured in the current state.
  * @private
  */
-Parser.prototype._endSubExpression = function () {
-  states[this._state].subHandler.call(this, this._subParser.complete());
-  this._subParser = null;
+Parser.prototype._endSubExpression = function() {
+	states[this._state].subHandler.call(this, this._subParser.complete());
+	this._subParser = null;
 };
 
 /**
@@ -35056,12 +35134,14 @@ Parser.prototype._endSubExpression = function () {
  * @param {{type: <string>}} node A node to be added to the AST
  * @private
  */
-Parser.prototype._placeAtCursor = function (node) {
-  if (!this._cursor) this._tree = node;else {
-    this._cursor.right = node;
-    this._setParent(node, this._cursor);
-  }
-  this._cursor = node;
+Parser.prototype._placeAtCursor = function(node) {
+	if (!this._cursor)
+		this._tree = node;
+	else {
+		this._cursor.right = node;
+		this._setParent(node, this._cursor);
+	}
+	this._cursor = node;
 };
 
 /**
@@ -35072,9 +35152,9 @@ Parser.prototype._placeAtCursor = function (node) {
  * @param {{type: <string>}} node A node to be added to the AST
  * @private
  */
-Parser.prototype._placeBeforeCursor = function (node) {
-  this._cursor = this._cursor._parent;
-  this._placeAtCursor(node);
+Parser.prototype._placeBeforeCursor = function(node) {
+	this._cursor = this._cursor._parent;
+	this._placeAtCursor(node);
 };
 
 /**
@@ -35086,11 +35166,11 @@ Parser.prototype._placeBeforeCursor = function (node) {
  *      parent of the new node
  * @private
  */
-Parser.prototype._setParent = function (node, parent) {
-  Object.defineProperty(node, '_parent', {
-    value: parent,
-    writable: true
-  });
+Parser.prototype._setParent = function(node, parent) {
+	Object.defineProperty(node, '_parent', {
+		value: parent,
+		writable: true
+	});
 };
 
 /**
@@ -35099,16 +35179,17 @@ Parser.prototype._setParent = function (node, parent) {
  * @param {string} [exprStr] The expression string to prefix to the new Parser
  * @private
  */
-Parser.prototype._startSubExpression = function (exprStr) {
-  var endStates = states[this._state].endStates;
-  if (!endStates) {
-    this._parentStop = true;
-    endStates = this._stopMap;
-  }
-  this._subParser = new Parser(this._grammar, exprStr, endStates);
+Parser.prototype._startSubExpression = function(exprStr) {
+	var endStates = states[this._state].endStates;
+	if (!endStates) {
+		this._parentStop = true;
+		endStates = this._stopMap;
+	}
+	this._subParser = new Parser(this._grammar, exprStr, endStates);
 };
 
 module.exports = Parser;
+
 
 /***/ }),
 /* 122 */
@@ -35156,72 +35237,72 @@ var h = __webpack_require__(51);
 exports.states = {
 	expectOperand: {
 		tokenTypes: {
-			literal: { toState: 'expectBinOp' },
-			identifier: { toState: 'identifier' },
+			literal: {toState: 'expectBinOp'},
+			identifier: {toState: 'identifier'},
 			unaryOp: {},
-			openParen: { toState: 'subExpression' },
-			openCurl: { toState: 'expectObjKey', handler: h.objStart },
-			dot: { toState: 'traverse' },
-			openBracket: { toState: 'arrayVal', handler: h.arrayStart }
+			openParen: {toState: 'subExpression'},
+			openCurl: {toState: 'expectObjKey', handler: h.objStart},
+			dot: {toState: 'traverse'},
+			openBracket: {toState: 'arrayVal', handler: h.arrayStart}
 		}
 	},
 	expectBinOp: {
 		tokenTypes: {
-			binaryOp: { toState: 'expectOperand' },
-			pipe: { toState: 'expectTransform' },
-			dot: { toState: 'traverse' },
-			question: { toState: 'ternaryMid', handler: h.ternaryStart }
+			binaryOp: {toState: 'expectOperand'},
+			pipe: {toState: 'expectTransform'},
+			dot: {toState: 'traverse'},
+			question: {toState: 'ternaryMid', handler: h.ternaryStart}
 		},
 		completable: true
 	},
 	expectTransform: {
 		tokenTypes: {
-			identifier: { toState: 'postTransform', handler: h.transform }
+			identifier: {toState: 'postTransform', handler: h.transform}
 		}
 	},
 	expectObjKey: {
 		tokenTypes: {
-			identifier: { toState: 'expectKeyValSep', handler: h.objKey },
-			closeCurl: { toState: 'expectBinOp' }
+			identifier: {toState: 'expectKeyValSep', handler: h.objKey},
+			closeCurl: {toState: 'expectBinOp'}
 		}
 	},
 	expectKeyValSep: {
 		tokenTypes: {
-			colon: { toState: 'objVal' }
+			colon: {toState: 'objVal'}
 		}
 	},
 	postTransform: {
 		tokenTypes: {
-			openParen: { toState: 'argVal' },
-			binaryOp: { toState: 'expectOperand' },
-			dot: { toState: 'traverse' },
-			openBracket: { toState: 'filter' },
-			pipe: { toState: 'expectTransform' }
+			openParen: {toState: 'argVal'},
+			binaryOp: {toState: 'expectOperand'},
+			dot: {toState: 'traverse'},
+			openBracket: {toState: 'filter'},
+			pipe: {toState: 'expectTransform'}
 		},
 		completable: true
 	},
 	postTransformArgs: {
 		tokenTypes: {
-			binaryOp: { toState: 'expectOperand' },
-			dot: { toState: 'traverse' },
-			openBracket: { toState: 'filter' },
-			pipe: { toState: 'expectTransform' }
+			binaryOp: {toState: 'expectOperand'},
+			dot: {toState: 'traverse'},
+			openBracket: {toState: 'filter'},
+			pipe: {toState: 'expectTransform'}
 		},
 		completable: true
 	},
 	identifier: {
 		tokenTypes: {
-			binaryOp: { toState: 'expectOperand' },
-			dot: { toState: 'traverse' },
-			openBracket: { toState: 'filter' },
-			pipe: { toState: 'expectTransform' },
-			question: { toState: 'ternaryMid', handler: h.ternaryStart }
+			binaryOp: {toState: 'expectOperand'},
+			dot: {toState: 'traverse'},
+			openBracket: {toState: 'filter'},
+			pipe: {toState: 'expectTransform'},
+			question: {toState: 'ternaryMid', handler: h.ternaryStart}
 		},
 		completable: true
 	},
 	traverse: {
 		tokenTypes: {
-			'identifier': { toState: 'identifier' }
+			'identifier': {toState: 'identifier'}
 		}
 	},
 	filter: {
@@ -35269,6 +35350,7 @@ exports.states = {
 	}
 };
 
+
 /***/ }),
 /* 123 */
 /***/ (function(module, exports) {
@@ -35284,92 +35366,62 @@ exports.states = {
  * @type {{}}
  */
 exports.elements = {
-	'.': { type: 'dot' },
-	'[': { type: 'openBracket' },
-	']': { type: 'closeBracket' },
-	'|': { type: 'pipe' },
-	'{': { type: 'openCurl' },
-	'}': { type: 'closeCurl' },
-	':': { type: 'colon' },
-	',': { type: 'comma' },
-	'(': { type: 'openParen' },
-	')': { type: 'closeParen' },
-	'?': { type: 'question' },
-	'+': { type: 'binaryOp', precedence: 30,
-		eval: function (left, right) {
-			return left + right;
-		} },
-	'-': { type: 'binaryOp', precedence: 30,
-		eval: function (left, right) {
-			return left - right;
-		} },
-	'*': { type: 'binaryOp', precedence: 40,
-		eval: function (left, right) {
-			return left * right;
-		} },
-	'/': { type: 'binaryOp', precedence: 40,
-		eval: function (left, right) {
-			return left / right;
-		} },
-	'//': { type: 'binaryOp', precedence: 40,
-		eval: function (left, right) {
-			return Math.floor(left / right);
-		} },
-	'%': { type: 'binaryOp', precedence: 50,
-		eval: function (left, right) {
-			return left % right;
-		} },
-	'^': { type: 'binaryOp', precedence: 50,
-		eval: function (left, right) {
-			return Math.pow(left, right);
-		} },
-	'==': { type: 'binaryOp', precedence: 20,
-		eval: function (left, right) {
-			return left == right;
-		} },
-	'!=': { type: 'binaryOp', precedence: 20,
-		eval: function (left, right) {
-			return left != right;
-		} },
-	'>': { type: 'binaryOp', precedence: 20,
-		eval: function (left, right) {
-			return left > right;
-		} },
-	'>=': { type: 'binaryOp', precedence: 20,
-		eval: function (left, right) {
-			return left >= right;
-		} },
-	'<': { type: 'binaryOp', precedence: 20,
-		eval: function (left, right) {
-			return left < right;
-		} },
-	'<=': { type: 'binaryOp', precedence: 20,
-		eval: function (left, right) {
-			return left <= right;
-		} },
-	'&&': { type: 'binaryOp', precedence: 10,
-		eval: function (left, right) {
-			return left && right;
-		} },
-	'||': { type: 'binaryOp', precedence: 10,
-		eval: function (left, right) {
-			return left || right;
-		} },
-	'in': { type: 'binaryOp', precedence: 20,
-		eval: function (left, right) {
-			if (typeof right === 'string') return right.indexOf(left) !== -1;
+	'.': {type: 'dot'},
+	'[': {type: 'openBracket'},
+	']': {type: 'closeBracket'},
+	'|': {type: 'pipe'},
+	'{': {type: 'openCurl'},
+	'}': {type: 'closeCurl'},
+	':': {type: 'colon'},
+	',': {type: 'comma'},
+	'(': {type: 'openParen'},
+	')': {type: 'closeParen'},
+	'?': {type: 'question'},
+	'+': {type: 'binaryOp', precedence: 30,
+		eval: function(left, right) { return left + right; }},
+	'-': {type: 'binaryOp', precedence: 30,
+		eval: function(left, right) { return left - right; }},
+	'*': {type: 'binaryOp', precedence: 40,
+		eval: function(left, right) { return left * right; }},
+	'/': {type: 'binaryOp', precedence: 40,
+		eval: function(left, right) { return left / right; }},
+	'//': {type: 'binaryOp', precedence: 40,
+		eval: function(left, right) { return Math.floor(left / right); }},
+	'%': {type: 'binaryOp', precedence: 50,
+		eval: function(left, right) { return left % right; }},
+	'^': {type: 'binaryOp', precedence: 50,
+		eval: function(left, right) { return Math.pow(left, right); }},
+	'==': {type: 'binaryOp', precedence: 20,
+		eval: function(left, right) { return left == right; }},
+	'!=': {type: 'binaryOp', precedence: 20,
+		eval: function(left, right) { return left != right; }},
+	'>': {type: 'binaryOp', precedence: 20,
+		eval: function(left, right) { return left > right; }},
+	'>=': {type: 'binaryOp', precedence: 20,
+		eval: function(left, right) { return left >= right; }},
+	'<': {type: 'binaryOp', precedence: 20,
+		eval: function(left, right) { return left < right; }},
+	'<=': {type: 'binaryOp', precedence: 20,
+		eval: function(left, right) { return left <= right; }},
+	'&&': {type: 'binaryOp', precedence: 10,
+		eval: function(left, right) { return left && right; }},
+	'||': {type: 'binaryOp', precedence: 10,
+		eval: function(left, right) { return left || right; }},
+	'in': {type: 'binaryOp', precedence: 20,
+		eval: function(left, right) {
+			if (typeof right === 'string')
+				return right.indexOf(left) !== -1;
 			if (Array.isArray(right)) {
-				return right.some(function (elem) {
+				return right.some(function(elem) {
 					return elem == left;
 				});
 			}
 			return false;
-		} },
-	'!': { type: 'unaryOp', precedence: Infinity,
-		eval: function (right) {
-			return !right;
-		} }
+		}},
+	'!': {type: 'unaryOp', precedence: Infinity,
+		eval: function(right) { return !right; }}
 };
+
 
 /***/ }),
 /* 124 */

@@ -1,6 +1,6 @@
 {
   "name": "weivjs",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": " A home-brew UI view library for modern component-based web development",
   "main": "lib/weiv.js",
   "scripts": {
@@ -52,7 +52,7 @@
     "debug": "^3.1.0",
     "fbemitter": "^2.1.1",
     "htmlparser2": "^3.9.2",
-    "jexl-sync": "^1.0.3",
+    "jexl-sync": "^1.0.5",
     "lodash": "^4.17.4",
     "main-loop": "^3.4.0",
     "mobx": "^3.4.1",
