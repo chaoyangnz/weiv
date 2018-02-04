@@ -29227,8 +29227,6 @@ module.exports = exports['default'];
 "use strict";
 
 
-var _weivjs = __webpack_require__(2);
-
 var _appstate = __webpack_require__(52);
 
 var _appstate2 = _interopRequireDefault(_appstate);
@@ -29240,7 +29238,7 @@ var _App2 = _interopRequireDefault(_App);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // MWE: Generate todos for benchmarking
-var STORE_SIZE = 10;
+var STORE_SIZE = 1000;
 
 var initialState = [];
 

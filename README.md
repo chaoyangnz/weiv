@@ -86,7 +86,7 @@ export class Todo {
     <p>Tip: When counter is less than 5, location will be shown.</p>
     <ol>
       <li @for:i="[1,2,3]">
-      {{i}} - {{__super.i}}
+      {{i}} - {{$super.i}}
       </li>
     </ol>
     <todo @bind:a="counter" @on:save="onSave">

@@ -1,9 +1,8 @@
-import { observable } from 'weivjs'
 import AppState from './stores/appstate'
 import App from './components/App';
 
 // MWE: Generate todos for benchmarking
-const STORE_SIZE = 10;
+const STORE_SIZE = 1000;
 
 const initialState = []
 
