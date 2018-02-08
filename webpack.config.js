@@ -10,8 +10,7 @@ let libraryName = 'weiv';
 let plugins = [], outputFile;
 
 if (env === 'build') {
-  console.log('Env is : %s', env)
-  plugins.push(new UglifyJsPlugin({ extractComments: true, sourceMap: false }));
+  plugins.push(new UglifyJsPlugin({ extractComments: true, sourceMap: false, parallel: 4 }));
   outputFile = libraryName + '.min.js';
 } else {
   outputFile = libraryName + '.js';
