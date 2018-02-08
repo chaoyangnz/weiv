@@ -11,7 +11,7 @@ This is an era of front-end evolution with tons of front-end frameworks: React, 
 
 ### TODO MVC example
 
-[Weiv TODO MVC example](http://yangchao.me/weiv-todomvc/)
+[Live demo](http://yangchao.me/weiv-todomvc/)
 
 [Source code](http://github.com/richdyang/weiv-todomvc)
 
