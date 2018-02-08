@@ -97,7 +97,9 @@ export class ForDirective extends Directive {
       _.remove(clonedNode.directives, directive => directive instanceof ForDirective)
       scope['$index'] = i
       scope[this.target] = item // inject for $var in ..
-      vnodes.push(clonedNode.render(contextComponent, scope))
+      const vnode = clonedNode.render(contextComponent, scope)
+      vnode.key = clonedNode.componentId // assign a key for vnode
+      vnodes.push(vnode)
     })
     return vnodes
   }

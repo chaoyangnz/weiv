@@ -1,8 +1,8 @@
 import _ from 'lodash'
-import vdom from 'virtual-dom'
+import VDOM from 'virtual-dom'
 import Jexl from 'jexl-sync'
 import debug from 'debug'
-import { HTML_EVENT_ATTRIBUTES } from './html'
+import { HTML_EVENT_ATTRIBUTES, HTML_GLOBAL_ATTRIBUTES, HTML_TAG_ATTRIBUTES } from './html'
 import * as utils from '../utils'
 
 const log = debug('weiv:render')
@@ -29,7 +29,7 @@ export class Expression {
   render(contextComponent, scope) {
     const val = this.eval(contextComponent, scope)
     const text = (val !== null && val !== undefined) ? String(val) : ''
-    return new vdom.VText(text)
+    return new VDOM.VText(text)
   }
 }
 
@@ -40,32 +40,34 @@ export class Text {
 
   render(contextComponent, scope) {
     console.log('%o', this)
-    return new vdom.VText(this.text)
+    return new VDOM.VText(this.text)
   }
 }
 
 export class Node {
-  constructor(contextComponentClass, tagName, attributes) {
+  constructor(contextComponentClass, tagName, attributes, parse = true) {
     this.contextComponentClass = contextComponentClass
     this.tagName = tagName
-    this.properties = {} // name -> value (string), except html events: onclick -> value (expression)
+    this.attributes = {} // name -> value (string), except html events: onclick -> value (expression)
     this.directives = [] // @command:(target).(params..) -> expression
     this.children = [] // children nodes
     this.parent = null
-    this._parsePropertiesAndDirectives(attributes)
+    if (parse) {
+      this._parseAttributesAndDirectives(attributes)
+    }
   }
 
-  _parsePropertiesAndDirectives(attributes) {
+  _parseAttributesAndDirectives(attributes) {
     for (let name of Object.keys(attributes)) {
       if (name.match(/@[^@]+/)) { // directive prefix: @
         const directive = this._parseDirective(name, attributes[name])
         if (directive) this.directives.push(directive)
       } else if (_.includes(HTML_EVENT_ATTRIBUTES, name)) {
-        this.properties[name] = new Expression(attributes[name])
-      } else if (name === 'class') {
-        this.properties['className'] = attributes[name]
+        this.attributes[name] = new Expression(attributes[name])
+      } else if (_.includes(HTML_GLOBAL_ATTRIBUTES, name) || _.includes(HTML_TAG_ATTRIBUTES[name], this.tagName)) {
+        this.attributes[name] = attributes[name]
       } else {
-        this.properties[name] = attributes[name]
+        console.warn('Illegal attribute `%s` for tag `%s`', name, this.tagName)
       }
     }
   }
@@ -127,7 +129,16 @@ export class Node {
     if (result !== true) return result
 
     // only `onclick..` attributes is expression
-    let properties = _.mapValues(_.cloneDeep(this.properties), attr => attr instanceof Expression ? attr.eval(contextComponent, scope) : attr)
+    let properties = { attributes: {} }
+    _.forIn(this.attributes, (attr, name) => {
+      if (attr instanceof Expression) { // events: onclick...
+        properties[name] = attr.eval(contextComponent, scope)
+      } else { // attributes
+        properties.attributes[name] = attr
+      }
+    })
+
+    // let properties = _.mapValues(this.attributes, prop => prop instanceof Expression ? prop.eval(contextComponent, scope) : prop)
 
     result = this._process(this.directives.map(directive => directive.propertiesEvaluated({contextComponent, scope, node: this, properties})))
     if (result !== true) return result
@@ -137,25 +148,25 @@ export class Node {
     result = this._process(this.directives.map(directive => directive.childrenRendered({contextComponent, scope, node: this, properties, children})))
     if (result !== true) return result
 
-    return vdom.h(this.tagName, properties, children)
+    return VDOM.h(this.tagName, properties, children)
   }
 }
 
 export class Component extends Node {
   constructor(contextComponentClass, tagName, attributes, componentClass) {
-    super(contextComponentClass, tagName, attributes)
+    super(contextComponentClass, tagName, attributes, false)
     this.componentClass = componentClass
     this.componentId = componentClass.$original.$uniqueid()
-    this.properties = {}
+    this.attributes = {}
     this.directives = []
     for (let name of Object.keys(attributes)) {
       if (name.match(/@[^@]+/)) { // directive prefix: @
-        const directive = this._parseDirective(name, attributes[name])
+        const directive = super._parseDirective(name, attributes[name])
         if (directive) this.directives.push(directive)
       } else {
         // validate component props
         if (_.includes(Object.keys(componentClass.$original.prototype.$props), name)) {
-          this.properties[name] = attributes[name]
+          this.attributes[name] = attributes[name]
         } else {
           console.warn('Illegal commponent props %s in %s', name, componentClass.$class.name)
         }
@@ -175,7 +186,7 @@ export class Component extends Node {
     result = this._process(this.directives.map(directive => directive.eventsPrepared({contextComponent, scope, node: this, events})))
     if (result !== true) return result
 
-    let properties = _.mapValues(_.cloneDeep(this.properties), prop => prop instanceof Expression ? prop.eval(contextComponent, scope) : prop)
+    let properties = _.mapValues(this.attributes, prop => prop instanceof Expression ? prop.eval(contextComponent, scope) : prop)
 
     result = this._process(this.directives.map(directive => directive.propertiesEvaluated({contextComponent, scope, node: this, properties})))
     if (result !== true) return result
@@ -226,8 +237,7 @@ export class Slot extends Node {
     let result = this._process(this.directives.map(directive => directive.initialised({contextComponent, scope, node: this})))
     if (result !== true) return result
 
-    // only `onclick..` attributes is expression
-    let properties = _.mapValues(_.cloneDeep(this.properties), attr => attr instanceof Expression ? attr.eval(contextComponent, scope) : attr)
+    let properties = {} // ignore any attributes
 
     result = this._process(this.directives.map(directive => directive.propertiesEvaluated({contextComponent, scope, node: this, properties})))
     if (result !== true) return result

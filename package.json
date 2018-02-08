@@ -1,6 +1,6 @@
 {
   "name": "weivjs",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": " A home-brew UI view library for modern component-based web development",
   "main": "lib/weiv.js",
   "scripts": {
@@ -45,6 +45,7 @@
     "flow-bin": "^0.64.0",
     "jest": "^22.1.4",
     "mocha": "^5.0.0",
+    "uglifyjs-webpack-plugin": "^1.1.8",
     "webpack": "^3.10.0",
     "yargs": "^11.0.0"
   },

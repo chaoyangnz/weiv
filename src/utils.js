@@ -1,8 +1,14 @@
+const ENABLE_LOG = false
+
 export function log(collapsed = false) {
   return function logDecorator(target, name, descriptor) {
     const original = descriptor.value;
     if (typeof original === 'function') {
       descriptor.value = function (...args) {
+        if (!ENABLE_LOG) {
+          return original.apply(this, args);
+        }
+
         if (collapsed) {
           console.groupCollapsed(this)
         } else {
