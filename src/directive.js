@@ -27,15 +27,61 @@ export class Directive {
 
 export class IfDirective extends Directive {
 
-  initialised({contextComponent, scope}) {
+  initialised({contextComponent, scope, node}) {
     const value = this.expression.eval(contextComponent, scope)
+    node.$ifValue = Boolean(value)
     if (!value) return []
+  }
+}
+
+export class ElifDirective extends Directive {
+
+  initialised({contextComponent, scope, node}) {
+    const value = this.expression.eval(contextComponent, scope)
+    node.$ifValue = Boolean(value)
+
+    if (node.parent === null) {
+      throw new Error('Cannot use `elif` on root node')
+    }
+    const index = _.findIndex(node.parent.children, child => child === node)
+    if (index === 0) {
+      throw new Error('Missing forward `if or elif` directives')
+    }
+    for (let i = 0; i < index; ++i) {
+      if (_.some(node.parent.children[i].directives, directive => directive instanceof IfDirective || directive instanceof ElifDirective)) {
+        if (node.parent.children[i].$ifValue) {
+          return []
+        }
+      }
+    }
+
+    if (!value) return []
+  }
+}
+
+export class ElseDirective extends Directive {
+
+  initialised({contextComponent, scope, node}) {
+    if (node.parent === null) {
+      throw new Error('Cannot use `else` on root node')
+    }
+    const index = _.findIndex(node.parent.children, child => child === node)
+    if (index === 0) {
+      throw new Error('Missing forward `if or elif` directives')
+    }
+    for (let i = 0; i < index; ++i) {
+      if (_.some(node.parent.children[i].directives, directive => directive instanceof IfDirective || directive instanceof ElifDirective)) {
+        if (node.parent.children[i].$ifValue) {
+          return []
+        }
+      }
+    }
   }
 }
 
 export class BindDirective extends Directive {
 
-  propertiesEvaluated({contextComponent, scope, properties}) {
+  propertiesEvaluated({contextComponent, scope, node, properties}) {
     const value = this.expression.eval(contextComponent, scope)
     if (this.target === 'class') {
       const classes = []
@@ -102,5 +148,28 @@ export class ForDirective extends Directive {
       vnodes.push(vnode)
     })
     return vnodes
+  }
+}
+
+export class ShowDirective extends Directive {
+
+  propertiesEvaluated({contextComponent, scope, node, properties}) {
+    const value = this.expression.eval(contextComponent, scope)
+    if (value) {
+      if (Object.hasOwnProperty(properties, 'style')) {
+        delete properties.style.display
+      }
+    } else {
+      properties.style = properties.style || {}
+      properties.style.display = 'none'
+    }
+  }
+}
+
+export class HtmlDirective extends Directive {
+
+  propertiesEvaluated({contextComponent, scope, node, properties}) {
+    const value = this.expression.eval(contextComponent, scope)
+    properties.innerHTML = String(value)
   }
 }

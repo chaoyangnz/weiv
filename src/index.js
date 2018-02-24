@@ -1,5 +1,5 @@
 import debug from 'debug'
-import { BindDirective, OnDirective, IfDirective, VarDirective, ForDirective } from './directive';
+import { BindDirective, OnDirective, IfDirective, ElifDirective, ElseDirective, VarDirective, ForDirective, ShowDirective, HtmlDirective } from './directive';
 
 export { Component } from './component'
 export { Directive } from './directive'
@@ -34,4 +34,8 @@ directive('var', VarDirective)
 directive('bind', BindDirective)
 directive('on', OnDirective)
 directive('if', IfDirective)
+directive('elif', ElifDirective)
+directive('else', ElseDirective)
 directive('for', ForDirective)
+directive('show', ShowDirective)
+directive('html', HtmlDirective)
