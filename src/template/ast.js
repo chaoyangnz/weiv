@@ -140,7 +140,7 @@ export class Node {
 
     // let properties = _.mapValues(this.attributes, prop => prop instanceof Expression ? prop.eval(contextComponent, scope) : prop)
 
-    result = this._process(this.directives.map(directive => directive.propertiesEvaluated({contextComponent, scope, node: this, properties})))
+    result = this._process(this.directives.map(directive => directive.propertiesPopulated({contextComponent, scope, node: this, properties})))
     if (result !== true) return result
 
     const children = _.compact(_.flatMap(this.children, child => child.render(contextComponent, scope)))
@@ -188,7 +188,7 @@ export class Component extends Node {
 
     let properties = _.mapValues(this.attributes, prop => prop instanceof Expression ? prop.eval(contextComponent, scope) : prop)
 
-    result = this._process(this.directives.map(directive => directive.propertiesEvaluated({contextComponent, scope, node: this, properties})))
+    result = this._process(this.directives.map(directive => directive.propertiesPopulated({contextComponent, scope, node: this, properties})))
     if (result !== true) return result
 
     const children = _.compact(_.flatMap(this.children, child => child.render(contextComponent, scope)))
@@ -239,7 +239,7 @@ export class Slot extends Node {
 
     let properties = {} // ignore any attributes
 
-    result = this._process(this.directives.map(directive => directive.propertiesEvaluated({contextComponent, scope, node: this, properties})))
+    result = this._process(this.directives.map(directive => directive.propertiesPopulated({contextComponent, scope, node: this, properties})))
     if (result !== true) return result
 
     const children = _.compact(_.flatMap(this.children, child => child.render(contextComponent, scope)))

@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import { Node, Component, Expression } from './template/ast';
 import { HTML_EVENT_ATTRIBUTES } from './template/html';
+import { isObservable } from 'mobx';
 
 export class Directive {
   constructor(command, target, params, exp) {
@@ -17,7 +18,7 @@ export class Directive {
   // only component node
   eventsPrepared({contextComponent, scope, node, events}) { }
 
-  propertiesEvaluated({contextComponent, scope, node, properties}) { }
+  propertiesPopulated({contextComponent, scope, node, properties}) { }
 
   childrenRendered({contextComponent, scope, node, properties, children}) { }
 
@@ -43,11 +44,12 @@ export class ElifDirective extends Directive {
     if (node.parent === null) {
       throw new Error('Cannot use `elif` on root node')
     }
-    const index = _.findIndex(node.parent.children, child => child === node)
-    if (index === 0) {
-      throw new Error('Missing forward `if or elif` directives')
+    const ifIndex = _.findLastIndex(node.parent.children, child => _.some(child.directives, directive => directive instanceof IfDirective))
+    if (ifIndex === -1) {
+      throw new Error('Missing sibling `if` directives')
     }
-    for (let i = 0; i < index; ++i) {
+    const elifIndex = _.findIndex(node.parent.children, child => child === node)
+    for (let i = ifIndex; i < elifIndex; ++i) {
       if (_.some(node.parent.children[i].directives, directive => directive instanceof IfDirective || directive instanceof ElifDirective)) {
         if (node.parent.children[i].$ifValue) {
           return []
@@ -65,12 +67,14 @@ export class ElseDirective extends Directive {
     if (node.parent === null) {
       throw new Error('Cannot use `else` on root node')
     }
-    const index = _.findIndex(node.parent.children, child => child === node)
-    if (index === 0) {
-      throw new Error('Missing forward `if or elif` directives')
+    const ifIndex = _.findLastIndex(node.parent.children, child => _.some(child.directives, directive => directive instanceof IfDirective))
+    if (ifIndex === -1) {
+      throw new Error('Missing sibling `if` directives')
     }
-    for (let i = 0; i < index; ++i) {
-      if (_.some(node.parent.children[i].directives, directive => directive instanceof IfDirective || directive instanceof ElifDirective)) {
+    const elseIndex = _.findIndex(node.parent.children, child => child === node)
+    for (let i = ifIndex; i < elseIndex; ++i) {
+      const children = node.parent.children[i]
+      if (_.some(children.directives, directive => directive instanceof IfDirective || directive instanceof ElifDirective)) {
         if (node.parent.children[i].$ifValue) {
           return []
         }
@@ -81,7 +85,7 @@ export class ElseDirective extends Directive {
 
 export class BindDirective extends Directive {
 
-  propertiesEvaluated({contextComponent, scope, node, properties}) {
+  propertiesPopulated({contextComponent, scope, node, properties}) {
     const value = this.expression.eval(contextComponent, scope)
     if (this.target === 'class') {
       const classes = []
@@ -105,7 +109,7 @@ export class OnDirective extends Directive {
     }
   }
 
-  propertiesEvaluated({contextComponent, scope, node, properties}) {
+  propertiesPopulated({contextComponent, scope, node, properties}) {
     const value = this.expression.eval(contextComponent, scope)
     if (node instanceof Node && _.includes(HTML_EVENT_ATTRIBUTES, `on${this.target}`)) {
       properties[`on${this.target}`] = value
@@ -153,7 +157,7 @@ export class ForDirective extends Directive {
 
 export class ShowDirective extends Directive {
 
-  propertiesEvaluated({contextComponent, scope, node, properties}) {
+  propertiesPopulated({contextComponent, scope, node, properties}) {
     const value = this.expression.eval(contextComponent, scope)
     if (value) {
       if (Object.hasOwnProperty(properties, 'style')) {
@@ -168,8 +172,32 @@ export class ShowDirective extends Directive {
 
 export class HtmlDirective extends Directive {
 
-  propertiesEvaluated({contextComponent, scope, node, properties}) {
+  propertiesPopulated({contextComponent, scope, node, properties}) {
     const value = this.expression.eval(contextComponent, scope)
     properties.innerHTML = String(value)
+  }
+}
+
+export class ModelDirective extends Directive {
+
+  propertiesPopulated({contextComponent, scope, node, properties}) {
+    if (this.expression.ast.type !== 'Identifier') {
+      throw new Error('Model supports identifier expression only')
+    }
+    // disallow observable
+    const segs = this.expression.exp.split('.')
+    let o = contextComponent
+    if (segs.length > 1) {
+      o = contextComponent[segs.slice(0, segs.length - 1).join('.')]
+    }
+    if (isObservable(o, segs[segs.length - 1])) {
+      throw new Error('Model must be not observable to avoid two-way data flow')
+    }
+
+    const value = this.expression.eval(contextComponent, scope)
+    properties['value'] = value
+    properties['oninput'] = (event) => {
+      contextComponent[this.expression.exp] = event.target.value
+    }
   }
 }

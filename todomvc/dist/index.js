@@ -402,6 +402,7 @@ directive('else', _directive.ElseDirective);
 directive('for', _directive.ForDirective);
 directive('show', _directive.ShowDirective);
 directive('html', _directive.HtmlDirective);
+directive('model', _directive.ModelDirective);
 
 /***/ }),
 /* 4 */
@@ -28914,7 +28915,7 @@ var Node = exports.Node = (_dec2 = utils.log(false), (_class2 = function () {
       // let properties = _.mapValues(this.attributes, prop => prop instanceof Expression ? prop.eval(contextComponent, scope) : prop)
 
       result = this._process(this.directives.map(function (directive) {
-        return directive.propertiesEvaluated({ contextComponent: contextComponent, scope: scope, node: _this, properties: properties });
+        return directive.propertiesPopulated({ contextComponent: contextComponent, scope: scope, node: _this, properties: properties });
       }));
       if (result !== true) return result;
 
@@ -29008,7 +29009,7 @@ var Component = exports.Component = (_dec3 = utils.log(false), (_class3 = functi
       });
 
       result = this._process(this.directives.map(function (directive) {
-        return directive.propertiesEvaluated({ contextComponent: contextComponent, scope: scope, node: _this3, properties: properties });
+        return directive.propertiesPopulated({ contextComponent: contextComponent, scope: scope, node: _this3, properties: properties });
       }));
       if (result !== true) return result;
 
@@ -29081,7 +29082,7 @@ var Slot = exports.Slot = (_dec4 = utils.log(false), (_class4 = function (_Node2
       var properties = {}; // ignore any attributes
 
       result = this._process(this.directives.map(function (directive) {
-        return directive.propertiesEvaluated({ contextComponent: contextComponent, scope: scope, node: _this5, properties: properties });
+        return directive.propertiesPopulated({ contextComponent: contextComponent, scope: scope, node: _this5, properties: properties });
       }));
       if (result !== true) return result;
 
@@ -35732,7 +35733,7 @@ function log() {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.HtmlDirective = exports.ShowDirective = exports.ForDirective = exports.VarDirective = exports.OnDirective = exports.BindDirective = exports.ElseDirective = exports.ElifDirective = exports.IfDirective = exports.Directive = undefined;
+exports.ModelDirective = exports.HtmlDirective = exports.ShowDirective = exports.ForDirective = exports.VarDirective = exports.OnDirective = exports.BindDirective = exports.ElseDirective = exports.ElifDirective = exports.IfDirective = exports.Directive = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -35743,6 +35744,8 @@ var _lodash2 = _interopRequireDefault(_lodash);
 var _ast = __webpack_require__(51);
 
 var _html = __webpack_require__(27);
+
+var _mobx = __webpack_require__(12);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -35786,8 +35789,8 @@ var Directive = exports.Directive = function () {
           events = _ref2.events;
     }
   }, {
-    key: 'propertiesEvaluated',
-    value: function propertiesEvaluated(_ref3) {
+    key: 'propertiesPopulated',
+    value: function propertiesPopulated(_ref3) {
       var contextComponent = _ref3.contextComponent,
           scope = _ref3.scope,
           node = _ref3.node,
@@ -35867,13 +35870,18 @@ var ElifDirective = exports.ElifDirective = function (_Directive2) {
       if (node.parent === null) {
         throw new Error('Cannot use `elif` on root node');
       }
-      var index = _lodash2.default.findIndex(node.parent.children, function (child) {
+      var ifIndex = _lodash2.default.findLastIndex(node.parent.children, function (child) {
+        return _lodash2.default.some(child.directives, function (directive) {
+          return directive instanceof IfDirective;
+        });
+      });
+      if (ifIndex === -1) {
+        throw new Error('Missing sibling `if` directives');
+      }
+      var elifIndex = _lodash2.default.findIndex(node.parent.children, function (child) {
         return child === node;
       });
-      if (index === 0) {
-        throw new Error('Missing forward `if or elif` directives');
-      }
-      for (var i = 0; i < index; ++i) {
+      for (var i = ifIndex; i < elifIndex; ++i) {
         if (_lodash2.default.some(node.parent.children[i].directives, function (directive) {
           return directive instanceof IfDirective || directive instanceof ElifDirective;
         })) {
@@ -35909,14 +35917,20 @@ var ElseDirective = exports.ElseDirective = function (_Directive3) {
       if (node.parent === null) {
         throw new Error('Cannot use `else` on root node');
       }
-      var index = _lodash2.default.findIndex(node.parent.children, function (child) {
+      var ifIndex = _lodash2.default.findLastIndex(node.parent.children, function (child) {
+        return _lodash2.default.some(child.directives, function (directive) {
+          return directive instanceof IfDirective;
+        });
+      });
+      if (ifIndex === -1) {
+        throw new Error('Missing sibling `if` directives');
+      }
+      var elseIndex = _lodash2.default.findIndex(node.parent.children, function (child) {
         return child === node;
       });
-      if (index === 0) {
-        throw new Error('Missing forward `if or elif` directives');
-      }
-      for (var i = 0; i < index; ++i) {
-        if (_lodash2.default.some(node.parent.children[i].directives, function (directive) {
+      for (var i = ifIndex; i < elseIndex; ++i) {
+        var children = node.parent.children[i];
+        if (_lodash2.default.some(children.directives, function (directive) {
           return directive instanceof IfDirective || directive instanceof ElifDirective;
         })) {
           if (node.parent.children[i].$ifValue) {
@@ -35940,8 +35954,8 @@ var BindDirective = exports.BindDirective = function (_Directive4) {
   }
 
   _createClass(BindDirective, [{
-    key: 'propertiesEvaluated',
-    value: function propertiesEvaluated(_ref9) {
+    key: 'propertiesPopulated',
+    value: function propertiesPopulated(_ref9) {
       var contextComponent = _ref9.contextComponent,
           scope = _ref9.scope,
           node = _ref9.node,
@@ -35987,8 +36001,8 @@ var OnDirective = exports.OnDirective = function (_Directive5) {
       }
     }
   }, {
-    key: 'propertiesEvaluated',
-    value: function propertiesEvaluated(_ref11) {
+    key: 'propertiesPopulated',
+    value: function propertiesPopulated(_ref11) {
       var contextComponent = _ref11.contextComponent,
           scope = _ref11.scope,
           node = _ref11.node,
@@ -36087,8 +36101,8 @@ var ShowDirective = exports.ShowDirective = function (_Directive8) {
   }
 
   _createClass(ShowDirective, [{
-    key: 'propertiesEvaluated',
-    value: function propertiesEvaluated(_ref14) {
+    key: 'propertiesPopulated',
+    value: function propertiesPopulated(_ref14) {
       var contextComponent = _ref14.contextComponent,
           scope = _ref14.scope,
           node = _ref14.node,
@@ -36119,8 +36133,8 @@ var HtmlDirective = exports.HtmlDirective = function (_Directive9) {
   }
 
   _createClass(HtmlDirective, [{
-    key: 'propertiesEvaluated',
-    value: function propertiesEvaluated(_ref15) {
+    key: 'propertiesPopulated',
+    value: function propertiesPopulated(_ref15) {
       var contextComponent = _ref15.contextComponent,
           scope = _ref15.scope,
           node = _ref15.node,
@@ -36132,6 +36146,49 @@ var HtmlDirective = exports.HtmlDirective = function (_Directive9) {
   }]);
 
   return HtmlDirective;
+}(Directive);
+
+var ModelDirective = exports.ModelDirective = function (_Directive10) {
+  _inherits(ModelDirective, _Directive10);
+
+  function ModelDirective() {
+    _classCallCheck(this, ModelDirective);
+
+    return _possibleConstructorReturn(this, (ModelDirective.__proto__ || Object.getPrototypeOf(ModelDirective)).apply(this, arguments));
+  }
+
+  _createClass(ModelDirective, [{
+    key: 'propertiesPopulated',
+    value: function propertiesPopulated(_ref16) {
+      var _this12 = this;
+
+      var contextComponent = _ref16.contextComponent,
+          scope = _ref16.scope,
+          node = _ref16.node,
+          properties = _ref16.properties;
+
+      if (this.expression.ast.type !== 'Identifier') {
+        throw new Error('Model supports identifier expression only');
+      }
+      // disallow observable
+      var segs = this.expression.exp.split('.');
+      var o = contextComponent;
+      if (segs.length > 1) {
+        o = contextComponent[segs.slice(0, segs.length - 1).join('.')];
+      }
+      if ((0, _mobx.isObservable)(o, segs[segs.length - 1])) {
+        throw new Error('Model must be not observable to avoid two-way data flow');
+      }
+
+      var value = this.expression.eval(contextComponent, scope);
+      properties['value'] = value;
+      properties['oninput'] = function (event) {
+        contextComponent[_this12.expression.exp] = event.target.value;
+      };
+    }
+  }]);
+
+  return ModelDirective;
 }(Directive);
 
 /***/ }),
@@ -36332,7 +36389,7 @@ function _initializerWarningHelper(descriptor, context) {
 }
 
 var TodoItem = (_dec = (0, _weivjs.Component)({
-  template: '\n  <li @bind:class="{completed: todo.completed, editing: editing}">\n    <span>\n      <todo-text-input @if="editing"\n                      @bind:text="todo.text"\n                      @bind:editing="editing"\n                      @on:save="handleSave"></todo-text-input>\n      <span class="view" @if="!editing">\n        <input class="toggle"\n              type="checkbox"\n              @bind:checked="todo.completed"\n              onchange="handleToggle" />\n        <label ondblclick="handleDoubleClick">\n          {{todo.text}} {{completed}}\n        </label>\n        <button class="destroy"\n                onclick="handleDelete"></button>\n      </span>\n    </span>\n  </li>\n  ',
+  template: '\n  <li @bind:class="{completed: todo.completed, editing: editing}">\n    <span>\n      <todo-text-input @if="editing"\n                      @bind:text="todo.text"\n                      @bind:editing="editing"\n                      @on:save="handleSave"></todo-text-input>\n      <span class="view" @else>\n        <input class="toggle"\n              type="checkbox"\n              @bind:checked="todo.completed"\n              onchange="handleToggle" />\n        <label ondblclick="handleDoubleClick">\n          {{todo.text}} {{completed}}\n        </label>\n        <button class="destroy"\n                onclick="handleDelete"></button>\n      </span>\n    </span>\n  </li>\n  ',
   props: {
     store: { type: 'object', required: true },
     todo: { type: 'object', required: true }

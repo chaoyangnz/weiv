@@ -10,7 +10,7 @@ import { observable } from 'mobx'
                       @bind:text="todo.text"
                       @bind:editing="editing"
                       @on:save="handleSave"></todo-text-input>
-      <span class="view" @if="!editing">
+      <span class="view" @else>
         <input class="toggle"
               type="checkbox"
               @bind:checked="todo.completed"
