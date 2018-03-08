@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { Node, Component, Expression } from './template/ast';
+import { Renderer, ComponentRenderer, Expression } from './template/ast';
 import { HTML_EVENT_ATTRIBUTES } from './template/html';
 import { isObservable } from 'mobx';
 
@@ -104,14 +104,14 @@ export class OnDirective extends Directive {
 
   eventsPrepared({contextComponent, scope, node, events}) {
     const value = this.expression.eval(contextComponent, scope)
-    if (node instanceof Component) {
+    if (node instanceof ComponentRenderer) {
       events[this.target] = value
     }
   }
 
   propertiesPopulated({contextComponent, scope, node, properties}) {
     const value = this.expression.eval(contextComponent, scope)
-    if (node instanceof Node && _.includes(HTML_EVENT_ATTRIBUTES, `on${this.target}`)) {
+    if (node instanceof Renderer && _.includes(HTML_EVENT_ATTRIBUTES, `on${this.target}`)) {
       properties[`on${this.target}`] = value
     }
   }
@@ -140,7 +140,7 @@ export class ForDirective extends Directive {
     value.forEach((item, i) => {
       const clonedNode = _.clone(node) // can optimise, because i just change directives
       clonedNode.directives = _.clone(node.directives)
-      if (clonedNode instanceof Component) {
+      if (clonedNode instanceof ComponentRenderer) {
         // generate new component id
         clonedNode.componentId = node.componentId + '@' + i
       }

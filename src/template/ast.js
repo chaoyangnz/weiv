@@ -33,7 +33,7 @@ export class Expression {
   }
 }
 
-export class Text {
+export class TextRenderer {
   constructor(text) {
     this.text = text
   }
@@ -44,7 +44,7 @@ export class Text {
   }
 }
 
-export class Node {
+export class Renderer {
   constructor(contextComponentClass, tagName, attributes, parse = true) {
     this.contextComponentClass = contextComponentClass
     this.tagName = tagName
@@ -93,7 +93,7 @@ export class Node {
     let node = this
     while (node != null) {
       /* eslint no-use-before-define: 0*/
-      if (node instanceof Component) return node
+      if (node instanceof ComponentRenderer) return node
       node = node.parent
     }
     return null
@@ -152,7 +152,7 @@ export class Node {
   }
 }
 
-export class Component extends Node {
+export class ComponentRenderer extends Renderer {
   constructor(contextComponentClass, tagName, attributes, componentClass) {
     super(contextComponentClass, tagName, attributes, false)
     this.componentClass = componentClass
@@ -224,7 +224,7 @@ export class Component extends Node {
   }
 }
 
-export class Slot extends Node {
+export class SlotRenderer extends Renderer {
   constructor(contextComponentClass, tagName, attributes) {
     super(contextComponentClass, tagName, attributes)
     this.name = attributes.name || 'default'
