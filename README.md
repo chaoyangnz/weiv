@@ -139,6 +139,7 @@ new App().$mount('#app')
 - [x] Refine directive structure
 - [x] Add scope to support `@for:i=""` directive like `for ... in`
 - [x] Enhance events support
+- [x] A lot of built-in directives: `@for`, `@if`/`@elif`/`else`, `@var`, `@bind`, `@on`, `@model`, `@show`, `@html`
 - [ ] Add lifecycle hooks
 - [ ] Optimise: cache subtree via vdom-trunk
 - [ ] Optimise: batch update via main-loop
