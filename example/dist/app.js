@@ -28453,7 +28453,7 @@ function done(stream, er, data) {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.SlotRenderer = exports.ComponentRenderer = exports.Renderer = exports.TextRenderer = exports.Expression = undefined;
+exports.Slot = exports.Component = exports.Block = exports.Text = exports.Expression = undefined;
 
 var _get = function get(object, property, receiver) { if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
 
@@ -28557,14 +28557,14 @@ var Expression = exports.Expression = (_dec = utils.log, (_class = function () {
   return Expression;
 }(), (_applyDecoratedDescriptor(_class.prototype, 'render', [_dec], Object.getOwnPropertyDescriptor(_class.prototype, 'render'), _class.prototype)), _class));
 
-var TextRenderer = exports.TextRenderer = function () {
-  function TextRenderer(text) {
-    _classCallCheck(this, TextRenderer);
+var Text = exports.Text = function () {
+  function Text(text) {
+    _classCallCheck(this, Text);
 
     this.text = text;
   }
 
-  _createClass(TextRenderer, [{
+  _createClass(Text, [{
     key: 'render',
     value: function render(contextComponent, scope) {
       console.log('%o', this);
@@ -28572,14 +28572,14 @@ var TextRenderer = exports.TextRenderer = function () {
     }
   }]);
 
-  return TextRenderer;
+  return Text;
 }();
 
-var Renderer = exports.Renderer = (_dec2 = utils.log(false), (_class2 = function () {
-  function Renderer(contextComponentClass, tagName, attributes) {
+var Block = exports.Block = (_dec2 = utils.log(false), (_class2 = function () {
+  function Block(contextComponentClass, tagName, attributes) {
     var parse = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
 
-    _classCallCheck(this, Renderer);
+    _classCallCheck(this, Block);
 
     this.contextComponentClass = contextComponentClass;
     this.tagName = tagName;
@@ -28592,7 +28592,7 @@ var Renderer = exports.Renderer = (_dec2 = utils.log(false), (_class2 = function
     }
   }
 
-  _createClass(Renderer, [{
+  _createClass(Block, [{
     key: '_parseAttributesAndDirectives',
     value: function _parseAttributesAndDirectives(attributes) {
       var _iteratorNormalCompletion = true;
@@ -28654,7 +28654,7 @@ var Renderer = exports.Renderer = (_dec2 = utils.log(false), (_class2 = function
       var node = this;
       while (node != null) {
         /* eslint no-use-before-define: 0*/
-        if (node instanceof ComponentRenderer) return node;
+        if (node instanceof Component) return node;
         node = node.parent;
       }
       return null;
@@ -28716,7 +28716,7 @@ var Renderer = exports.Renderer = (_dec2 = utils.log(false), (_class2 = function
       var scope = { $super: superScope };
 
       var result = this._process(this.directives.map(function (directive) {
-        return directive.initialised({ contextComponent: contextComponent, scope: scope, node: _this });
+        return directive.initialised({ contextComponent: contextComponent, scope: scope, block: _this });
       }));
       if (result !== true) return result;
 
@@ -28735,7 +28735,7 @@ var Renderer = exports.Renderer = (_dec2 = utils.log(false), (_class2 = function
       // let properties = _.mapValues(this.attributes, prop => prop instanceof Expression ? prop.eval(contextComponent, scope) : prop)
 
       result = this._process(this.directives.map(function (directive) {
-        return directive.propertiesPopulated({ contextComponent: contextComponent, scope: scope, node: _this, properties: properties });
+        return directive.propertiesPopulated({ contextComponent: contextComponent, scope: scope, block: _this, properties: properties });
       }));
       if (result !== true) return result;
 
@@ -28744,7 +28744,7 @@ var Renderer = exports.Renderer = (_dec2 = utils.log(false), (_class2 = function
       }));
 
       result = this._process(this.directives.map(function (directive) {
-        return directive.childrenRendered({ contextComponent: contextComponent, scope: scope, node: _this, properties: properties, children: children });
+        return directive.childrenRendered({ contextComponent: contextComponent, scope: scope, block: _this, properties: properties, children: children });
       }));
       if (result !== true) return result;
 
@@ -28752,15 +28752,15 @@ var Renderer = exports.Renderer = (_dec2 = utils.log(false), (_class2 = function
     }
   }]);
 
-  return Renderer;
+  return Block;
 }(), (_applyDecoratedDescriptor(_class2.prototype, 'render', [_dec2], Object.getOwnPropertyDescriptor(_class2.prototype, 'render'), _class2.prototype)), _class2));
-var ComponentRenderer = exports.ComponentRenderer = (_dec3 = utils.log(false), (_class3 = function (_Renderer) {
-  _inherits(ComponentRenderer, _Renderer);
+var Component = exports.Component = (_dec3 = utils.log(false), (_class3 = function (_Block) {
+  _inherits(Component, _Block);
 
-  function ComponentRenderer(contextComponentClass, tagName, attributes, componentClass) {
-    _classCallCheck(this, ComponentRenderer);
+  function Component(contextComponentClass, tagName, attributes, componentClass) {
+    _classCallCheck(this, Component);
 
-    var _this2 = _possibleConstructorReturn(this, (ComponentRenderer.__proto__ || Object.getPrototypeOf(ComponentRenderer)).call(this, contextComponentClass, tagName, attributes, false));
+    var _this2 = _possibleConstructorReturn(this, (Component.__proto__ || Object.getPrototypeOf(Component)).call(this, contextComponentClass, tagName, attributes, false));
 
     _this2.componentClass = componentClass;
     _this2.componentId = componentClass.$original.$uniqueid();
@@ -28776,7 +28776,7 @@ var ComponentRenderer = exports.ComponentRenderer = (_dec3 = utils.log(false), (
 
         if (name.match(/@[^@]+/)) {
           // directive prefix: @
-          var directive = _get(ComponentRenderer.prototype.__proto__ || Object.getPrototypeOf(ComponentRenderer.prototype), '_parseDirective', _this2).call(_this2, name, attributes[name]);
+          var directive = _get(Component.prototype.__proto__ || Object.getPrototypeOf(Component.prototype), '_parseDirective', _this2).call(_this2, name, attributes[name]);
           if (directive) _this2.directives.push(directive);
         } else {
           // validate component props
@@ -28805,7 +28805,7 @@ var ComponentRenderer = exports.ComponentRenderer = (_dec3 = utils.log(false), (
     return _this2;
   }
 
-  _createClass(ComponentRenderer, [{
+  _createClass(Component, [{
     key: 'render',
     value: function render(contextComponent, superScope) {
       var _this3 = this;
@@ -28813,14 +28813,14 @@ var ComponentRenderer = exports.ComponentRenderer = (_dec3 = utils.log(false), (
       var scope = { $super: superScope };
 
       var result = this._process(this.directives.map(function (directive) {
-        return directive.initialised({ contextComponent: contextComponent, scope: scope, node: _this3 });
+        return directive.initialised({ contextComponent: contextComponent, scope: scope, block: _this3 });
       }));
       if (result !== true) return result;
 
       var events = {};
 
       result = this._process(this.directives.map(function (directive) {
-        return directive.eventsPrepared({ contextComponent: contextComponent, scope: scope, node: _this3, events: events });
+        return directive.eventsPrepared({ contextComponent: contextComponent, scope: scope, block: _this3, events: events });
       }));
       if (result !== true) return result;
 
@@ -28829,7 +28829,7 @@ var ComponentRenderer = exports.ComponentRenderer = (_dec3 = utils.log(false), (
       });
 
       result = this._process(this.directives.map(function (directive) {
-        return directive.propertiesPopulated({ contextComponent: contextComponent, scope: scope, node: _this3, properties: properties });
+        return directive.propertiesPopulated({ contextComponent: contextComponent, scope: scope, block: _this3, properties: properties });
       }));
       if (result !== true) return result;
 
@@ -28838,7 +28838,7 @@ var ComponentRenderer = exports.ComponentRenderer = (_dec3 = utils.log(false), (
       }));
 
       result = this._process(this.directives.map(function (directive) {
-        return directive.childrenRendered({ contextComponent: contextComponent, scope: scope, node: _this3, properties: properties, children: children });
+        return directive.childrenRendered({ contextComponent: contextComponent, scope: scope, block: _this3, properties: properties, children: children });
       }));
       if (result !== true) return result;
 
@@ -28850,7 +28850,7 @@ var ComponentRenderer = exports.ComponentRenderer = (_dec3 = utils.log(false), (
       }
 
       result = this._process(this.directives.map(function (directive) {
-        return directive.childComponentCreated({ contextComponent: contextComponent, scope: scope, node: _this3, properties: properties, children: children, childComponent: childComponent });
+        return directive.childComponentCreated({ contextComponent: contextComponent, scope: scope, block: _this3, properties: properties, children: children, childComponent: childComponent });
       }));
       if (result !== true) return result;
 
@@ -28872,21 +28872,21 @@ var ComponentRenderer = exports.ComponentRenderer = (_dec3 = utils.log(false), (
     }
   }]);
 
-  return ComponentRenderer;
-}(Renderer), (_applyDecoratedDescriptor(_class3.prototype, 'render', [_dec3], Object.getOwnPropertyDescriptor(_class3.prototype, 'render'), _class3.prototype)), _class3));
-var SlotRenderer = exports.SlotRenderer = (_dec4 = utils.log(false), (_class4 = function (_Renderer2) {
-  _inherits(SlotRenderer, _Renderer2);
+  return Component;
+}(Block), (_applyDecoratedDescriptor(_class3.prototype, 'render', [_dec3], Object.getOwnPropertyDescriptor(_class3.prototype, 'render'), _class3.prototype)), _class3));
+var Slot = exports.Slot = (_dec4 = utils.log(false), (_class4 = function (_Block2) {
+  _inherits(Slot, _Block2);
 
-  function SlotRenderer(contextComponentClass, tagName, attributes) {
-    _classCallCheck(this, SlotRenderer);
+  function Slot(contextComponentClass, tagName, attributes) {
+    _classCallCheck(this, Slot);
 
-    var _this4 = _possibleConstructorReturn(this, (SlotRenderer.__proto__ || Object.getPrototypeOf(SlotRenderer)).call(this, contextComponentClass, tagName, attributes));
+    var _this4 = _possibleConstructorReturn(this, (Slot.__proto__ || Object.getPrototypeOf(Slot)).call(this, contextComponentClass, tagName, attributes));
 
     _this4.name = attributes.name || 'default';
     return _this4;
   }
 
-  _createClass(SlotRenderer, [{
+  _createClass(Slot, [{
     key: 'render',
     value: function render(contextComponent, superScope) {
       var _this5 = this;
@@ -28895,14 +28895,14 @@ var SlotRenderer = exports.SlotRenderer = (_dec4 = utils.log(false), (_class4 = 
       var scope = { $super: superScope };
 
       var result = this._process(this.directives.map(function (directive) {
-        return directive.initialised({ contextComponent: contextComponent, scope: scope, node: _this5 });
+        return directive.initialised({ contextComponent: contextComponent, scope: scope, block: _this5 });
       }));
       if (result !== true) return result;
 
       var properties = {}; // ignore any attributes
 
       result = this._process(this.directives.map(function (directive) {
-        return directive.propertiesPopulated({ contextComponent: contextComponent, scope: scope, node: _this5, properties: properties });
+        return directive.propertiesPopulated({ contextComponent: contextComponent, scope: scope, block: _this5, properties: properties });
       }));
       if (result !== true) return result;
 
@@ -28911,7 +28911,7 @@ var SlotRenderer = exports.SlotRenderer = (_dec4 = utils.log(false), (_class4 = 
       }));
 
       result = this._process(this.directives.map(function (directive) {
-        return directive.childrenRendered({ contextComponent: contextComponent, scope: scope, node: _this5, properties: properties, children: children });
+        return directive.childrenRendered({ contextComponent: contextComponent, scope: scope, block: _this5, properties: properties, children: children });
       }));
       if (result !== true) return result;
 
@@ -28923,8 +28923,8 @@ var SlotRenderer = exports.SlotRenderer = (_dec4 = utils.log(false), (_class4 = 
     }
   }]);
 
-  return SlotRenderer;
-}(Renderer), (_applyDecoratedDescriptor(_class4.prototype, 'render', [_dec4], Object.getOwnPropertyDescriptor(_class4.prototype, 'render'), _class4.prototype)), _class4));
+  return Slot;
+}(Block), (_applyDecoratedDescriptor(_class4.prototype, 'render', [_dec4], Object.getOwnPropertyDescriptor(_class4.prototype, 'render'), _class4.prototype)), _class4));
 
 /***/ }),
 /* 51 */
@@ -31776,7 +31776,7 @@ function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr
 var log = (0, _debug2.default)('weiv:parse');
 
 function parse(template, contextComponentClass) {
-  if (_lodash2.default.isEmpty(template)) return new _ast.TextRenderer('');
+  if (_lodash2.default.isEmpty(template)) return new _ast.Text('');
   var roots = [];
   var stack = [];
   var ast = null;
@@ -31790,7 +31790,7 @@ function parse(template, contextComponentClass) {
     });
     var texts = text.split(pattern);
     for (var i = 0; i < Math.max(expressions.length, texts.length); ++i) {
-      if (i < texts.length && !texts[i].match(/^\s*$/)) arr.push(new _ast.TextRenderer(texts[i]));
+      if (i < texts.length && !texts[i].match(/^\s*$/)) arr.push(new _ast.Text(texts[i]));
       if (i < expressions.length) arr.push(new _ast.Expression(expressions[i]));
     }
     return arr;
@@ -31816,7 +31816,7 @@ function parse(template, contextComponentClass) {
 
     if (_lodash2.default.includes(_html.HTML_TAGS, tagName)) {
       // HTML tags
-      return new _ast.Renderer(contextComponentClass, tagName, attributes);
+      return new _ast.Block(contextComponentClass, tagName, attributes);
     }
     if (tagName === 'slot') {
       var slot = new _ast.Slot(contextComponentClass, tagName, attributes);
@@ -31825,7 +31825,7 @@ function parse(template, contextComponentClass) {
     }
     var childComponentClass = contextComponentClass.prototype.$lookupComponent(tagName); // custom tag for component
     if (childComponentClass) {
-      return new _ast.ComponentRenderer(contextComponentClass, tagName, attributes, childComponentClass);
+      return new _ast.Component(contextComponentClass, tagName, attributes, childComponentClass);
     }
     reportParseError('Cannot find component for custom tag: ' + tagName);
   }
@@ -35558,17 +35558,17 @@ var Directive = exports.Directive = function () {
     value: function initialised(_ref) {
       var contextComponent = _ref.contextComponent,
           scope = _ref.scope,
-          node = _ref.node;
+          block = _ref.block;
     }
 
-    // only component node
+    // only component block
 
   }, {
     key: 'eventsPrepared',
     value: function eventsPrepared(_ref2) {
       var contextComponent = _ref2.contextComponent,
           scope = _ref2.scope,
-          node = _ref2.node,
+          block = _ref2.block,
           events = _ref2.events;
     }
   }, {
@@ -35576,7 +35576,7 @@ var Directive = exports.Directive = function () {
     value: function propertiesPopulated(_ref3) {
       var contextComponent = _ref3.contextComponent,
           scope = _ref3.scope,
-          node = _ref3.node,
+          block = _ref3.block,
           properties = _ref3.properties;
     }
   }, {
@@ -35584,19 +35584,19 @@ var Directive = exports.Directive = function () {
     value: function childrenRendered(_ref4) {
       var contextComponent = _ref4.contextComponent,
           scope = _ref4.scope,
-          node = _ref4.node,
+          block = _ref4.block,
           properties = _ref4.properties,
           children = _ref4.children;
     }
 
-    // only component node
+    // only component block
 
   }, {
     key: 'childComponentCreated',
     value: function childComponentCreated(_ref5) {
       var contextComponent = _ref5.contextComponent,
           scope = _ref5.scope,
-          node = _ref5.node,
+          block = _ref5.block,
           properties = _ref5.properties,
           children = _ref5.children,
           childComponent = _ref5.childComponent;
@@ -35620,10 +35620,10 @@ var IfDirective = exports.IfDirective = function (_Directive) {
     value: function initialised(_ref6) {
       var contextComponent = _ref6.contextComponent,
           scope = _ref6.scope,
-          node = _ref6.node;
+          block = _ref6.block;
 
       var value = this.expression.eval(contextComponent, scope);
-      node.$ifValue = Boolean(value);
+      block.$ifValue = Boolean(value);
       if (!value) return [];
     }
   }]);
@@ -35645,15 +35645,15 @@ var ElifDirective = exports.ElifDirective = function (_Directive2) {
     value: function initialised(_ref7) {
       var contextComponent = _ref7.contextComponent,
           scope = _ref7.scope,
-          node = _ref7.node;
+          block = _ref7.block;
 
       var value = this.expression.eval(contextComponent, scope);
-      node.$ifValue = Boolean(value);
+      block.$ifValue = Boolean(value);
 
-      if (node.parent === null) {
+      if (block.parent === null) {
         throw new Error('Cannot use `elif` on root node');
       }
-      var ifIndex = _lodash2.default.findLastIndex(node.parent.children, function (child) {
+      var ifIndex = _lodash2.default.findLastIndex(block.parent.children, function (child) {
         return _lodash2.default.some(child.directives, function (directive) {
           return directive instanceof IfDirective;
         });
@@ -35661,14 +35661,14 @@ var ElifDirective = exports.ElifDirective = function (_Directive2) {
       if (ifIndex === -1) {
         throw new Error('Missing sibling `if` directives');
       }
-      var elifIndex = _lodash2.default.findIndex(node.parent.children, function (child) {
-        return child === node;
+      var elifIndex = _lodash2.default.findIndex(block.parent.children, function (child) {
+        return child === block;
       });
       for (var i = ifIndex; i < elifIndex; ++i) {
-        if (_lodash2.default.some(node.parent.children[i].directives, function (directive) {
+        if (_lodash2.default.some(block.parent.children[i].directives, function (directive) {
           return directive instanceof IfDirective || directive instanceof ElifDirective;
         })) {
-          if (node.parent.children[i].$ifValue) {
+          if (block.parent.children[i].$ifValue) {
             return [];
           }
         }
@@ -35695,12 +35695,12 @@ var ElseDirective = exports.ElseDirective = function (_Directive3) {
     value: function initialised(_ref8) {
       var contextComponent = _ref8.contextComponent,
           scope = _ref8.scope,
-          node = _ref8.node;
+          block = _ref8.block;
 
-      if (node.parent === null) {
+      if (block.parent === null) {
         throw new Error('Cannot use `else` on root node');
       }
-      var ifIndex = _lodash2.default.findLastIndex(node.parent.children, function (child) {
+      var ifIndex = _lodash2.default.findLastIndex(block.parent.children, function (child) {
         return _lodash2.default.some(child.directives, function (directive) {
           return directive instanceof IfDirective;
         });
@@ -35708,15 +35708,15 @@ var ElseDirective = exports.ElseDirective = function (_Directive3) {
       if (ifIndex === -1) {
         throw new Error('Missing sibling `if` directives');
       }
-      var elseIndex = _lodash2.default.findIndex(node.parent.children, function (child) {
-        return child === node;
+      var elseIndex = _lodash2.default.findIndex(block.parent.children, function (child) {
+        return child === block;
       });
       for (var i = ifIndex; i < elseIndex; ++i) {
-        var children = node.parent.children[i];
+        var children = block.parent.children[i];
         if (_lodash2.default.some(children.directives, function (directive) {
           return directive instanceof IfDirective || directive instanceof ElifDirective;
         })) {
-          if (node.parent.children[i].$ifValue) {
+          if (block.parent.children[i].$ifValue) {
             return [];
           }
         }
@@ -35741,7 +35741,7 @@ var BindDirective = exports.BindDirective = function (_Directive4) {
     value: function propertiesPopulated(_ref9) {
       var contextComponent = _ref9.contextComponent,
           scope = _ref9.scope,
-          node = _ref9.node,
+          block = _ref9.block,
           properties = _ref9.properties;
 
       var value = this.expression.eval(contextComponent, scope);
@@ -35775,11 +35775,11 @@ var OnDirective = exports.OnDirective = function (_Directive5) {
     value: function eventsPrepared(_ref10) {
       var contextComponent = _ref10.contextComponent,
           scope = _ref10.scope,
-          node = _ref10.node,
+          block = _ref10.block,
           events = _ref10.events;
 
       var value = this.expression.eval(contextComponent, scope);
-      if (node instanceof _ast.ComponentRenderer) {
+      if (block instanceof _ast.Component) {
         events[this.target] = value;
       }
     }
@@ -35788,11 +35788,11 @@ var OnDirective = exports.OnDirective = function (_Directive5) {
     value: function propertiesPopulated(_ref11) {
       var contextComponent = _ref11.contextComponent,
           scope = _ref11.scope,
-          node = _ref11.node,
+          block = _ref11.block,
           properties = _ref11.properties;
 
       var value = this.expression.eval(contextComponent, scope);
-      if (node instanceof _ast.Renderer && _lodash2.default.includes(_html.HTML_EVENT_ATTRIBUTES, 'on' + this.target)) {
+      if (block instanceof _ast.Block && _lodash2.default.includes(_html.HTML_EVENT_ATTRIBUTES, 'on' + this.target)) {
         properties['on' + this.target] = value;
       }
     }
@@ -35840,11 +35840,11 @@ var ForDirective = exports.ForDirective = function (_Directive7) {
 
       var contextComponent = _ref13.contextComponent,
           scope = _ref13.scope,
-          node = _ref13.node;
+          block = _ref13.block;
 
       var value = this.expression.eval(contextComponent, scope);
 
-      if (!node.parent) {
+      if (!block.parent) {
         console.warn('Cannot apply for directive in root node');
         return;
       }
@@ -35852,11 +35852,11 @@ var ForDirective = exports.ForDirective = function (_Directive7) {
 
       var vnodes = [];
       value.forEach(function (item, i) {
-        var clonedNode = _lodash2.default.clone(node); // can optimise, because i just change directives
-        clonedNode.directives = _lodash2.default.clone(node.directives);
-        if (clonedNode instanceof _ast.ComponentRenderer) {
+        var clonedNode = _lodash2.default.clone(block); // can optimise, because i just change directives
+        clonedNode.directives = _lodash2.default.clone(block.directives);
+        if (clonedNode instanceof _ast.Component) {
           // generate new component id
-          clonedNode.componentId = node.componentId + '@' + i;
+          clonedNode.componentId = block.componentId + '@' + i;
         }
         _lodash2.default.remove(clonedNode.directives, function (directive) {
           return directive instanceof ForDirective;
@@ -35888,7 +35888,7 @@ var ShowDirective = exports.ShowDirective = function (_Directive8) {
     value: function propertiesPopulated(_ref14) {
       var contextComponent = _ref14.contextComponent,
           scope = _ref14.scope,
-          node = _ref14.node,
+          block = _ref14.block,
           properties = _ref14.properties;
 
       var value = this.expression.eval(contextComponent, scope);
@@ -35920,7 +35920,7 @@ var HtmlDirective = exports.HtmlDirective = function (_Directive9) {
     value: function propertiesPopulated(_ref15) {
       var contextComponent = _ref15.contextComponent,
           scope = _ref15.scope,
-          node = _ref15.node,
+          block = _ref15.block,
           properties = _ref15.properties;
 
       var value = this.expression.eval(contextComponent, scope);
@@ -35947,7 +35947,7 @@ var ModelDirective = exports.ModelDirective = function (_Directive10) {
 
       var contextComponent = _ref16.contextComponent,
           scope = _ref16.scope,
-          node = _ref16.node,
+          block = _ref16.block,
           properties = _ref16.properties;
 
       if (this.expression.ast.type !== 'Identifier') {

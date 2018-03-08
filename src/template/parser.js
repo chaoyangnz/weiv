@@ -2,12 +2,12 @@ import _ from 'lodash'
 import htmlparser from 'htmlparser2'
 import debug from 'debug'
 import { HTML_TAGS, BOOLEAN_ATTRIBUTES } from './html'
-import { Renderer, ComponentRenderer, TextRenderer, Expression, Slot } from './ast'
+import { Block, Component, Text, Expression, Slot } from './ast'
 
 const log = debug('weiv:parse')
 
 export function parse(template, contextComponentClass) {
-  if (_.isEmpty(template)) return new TextRenderer('')
+  if (_.isEmpty(template)) return new Text('')
   const roots = []
   const stack = []
   let ast = null
@@ -19,7 +19,7 @@ export function parse(template, contextComponentClass) {
     const expressions = m.map(x => x.match(/[\w\._\$\[\]\(\)]+/)[0])
     const texts = text.split(pattern)
     for (let i = 0; i < Math.max(expressions.length, texts.length); ++i) {
-      if (i < texts.length && !texts[i].match(/^\s*$/)) arr.push(new TextRenderer(texts[i]))
+      if (i < texts.length && !texts[i].match(/^\s*$/)) arr.push(new Text(texts[i]))
       if (i < expressions.length) arr.push(new Expression(expressions[i]))
     }
     return arr
@@ -38,7 +38,7 @@ export function parse(template, contextComponentClass) {
     })
 
     if (_.includes(HTML_TAGS, tagName)) { // HTML tags
-      return new Renderer(contextComponentClass, tagName, attributes)
+      return new Block(contextComponentClass, tagName, attributes)
     }
     if (tagName === 'slot') {
       const slot = new Slot(contextComponentClass, tagName, attributes)
@@ -47,7 +47,7 @@ export function parse(template, contextComponentClass) {
     }
     const childComponentClass = contextComponentClass.prototype.$lookupComponent(tagName) // custom tag for component
     if (childComponentClass) {
-      return new ComponentRenderer(contextComponentClass, tagName, attributes, childComponentClass)
+      return new Component(contextComponentClass, tagName, attributes, childComponentClass)
     }
     reportParseError('Cannot find component for custom tag: ' + tagName)
   }

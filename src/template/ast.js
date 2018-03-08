@@ -1,14 +1,20 @@
 import _ from 'lodash'
-import VDOM from 'virtual-dom'
+import VDOM, { VNode } from 'virtual-dom'
 import Jexl from 'jexl-sync'
+// @flow
+
 import debug from 'debug'
 import { HTML_EVENT_ATTRIBUTES, HTML_GLOBAL_ATTRIBUTES, HTML_TAG_ATTRIBUTES } from './html'
 import * as utils from '../utils'
 
 const log = debug('weiv:render')
 
+interface Renderer {
+  render(contextComponent: any, superScope: any): VNode
+}
+
 // Expression can exist as child of Node, also as the value of attribute
-export class Expression {
+export class Expression implements Renderer {
   constructor(exp) {
     this.exp = exp
     this.ast = Jexl.parse(exp)
@@ -33,7 +39,7 @@ export class Expression {
   }
 }
 
-export class TextRenderer {
+export class Text implements Renderer {
   constructor(text) {
     this.text = text
   }
@@ -44,7 +50,7 @@ export class TextRenderer {
   }
 }
 
-export class Renderer {
+export class Block implements Renderer {
   constructor(contextComponentClass, tagName, attributes, parse = true) {
     this.contextComponentClass = contextComponentClass
     this.tagName = tagName
@@ -93,7 +99,7 @@ export class Renderer {
     let node = this
     while (node != null) {
       /* eslint no-use-before-define: 0*/
-      if (node instanceof ComponentRenderer) return node
+      if (node instanceof Component) return node
       node = node.parent
     }
     return null
@@ -125,7 +131,7 @@ export class Renderer {
   render(contextComponent, superScope) {
     const scope = {$super: superScope}
 
-    let result = this._process(this.directives.map(directive => directive.initialised({contextComponent, scope, node: this})))
+    let result = this._process(this.directives.map(directive => directive.initialised({contextComponent, scope, block: this})))
     if (result !== true) return result
 
     // only `onclick..` attributes is expression
@@ -140,19 +146,19 @@ export class Renderer {
 
     // let properties = _.mapValues(this.attributes, prop => prop instanceof Expression ? prop.eval(contextComponent, scope) : prop)
 
-    result = this._process(this.directives.map(directive => directive.propertiesPopulated({contextComponent, scope, node: this, properties})))
+    result = this._process(this.directives.map(directive => directive.propertiesPopulated({contextComponent, scope, block: this, properties})))
     if (result !== true) return result
 
     const children = _.compact(_.flatMap(this.children, child => child.render(contextComponent, scope)))
 
-    result = this._process(this.directives.map(directive => directive.childrenRendered({contextComponent, scope, node: this, properties, children})))
+    result = this._process(this.directives.map(directive => directive.childrenRendered({contextComponent, scope, block: this, properties, children})))
     if (result !== true) return result
 
     return VDOM.h(this.tagName, properties, children)
   }
 }
 
-export class ComponentRenderer extends Renderer {
+export class Component extends Block {
   constructor(contextComponentClass, tagName, attributes, componentClass) {
     super(contextComponentClass, tagName, attributes, false)
     this.componentClass = componentClass
@@ -178,22 +184,22 @@ export class ComponentRenderer extends Renderer {
   render(contextComponent, superScope) {
     const scope = {$super: superScope}
 
-    let result = this._process(this.directives.map(directive => directive.initialised({contextComponent, scope, node: this})))
+    let result = this._process(this.directives.map(directive => directive.initialised({contextComponent, scope, block: this})))
     if (result !== true) return result
 
     const events = {}
 
-    result = this._process(this.directives.map(directive => directive.eventsPrepared({contextComponent, scope, node: this, events})))
+    result = this._process(this.directives.map(directive => directive.eventsPrepared({contextComponent, scope, block: this, events})))
     if (result !== true) return result
 
     let properties = _.mapValues(this.attributes, prop => prop instanceof Expression ? prop.eval(contextComponent, scope) : prop)
 
-    result = this._process(this.directives.map(directive => directive.propertiesPopulated({contextComponent, scope, node: this, properties})))
+    result = this._process(this.directives.map(directive => directive.propertiesPopulated({contextComponent, scope, block: this, properties})))
     if (result !== true) return result
 
     const children = _.compact(_.flatMap(this.children, child => child.render(contextComponent, scope)))
 
-    result = this._process(this.directives.map(directive => directive.childrenRendered({contextComponent, scope, node: this, properties, children})))
+    result = this._process(this.directives.map(directive => directive.childrenRendered({contextComponent, scope, block: this, properties, children})))
     if (result !== true) return result
 
     /* eslint new-cap: 0 */
@@ -203,7 +209,7 @@ export class ComponentRenderer extends Renderer {
       childComponent = new this.componentClass(this.componentId, contextComponent)
     }
 
-    result = this._process(this.directives.map(directive => directive.childComponentCreated({contextComponent, scope, node: this, properties, children, childComponent})))
+    result = this._process(this.directives.map(directive => directive.childComponentCreated({contextComponent, scope, block: this, properties, children, childComponent})))
     if (result !== true) return result
 
     // process childrent to fill slots
@@ -224,7 +230,7 @@ export class ComponentRenderer extends Renderer {
   }
 }
 
-export class SlotRenderer extends Renderer {
+export class Slot extends Block {
   constructor(contextComponentClass, tagName, attributes) {
     super(contextComponentClass, tagName, attributes)
     this.name = attributes.name || 'default'
@@ -234,17 +240,17 @@ export class SlotRenderer extends Renderer {
   render(contextComponent, superScope) { // return multiple vnodes
     const scope = {$super: superScope}
 
-    let result = this._process(this.directives.map(directive => directive.initialised({contextComponent, scope, node: this})))
+    let result = this._process(this.directives.map(directive => directive.initialised({contextComponent, scope, block: this})))
     if (result !== true) return result
 
     let properties = {} // ignore any attributes
 
-    result = this._process(this.directives.map(directive => directive.propertiesPopulated({contextComponent, scope, node: this, properties})))
+    result = this._process(this.directives.map(directive => directive.propertiesPopulated({contextComponent, scope, block: this, properties})))
     if (result !== true) return result
 
     const children = _.compact(_.flatMap(this.children, child => child.render(contextComponent, scope)))
 
-    result = this._process(this.directives.map(directive => directive.childrenRendered({contextComponent, scope, node: this, properties, children})))
+    result = this._process(this.directives.map(directive => directive.childrenRendered({contextComponent, scope, block: this, properties, children})))
     if (result !== true) return result
 
     if (contextComponent.$vslots.has(this.name) && !_.isEmpty(contextComponent.$vslots.get(this.name))) {
