@@ -56,7 +56,7 @@ export class Block implements Renderer {
     this.tagName = tagName
     this.attributes = {} // name -> value (string), except html events: onclick -> value (expression)
     this.directives = [] // @command:(target).(params..) -> expression
-    this.children = [] // children nodes
+    this.children = [] // children blocks/texts
     this.parent = null
     if (parse) {
       this._parseAttributesAndDirectives(attributes)
@@ -96,11 +96,11 @@ export class Block implements Renderer {
   }
 
   closestComponent() {
-    let node = this
-    while (node != null) {
+    let block = this
+    while (block != null) {
       /* eslint no-use-before-define: 0*/
-      if (node instanceof Component) return node
-      node = node.parent
+      if (block instanceof Component) return node
+      block = block.parent
     }
     return null
   }

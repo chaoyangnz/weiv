@@ -42,7 +42,7 @@ export class ElifDirective extends Directive {
     block.$ifValue = Boolean(value)
 
     if (block.parent === null) {
-      throw new Error('Cannot use `elif` on root node')
+      throw new Error('Cannot use `elif` on root block')
     }
     const ifIndex = _.findLastIndex(block.parent.children, child => _.some(child.directives, directive => directive instanceof IfDirective))
     if (ifIndex === -1) {
@@ -65,7 +65,7 @@ export class ElseDirective extends Directive {
 
   initialised({contextComponent, scope, block}) {
     if (block.parent === null) {
-      throw new Error('Cannot use `else` on root node')
+      throw new Error('Cannot use `else` on root block')
     }
     const ifIndex = _.findLastIndex(block.parent.children, child => _.some(child.directives, directive => directive instanceof IfDirective))
     if (ifIndex === -1) {
@@ -131,7 +131,7 @@ export class ForDirective extends Directive {
     const value = this.expression.eval(contextComponent, scope)
 
     if (!block.parent) {
-      console.warn('Cannot apply for directive in root node')
+      console.warn('Cannot apply for directive in root block')
       return
     }
     if (!_.isArrayLike(value)) return

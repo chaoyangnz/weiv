@@ -26,6 +26,7 @@ const config = {
     libraryTarget: 'umd',
     umdNamedDefine: true
   },
+  mode: 'development',
   module: {
     rules: [
       {
@@ -87,6 +88,7 @@ const todomvcConfig = {
     path: __dirname + '/todomvc/dist',
     filename: todoIndex
   },
+  mode: 'development',
   module: {
     rules: [
       {
