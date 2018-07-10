@@ -26,7 +26,7 @@ export type Recipe = {
 }
 
 // default render logic
-function $render(props: any = {}, events = {}, slots = {}) {
+function $render(props: any = {}, events = {}, plugs = {}) {
   console.groupCollapsed('%cRender component: %o', 'color: white; background-color: forestgreen', this)
   // props
   Object.keys(props).forEach(prop => {
@@ -36,22 +36,22 @@ function $render(props: any = {}, events = {}, slots = {}) {
     }
   })
   // events
-  this.$emitter.removeAllListeners()
+  this.__emitter__.removeAllListeners()
   Object.keys(events).forEach(event => {
     if (_.includes(Object.keys(this.$events), event)) { // TODO validate props type
       this.$on(event, events[event])
     }
   })
-  // slots
-  Object.keys(slots).forEach(slot => {
-    if (this.$slots.has(slot)) {
-      this.$vslots.set(slot, slots[slot])
+  // plugs to fill the slots
+  Object.keys(plugs).forEach(slotName => {
+    if (this.$slots.has(slotName)) {
+      this.__plugs__.set(slotName, plugs[slotName])
     } else {
-      console.warn('Fail to find slot %j in component %s template', slot, this.componentClass.name)
+      console.warn('Fail to find slot %s in component %o template', slotName, this)
     }
   })
 
-  this.$vdom = this.$template.render(this, this.$scope())
+  this.__vdom__ = this.$ast.render(this, this.$scope())
   console.groupEnd()
 }
 
@@ -73,42 +73,42 @@ function $lookupDirective(name) {
 
 function $on(event, listener) {
   if (_.includes(Object.keys(this.$events), event)) { // TODO validate events type
-    this.$emitter.addListener(event, listener)
+    this.__emitter__.addListener(event, listener)
   }
 }
 
 function $emit(event, ...args) {
   if (_.includes(Object.keys(this.$events), event)) { // TODO validate events type
-    this.$emitter.emit(event, ...args)
+    this.__emitter__.emit(event, ...args)
   } else {
     throw new Error(`No event '${event}' declaration in component: ${Object.getPrototypeOf(this).constructor.name}`)
   }
 }
 
 function $mount(el) {
-  if (this.$parent !== null || this.$dom !== null) {
+  if (this.__context__ !== null || this.__dom__ !== null) {
     throw new Error('Mount a child component is disallowed')
   }
   const tick = () => { // tick
-    const vdom = this.$vdom // old vdom tree
+    const vdom = this.__vdom__ // old vdom tree
     log('Before: %o', vdom)
     this.$render()
-    log('After: %o', this.$vdom)
-    console.assert(vdom !== this.$vdom)
+    log('After: %o', this.__vdom__)
+    console.assert(vdom !== this.__vdom__)
     if (vdom) {
-      const patches = VDOM.diff(vdom, this.$vdom)
+      const patches = VDOM.diff(vdom, this.__vdom__)
       log('Diff: %o', patches)
-      this.$dom = VDOM.patch(this.$dom, patches)
+      this.__dom__ = VDOM.patch(this.__dom__, patches)
     } else {
-      const dom: any = VDOM.create(this.$vdom)
-      this.$dom = dom
+      const dom: any = VDOM.create(this.__vdom__)
+      this.__dom__ = dom
       const mountNode = document.getElementById(el.substr(1))
       if (!mountNode) {
         throw new Error('Cannot find DOM element: ' + el)
       }
       mountNode.appendChild(dom)
     }
-    log('After patch to DOM: %o', self.$dom)
+    log('After patch to DOM: %o', self.__dom__)
   }
   autorun(tick)
 }
@@ -133,7 +133,7 @@ function $scope() {
 
 // mix component prototype
 function mixinPrototype(componentClass, recipe: Recipe) {
-  // attach properties from recipe
+  // populate properties from recipe
   Object.defineProperty(componentClass.prototype, '$name', { value: _.cloneDeep(recipe.name || null) })
   Object.defineProperty(componentClass.prototype, '$props', { value: _.cloneDeep(recipe.props || {}) })
   Object.defineProperty(componentClass.prototype, '$events', { value: _.cloneDeep(recipe.events || {}) })
@@ -146,33 +146,33 @@ function mixinPrototype(componentClass, recipe: Recipe) {
   Object.defineProperty(componentClass.prototype, '$on', { value: $on })
   Object.defineProperty(componentClass.prototype, '$emit', { value: $emit })
   Object.defineProperty(componentClass.prototype, '$mount', { value: $mount })
+  Object.defineProperty(componentClass.prototype, '$scope', { value: $scope })
   // attach parsed ast to component prototype
   const template = recipe.template ? recipe.template.trim() : ''
-  Object.defineProperty(componentClass.prototype, '$slots', { value: new Set() })
-  Object.defineProperty(componentClass.prototype, '$template', { value: Object.freeze(parse(template, componentClass)) })
-  Object.defineProperty(componentClass.prototype, '$scope', { value: $scope })
+  Object.defineProperty(componentClass.prototype, '$slots', { value: new Set() }) // will populate when parsing
+  Object.defineProperty(componentClass.prototype, '$ast', { value: Object.freeze(parse(template, componentClass)) })
   Object.freeze(componentClass.prototype)
 }
 
 // mixin component instance
-function mixinComponent(component, id, parent) {
-  Object.defineProperty(component, '$id', { value: id })
-  Object.defineProperty(component, '$children', { value: new Map() })
-  if (parent) {
-    parent.$children.set(id, component)
-    Object.defineProperty(component, '$parent', { value: parent })
-    Object.defineProperty(component, '$root', { value: parent.$root })
+function mixinComponent(component, id, context) {
+  Object.defineProperty(component, '__id__', { value: id })
+  Object.defineProperty(component, '__components__', { value: new Map() })
+  if (context) {
+    context.__components__.set(id, component)
+    Object.defineProperty(component, '__context__', { value: context })
+    Object.defineProperty(component, '__root__', { value: context.$root })
   } else {
-    Object.defineProperty(component, '$parent', { value: null })
-    Object.defineProperty(component, '$root', { value: component })
+    Object.defineProperty(component, '__context__', { value: null })
+    Object.defineProperty(component, '__root__', { value: component })
   }
-  Object.defineProperty(component, '$emitter', { value: new EventEmitter() })
-  Object.defineProperty(component, '$vdom', { value: null, writable: true })
+  Object.defineProperty(component, '__emitter__', { value: new EventEmitter() })
+  Object.defineProperty(component, '__vdom__', { value: null, writable: true })
   // <string, array<vnode>>slots save the vdom rendered in parent scope
-  const slots = new Map()
-  component.$slots.forEach(slot => slots.set(slot, []))
-  Object.defineProperty(component, '$vslots', { value: slots })
-  Object.defineProperty(component, '$dom', { value: null, writable: true })
+  const plugs = new Map()
+  component.$slots.forEach(slot => plugs.set(slot, []))
+  Object.defineProperty(component, '__plugs__', { value: plugs })
+  Object.defineProperty(component, '__dom__', { value: null, writable: true })
 }
 
 /**
@@ -187,16 +187,16 @@ export function Component(recipe: Recipe) {
     }
     mixinPrototype(ComponentClass, recipe)
     Object.defineProperty(ComponentClass, '$uniqueid', { value: uniqueid })
-    // decorate
-    const DecoratedComponentClass = (id: string, parent: any) => {
+    // decorated class
+    function WeivComponent(id: string, context: any) {
       let component = new ComponentClass()
-      mixinComponent(component, id || uniqueid(), parent) // inject internal component properties
+      mixinComponent(component, id || uniqueid(), context) // inject internal component properties
       // log('%cNew Component: %o', 'color: white; background-color: forestgreen', component)
       return component
     }
-    // SHOULD never use $$original in your code, it is for weiv internal use only
-    Object.defineProperty(DecoratedComponentClass, '$$', { value: ComponentClass })
-    Object.defineProperty(ComponentClass, '$$', { value: DecoratedComponentClass })
-    return DecoratedComponentClass
+    // mutual references of docorated class and undecorated class
+    Object.defineProperty(WeivComponent, '$$', { value: ComponentClass })
+    Object.defineProperty(ComponentClass, '$$', { value: WeivComponent })
+    return WeivComponent
   }
 }

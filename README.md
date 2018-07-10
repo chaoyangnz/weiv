@@ -7,13 +7,15 @@
 
 This is an era of front-end evolution with tons of front-end frameworks: React, Angular, Vue, Preact, Ractive, Svelte. Probably like me, you also feel tired to follow this one or another one. So I choose to reinvent the wheel and eat my own dog food.
 
+For developers: [Guide for developers](guide-for-developers.md)
+
 ## How it's like
 
 ### TODO MVC example
 
-[Live demo](http://yangchao.me/weiv-todomvc/)
+[Live demo](http://chaoyang.io/weiv-todomvc/)
 
-[Source code](http://github.com/richdyang/weiv-todomvc)
+[Source code](http://github.com/chaoyangnz/weiv-todomvc)
 
 <img src="https://i.imgur.com/bVaAVQt.gif" width="500">
 
@@ -103,7 +105,7 @@ export class Todo {
 export class App {
   firstName = 'Chao'
   lastName = 'Yang'
-  blogURL = 'http://yangchao.me'
+  blogURL = 'http://chaoyang.io'
   location = {
     city: 'Auckland',
     country: 'New Zealand'
@@ -131,7 +133,7 @@ new App().$mount('#app')
 
 - [virtual dom](https://github.com/Matt-Esch/virtual-dom)
 - [mobx](https://github.com/mobxjs/mobx)
-- [jexl-sync](https://github.com/richdyang/jexl-sync)
+- [jexl-sync](https://github.com/chaoyangnz/jexl-sync)
 
 ## TODOs
 

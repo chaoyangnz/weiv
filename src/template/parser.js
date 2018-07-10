@@ -2,7 +2,7 @@ import _ from 'lodash'
 import htmlparser from 'htmlparser2'
 import debug from 'debug'
 import { HTML_TAGS, BOOLEAN_ATTRIBUTES } from './html'
-import { Block, Component, Text, Expression, Slot } from './ast'
+import { Element, CustomElement, Text, Expression, Slot } from './ast'
 
 const log = debug('weiv:parse')
 
@@ -38,7 +38,7 @@ export function parse(template, contextComponentClass) {
     })
 
     if (_.includes(HTML_TAGS, tagName)) { // HTML tags
-      return new Block(contextComponentClass, tagName, attributes)
+      return new Element(contextComponentClass, tagName, attributes)
     }
     if (tagName === 'slot') {
       const slot = new Slot(contextComponentClass, tagName, attributes)
@@ -47,7 +47,7 @@ export function parse(template, contextComponentClass) {
     }
     const childComponentClass = contextComponentClass.prototype.$lookupComponent(tagName) // custom tag for component
     if (childComponentClass) {
-      return new Component(contextComponentClass, tagName, attributes, childComponentClass)
+      return new CustomElement(contextComponentClass, tagName, attributes, childComponentClass)
     }
     reportParseError('Cannot find component for custom tag: ' + tagName)
   }

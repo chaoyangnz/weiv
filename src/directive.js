@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { Block, Component, Expression } from './template/ast';
+import { Element, CustomElement, Expression } from './template/ast';
 import { HTML_EVENT_ATTRIBUTES } from './template/html';
 import { isObservable } from 'mobx';
 
@@ -13,45 +13,45 @@ export class Directive {
 
   validate() { return true }
 
-  initialised({contextComponent, scope, block}) { }
+  initialised({contextComponent, scope, element}) { }
 
-  // only component block
-  eventsPrepared({contextComponent, scope, block, events}) { }
+  // only component element
+  eventsPrepared({contextComponent, scope, element, events}) { }
 
-  propertiesPopulated({contextComponent, scope, block, properties}) { }
+  propertiesPopulated({contextComponent, scope, element, properties}) { }
 
-  childrenRendered({contextComponent, scope, block, properties, children}) { }
+  childrenRendered({contextComponent, scope, element, properties, children}) { }
 
-  // only component block
-  childComponentCreated({contextComponent, scope, block, properties, children, childComponent}) { }
+  // only component element
+  componentPrepared({contextComponent, scope, element, properties, children, childComponent}) { }
 }
 
 export class IfDirective extends Directive {
 
-  initialised({contextComponent, scope, block}) {
+  initialised({contextComponent, scope, element}) {
     const value = this.expression.eval(contextComponent, scope)
-    block.$ifValue = Boolean(value)
+    element.$ifValue = Boolean(value)
     if (!value) return []
   }
 }
 
 export class ElifDirective extends Directive {
 
-  initialised({contextComponent, scope, block}) {
+  initialised({contextComponent, scope, element}) {
     const value = this.expression.eval(contextComponent, scope)
-    block.$ifValue = Boolean(value)
+    element.$ifValue = Boolean(value)
 
-    if (block.parent === null) {
-      throw new Error('Cannot use `elif` on root block')
+    if (element.parent === null) {
+      throw new Error('Cannot use `elif` on root element')
     }
-    const ifIndex = _.findLastIndex(block.parent.children, child => _.some(child.directives, directive => directive instanceof IfDirective))
+    const ifIndex = _.findLastIndex(element.parent.children, child => _.some(child.directives, directive => directive instanceof IfDirective))
     if (ifIndex === -1) {
       throw new Error('Missing sibling `if` directives')
     }
-    const elifIndex = _.findIndex(block.parent.children, child => child === block)
+    const elifIndex = _.findIndex(element.parent.children, child => child === element)
     for (let i = ifIndex; i < elifIndex; ++i) {
-      if (_.some(block.parent.children[i].directives, directive => directive instanceof IfDirective || directive instanceof ElifDirective)) {
-        if (block.parent.children[i].$ifValue) {
+      if (_.some(element.parent.children[i].directives, directive => directive instanceof IfDirective || directive instanceof ElifDirective)) {
+        if (element.parent.children[i].$ifValue) {
           return []
         }
       }
@@ -63,19 +63,19 @@ export class ElifDirective extends Directive {
 
 export class ElseDirective extends Directive {
 
-  initialised({contextComponent, scope, block}) {
-    if (block.parent === null) {
-      throw new Error('Cannot use `else` on root block')
+  initialised({contextComponent, scope, element}) {
+    if (element.parent === null) {
+      throw new Error('Cannot use `else` on root element')
     }
-    const ifIndex = _.findLastIndex(block.parent.children, child => _.some(child.directives, directive => directive instanceof IfDirective))
+    const ifIndex = _.findLastIndex(element.parent.children, child => _.some(child.directives, directive => directive instanceof IfDirective))
     if (ifIndex === -1) {
       throw new Error('Missing sibling `if` directives')
     }
-    const elseIndex = _.findIndex(block.parent.children, child => child === block)
+    const elseIndex = _.findIndex(element.parent.children, child => child === element)
     for (let i = ifIndex; i < elseIndex; ++i) {
-      const children = block.parent.children[i]
+      const children = element.parent.children[i]
       if (_.some(children.directives, directive => directive instanceof IfDirective || directive instanceof ElifDirective)) {
-        if (block.parent.children[i].$ifValue) {
+        if (element.parent.children[i].$ifValue) {
           return []
         }
       }
@@ -85,7 +85,7 @@ export class ElseDirective extends Directive {
 
 export class BindDirective extends Directive {
 
-  propertiesPopulated({contextComponent, scope, block, properties}) {
+  propertiesPopulated({contextComponent, scope, element, properties}) {
     const value = this.expression.eval(contextComponent, scope)
     if (this.target === 'class') {
       const classes = []
@@ -102,16 +102,16 @@ export class BindDirective extends Directive {
 
 export class OnDirective extends Directive {
 
-  eventsPrepared({contextComponent, scope, block, events}) {
+  eventsPrepared({contextComponent, scope, element, events}) {
     const value = this.expression.eval(contextComponent, scope)
-    if (block instanceof Component) {
+    if (element instanceof CustomElement) {
       events[this.target] = value
     }
   }
 
-  propertiesPopulated({contextComponent, scope, block, properties}) {
+  propertiesPopulated({contextComponent, scope, element, properties}) {
     const value = this.expression.eval(contextComponent, scope)
-    if (block instanceof Block && _.includes(HTML_EVENT_ATTRIBUTES, `on${this.target}`)) {
+    if (element instanceof Element && _.includes(HTML_EVENT_ATTRIBUTES, `on${this.target}`)) {
       properties[`on${this.target}`] = value
     }
   }
@@ -127,22 +127,22 @@ export class VarDirective extends Directive {
 
 export class ForDirective extends Directive {
 
-  initialised({contextComponent, scope, block}) {
+  initialised({contextComponent, scope, element}) {
     const value = this.expression.eval(contextComponent, scope)
 
-    if (!block.parent) {
-      console.warn('Cannot apply for directive in root block')
+    if (!element.parent) {
+      console.warn('Cannot apply for directive in root element')
       return
     }
     if (!_.isArrayLike(value)) return
 
     const vnodes = []
     value.forEach((item, i) => {
-      const clonedNode = _.clone(block) // can optimise, because i just change directives
-      clonedNode.directives = _.clone(block.directives)
-      if (clonedNode instanceof Component) {
+      const clonedNode = _.clone(element) // can optimise, because i just change directives
+      clonedNode.directives = _.clone(element.directives)
+      if (clonedNode instanceof CustomElement) {
         // generate new component id
-        clonedNode.componentId = block.componentId + '@' + i
+        clonedNode.componentId = element.componentId + '@' + i
       }
       _.remove(clonedNode.directives, directive => directive instanceof ForDirective)
       scope['$index'] = i
@@ -157,7 +157,7 @@ export class ForDirective extends Directive {
 
 export class ShowDirective extends Directive {
 
-  propertiesPopulated({contextComponent, scope, block, properties}) {
+  propertiesPopulated({contextComponent, scope, element, properties}) {
     const value = this.expression.eval(contextComponent, scope)
     if (value) {
       if (Object.hasOwnProperty(properties, 'style')) {
@@ -172,7 +172,7 @@ export class ShowDirective extends Directive {
 
 export class HtmlDirective extends Directive {
 
-  propertiesPopulated({contextComponent, scope, block, properties}) {
+  propertiesPopulated({contextComponent, scope, element, properties}) {
     const value = this.expression.eval(contextComponent, scope)
     properties.innerHTML = String(value)
   }
@@ -180,15 +180,15 @@ export class HtmlDirective extends Directive {
 
 export class ModelDirective extends Directive {
 
-  propertiesPopulated({contextComponent, scope, block, properties}) {
+  propertiesPopulated({contextComponent, scope, element, properties}) {
     if (this.expression.ast.type !== 'Identifier') {
       throw new Error('Model supports identifier expression only')
     }
     // disallow observable
     const segs = this.expression.exp.split('.')
     let o = contextComponent
-    if (segs.length > 1) {
-      o = contextComponent[segs.slice(0, segs.length - 1).join('.')]
+    for (let i = 0; i < segs.length - 1; ++i) {
+      o = o[segs[i]]
     }
     if (isObservable(o, segs[segs.length - 1])) {
       throw new Error('Model must be not observable to avoid two-way data flow')
