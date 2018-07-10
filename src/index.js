@@ -18,7 +18,7 @@ export function component(tag: string, componentClass: any) {
   if ($components.has(tag)) {
     console.log('Component has been registered: %s', tag)
   }
-  $components.set(tag, componentClass)
+  $components.set(tag, componentClass.$$)
 }
 
 export function directive(name: string, directive: any) {

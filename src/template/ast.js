@@ -99,7 +99,7 @@ export class Block implements Renderer {
     let block = this
     while (block != null) {
       /* eslint no-use-before-define: 0*/
-      if (block instanceof Component) return node
+      if (block instanceof Component) return block
       block = block.parent
     }
     return null
@@ -162,7 +162,7 @@ export class Component extends Block {
   constructor(contextComponentClass, tagName, attributes, componentClass) {
     super(contextComponentClass, tagName, attributes, false)
     this.componentClass = componentClass
-    this.componentId = componentClass.$original.$uniqueid()
+    this.componentId = componentClass.$uniqueid()
     this.attributes = {}
     this.directives = []
     for (let name of Object.keys(attributes)) {
@@ -171,7 +171,7 @@ export class Component extends Block {
         if (directive) this.directives.push(directive)
       } else {
         // validate component props
-        if (_.includes(Object.keys(componentClass.$original.prototype.$props), name)) {
+        if (_.includes(Object.keys(componentClass.prototype.$props), name)) {
           this.attributes[name] = attributes[name]
         } else {
           console.warn('Illegal commponent props %s in %s', name, componentClass.$class.name)
@@ -206,7 +206,7 @@ export class Component extends Block {
     let childComponent = contextComponent.$children.get(this.componentId)
     if (!childComponent) {
       log('New')
-      childComponent = new this.componentClass(this.componentId, contextComponent)
+      childComponent = new this.componentClass.$$(this.componentId, contextComponent)
     }
 
     result = this._process(this.directives.map(directive => directive.childComponentCreated({contextComponent, scope, block: this, properties, children, childComponent})))

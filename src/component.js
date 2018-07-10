@@ -17,7 +17,7 @@ export type Prop = {
   description: ?string
 }
 
-export type Options = {
+export type Recipe = {
   name: string,
   template?: string,
   props?: {[string]: Prop},
@@ -25,13 +25,13 @@ export type Options = {
   components: any
 }
 
+// default render logic
 function $render(props: any = {}, events = {}, slots = {}) {
   console.groupCollapsed('%cRender component: %o', 'color: white; background-color: forestgreen', this)
   // props
   Object.keys(props).forEach(prop => {
     if (_.includes(Object.keys(this.$props), prop)) { // TODO validate props type
-      const value = props[prop] // _.clone(props[prop]) // deep clone??
-      Object.freeze(value)
+      const value = props[prop] // never clone as vue and angular do!!
       Object.defineProperty(this, prop, { value: value, configurable: true, writable: false })
     }
   })
@@ -47,7 +47,7 @@ function $render(props: any = {}, events = {}, slots = {}) {
     if (this.$slots.has(slot)) {
       this.$vslots.set(slot, slots[slot])
     } else {
-      console.warn('Fail to find slot %j in component %s template', slot, this.componentClass.$original.name)
+      console.warn('Fail to find slot %j in component %s template', slot, this.componentClass.name)
     }
   })
 
@@ -55,10 +55,14 @@ function $render(props: any = {}, events = {}, slots = {}) {
   console.groupEnd()
 }
 
+/**
+ * When register component in current component or globaly by weiv.component(..),
+ * you put decoreated class to the Map, but it will be stored as undecoreated class
+ */
 function $lookupComponent(tag) {
   let componentClass = this.$components[tag]
   if (componentClass) return componentClass
-  return weiv.component(tag)
+  return weiv.component(tag).$$
 }
 
 function $lookupDirective(name) {
@@ -127,12 +131,15 @@ function $scope() {
   // return scope
 }
 
-function mixinPrototype(componentClass, options: Options) {
-  Object.defineProperty(componentClass.prototype, '$name', { value: _.cloneDeep(options.name || null) })
-  Object.defineProperty(componentClass.prototype, '$props', { value: _.cloneDeep(options.props || {}) })
-  Object.defineProperty(componentClass.prototype, '$events', { value: _.cloneDeep(options.events || {}) })
-  Object.defineProperty(componentClass.prototype, '$components', { value: _.cloneDeep(options.components || []) })
-  Object.defineProperty(componentClass.prototype, '$directives', { value: _.cloneDeep(options.directives || []) })
+// mix component prototype
+function mixinPrototype(componentClass, recipe: Recipe) {
+  // attach properties from recipe
+  Object.defineProperty(componentClass.prototype, '$name', { value: _.cloneDeep(recipe.name || null) })
+  Object.defineProperty(componentClass.prototype, '$props', { value: _.cloneDeep(recipe.props || {}) })
+  Object.defineProperty(componentClass.prototype, '$events', { value: _.cloneDeep(recipe.events || {}) })
+  Object.defineProperty(componentClass.prototype, '$components', { value: _.mapValues(recipe.components || {}, componentClass => componentClass.$$)})
+  Object.defineProperty(componentClass.prototype, '$directives', { value: _.cloneDeep(recipe.directives || []) })
+  // attach methods
   Object.defineProperty(componentClass.prototype, '$render', { value: $render })
   Object.defineProperty(componentClass.prototype, '$lookupComponent', { value: $lookupComponent })
   Object.defineProperty(componentClass.prototype, '$lookupDirective', { value: $lookupDirective })
@@ -140,18 +147,14 @@ function mixinPrototype(componentClass, options: Options) {
   Object.defineProperty(componentClass.prototype, '$emit', { value: $emit })
   Object.defineProperty(componentClass.prototype, '$mount', { value: $mount })
   // attach parsed ast to component prototype
-  const template = options.template ? options.template.trim() : ''
+  const template = recipe.template ? recipe.template.trim() : ''
   Object.defineProperty(componentClass.prototype, '$slots', { value: new Set() })
   Object.defineProperty(componentClass.prototype, '$template', { value: Object.freeze(parse(template, componentClass)) })
   Object.defineProperty(componentClass.prototype, '$scope', { value: $scope })
   Object.freeze(componentClass.prototype)
-
-  // static methods
-  Object.defineProperty(componentClass, '$uniqueid', { value: function () {
-    return `${componentClass.name}@${Math.random().toString(36).substr(2, 9)}`
-  }})
 }
 
+// mixin component instance
 function mixinComponent(component, id, parent) {
   Object.defineProperty(component, '$id', { value: id })
   Object.defineProperty(component, '$children', { value: new Map() })
@@ -172,17 +175,28 @@ function mixinComponent(component, id, parent) {
   Object.defineProperty(component, '$dom', { value: null, writable: true })
 }
 
-export function Component(options: Options) {
+/**
+ * IMPORTANT:
+ * - All classes in parser, AST and component registry (in component or globally) are orignal UNDECORATED classes.
+ * - DECOREATED class is required only when you need to initialise the component instance, but you have rare opportunity to do so.
+ */
+export function Component(recipe: Recipe) {
   return function decorator(ComponentClass: any) {
-    mixinPrototype(ComponentClass, options)
-
-    const Component = (id: string, parent: any) => {
+    const uniqueid = () => {
+      return `${ComponentClass.name}@${Math.random().toString(36).substr(2, 9)}`
+    }
+    mixinPrototype(ComponentClass, recipe)
+    Object.defineProperty(ComponentClass, '$uniqueid', { value: uniqueid })
+    // decorate
+    const DecoratedComponentClass = (id: string, parent: any) => {
       let component = new ComponentClass()
-      mixinComponent(component, id || ComponentClass.$uniqueid(), parent) // inject internal component properties
+      mixinComponent(component, id || uniqueid(), parent) // inject internal component properties
       // log('%cNew Component: %o', 'color: white; background-color: forestgreen', component)
       return component
     }
-    Object.defineProperty(Component, '$original', { value: ComponentClass })
-    return Component
+    // SHOULD never use $$original in your code, it is for weiv internal use only
+    Object.defineProperty(DecoratedComponentClass, '$$', { value: ComponentClass })
+    Object.defineProperty(ComponentClass, '$$', { value: DecoratedComponentClass })
+    return DecoratedComponentClass
   }
 }
