@@ -45,11 +45,7 @@ export function parse(template, contextComponentClass) {
       contextComponentClass.prototype.$slots.add(slot.name)
       return slot
     }
-    const childComponentClass = contextComponentClass.prototype.$lookupComponent(tagName) // custom tag for component
-    if (childComponentClass) {
-      return new CustomElement(contextComponentClass, tagName, attributes, childComponentClass)
-    }
-    reportParseError('Cannot find component for custom tag: ' + tagName)
+    return new CustomElement(contextComponentClass, tagName, attributes)
   }
 
   const onOpenTag = (tagName, attributes) => {

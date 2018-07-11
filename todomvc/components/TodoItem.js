@@ -14,7 +14,7 @@ import { observable } from 'mobx'
         <input class="toggle"
               type="checkbox"
               @bind:checked="todo.completed"
-              onchange="handleToggle" />
+              onchange="handleToggle" autofocus />
         <label ondblclick="handleDoubleClick">
           {{todo.text}} {{completed}}
         </label>

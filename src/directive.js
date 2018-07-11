@@ -13,23 +13,23 @@ export class Directive {
 
   validate() { return true }
 
-  initialised({contextComponent, scope, element}) { }
+  initialised({hostComponent, scope, element}) { }
 
   // only component element
-  eventsPrepared({contextComponent, scope, element, events}) { }
+  eventsPrepared({hostComponent, scope, element, events}) { }
 
-  propertiesPopulated({contextComponent, scope, element, properties}) { }
+  propertiesPopulated({hostComponent, scope, element, properties}) { }
 
-  childrenRendered({contextComponent, scope, element, properties, children}) { }
+  childrenRendered({hostComponent, scope, element, properties, children}) { }
 
   // only component element
-  componentPrepared({contextComponent, scope, element, properties, children, childComponent}) { }
+  componentPrepared({hostComponent, scope, element, properties, children, childComponent}) { }
 }
 
 export class IfDirective extends Directive {
 
-  initialised({contextComponent, scope, element}) {
-    const value = this.expression.eval(contextComponent, scope)
+  initialised({hostComponent, scope, element}) {
+    const value = this.expression.eval(hostComponent, scope)
     element.$ifValue = Boolean(value)
     if (!value) return []
   }
@@ -37,8 +37,8 @@ export class IfDirective extends Directive {
 
 export class ElifDirective extends Directive {
 
-  initialised({contextComponent, scope, element}) {
-    const value = this.expression.eval(contextComponent, scope)
+  initialised({hostComponent, scope, element}) {
+    const value = this.expression.eval(hostComponent, scope)
     element.$ifValue = Boolean(value)
 
     if (element.parent === null) {
@@ -63,7 +63,7 @@ export class ElifDirective extends Directive {
 
 export class ElseDirective extends Directive {
 
-  initialised({contextComponent, scope, element}) {
+  initialised({hostComponent, scope, element}) {
     if (element.parent === null) {
       throw new Error('Cannot use `else` on root element')
     }
@@ -85,8 +85,8 @@ export class ElseDirective extends Directive {
 
 export class BindDirective extends Directive {
 
-  propertiesPopulated({contextComponent, scope, element, properties}) {
-    const value = this.expression.eval(contextComponent, scope)
+  propertiesPopulated({hostComponent, scope, element, properties}) {
+    const value = this.expression.eval(hostComponent, scope)
     if (this.target === 'class') {
       const classes = []
       _.forIn(value, (val, key) => {
@@ -102,15 +102,15 @@ export class BindDirective extends Directive {
 
 export class OnDirective extends Directive {
 
-  eventsPrepared({contextComponent, scope, element, events}) {
-    const value = this.expression.eval(contextComponent, scope)
+  eventsPrepared({hostComponent, scope, element, events}) {
+    const value = this.expression.eval(hostComponent, scope)
     if (element instanceof CustomElement) {
       events[this.target] = value
     }
   }
 
-  propertiesPopulated({contextComponent, scope, element, properties}) {
-    const value = this.expression.eval(contextComponent, scope)
+  propertiesPopulated({hostComponent, scope, element, properties}) {
+    const value = this.expression.eval(hostComponent, scope)
     if (element instanceof Element && _.includes(HTML_EVENT_ATTRIBUTES, `on${this.target}`)) {
       properties[`on${this.target}`] = value
     }
@@ -119,16 +119,16 @@ export class OnDirective extends Directive {
 
 export class VarDirective extends Directive {
 
-  initialised({contextComponent, scope}) {
-    const value = this.expression.eval(contextComponent, scope)
+  initialised({hostComponent, scope}) {
+    const value = this.expression.eval(hostComponent, scope)
     scope[this.target] = value
   }
 }
 
 export class ForDirective extends Directive {
 
-  initialised({contextComponent, scope, element}) {
-    const value = this.expression.eval(contextComponent, scope)
+  initialised({hostComponent, scope, element}) {
+    const value = this.expression.eval(hostComponent, scope)
 
     if (!element.parent) {
       console.warn('Cannot apply for directive in root element')
@@ -147,7 +147,7 @@ export class ForDirective extends Directive {
       _.remove(clonedNode.directives, directive => directive instanceof ForDirective)
       scope['$index'] = i
       scope[this.target] = item // inject for $var in ..
-      const vnode = clonedNode.render(contextComponent, scope)
+      const vnode = clonedNode.render(hostComponent, scope)
       vnode.key = clonedNode.componentId // assign a key for vnode
       vnodes.push(vnode)
     })
@@ -157,8 +157,8 @@ export class ForDirective extends Directive {
 
 export class ShowDirective extends Directive {
 
-  propertiesPopulated({contextComponent, scope, element, properties}) {
-    const value = this.expression.eval(contextComponent, scope)
+  propertiesPopulated({hostComponent, scope, element, properties}) {
+    const value = this.expression.eval(hostComponent, scope)
     if (value) {
       if (Object.hasOwnProperty(properties, 'style')) {
         delete properties.style.display
@@ -172,21 +172,21 @@ export class ShowDirective extends Directive {
 
 export class HtmlDirective extends Directive {
 
-  propertiesPopulated({contextComponent, scope, element, properties}) {
-    const value = this.expression.eval(contextComponent, scope)
+  propertiesPopulated({hostComponent, scope, element, properties}) {
+    const value = this.expression.eval(hostComponent, scope)
     properties.innerHTML = String(value)
   }
 }
 
 export class ModelDirective extends Directive {
 
-  propertiesPopulated({contextComponent, scope, element, properties}) {
+  propertiesPopulated({hostComponent, scope, element, properties}) {
     if (this.expression.ast.type !== 'Identifier') {
       throw new Error('Model supports identifier expression only')
     }
     // disallow observable
     const segs = this.expression.exp.split('.')
-    let o = contextComponent
+    let o = hostComponent
     for (let i = 0; i < segs.length - 1; ++i) {
       o = o[segs[i]]
     }
@@ -194,10 +194,10 @@ export class ModelDirective extends Directive {
       throw new Error('Model must be not observable to avoid two-way data flow')
     }
 
-    const value = this.expression.eval(contextComponent, scope)
+    const value = this.expression.eval(hostComponent, scope)
     properties['value'] = value
     properties['oninput'] = (event) => {
-      contextComponent[this.expression.exp] = event.target.value
+      hostComponent[this.expression.exp] = event.target.value
     }
   }
 }

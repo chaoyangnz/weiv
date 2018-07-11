@@ -25719,7 +25719,7 @@ var Directive = exports.Directive = function () {
   }, {
     key: 'initialised',
     value: function initialised(_ref) {
-      var contextComponent = _ref.contextComponent,
+      var hostComponent = _ref.hostComponent,
           scope = _ref.scope,
           element = _ref.element;
     }
@@ -25729,7 +25729,7 @@ var Directive = exports.Directive = function () {
   }, {
     key: 'eventsPrepared',
     value: function eventsPrepared(_ref2) {
-      var contextComponent = _ref2.contextComponent,
+      var hostComponent = _ref2.hostComponent,
           scope = _ref2.scope,
           element = _ref2.element,
           events = _ref2.events;
@@ -25737,7 +25737,7 @@ var Directive = exports.Directive = function () {
   }, {
     key: 'propertiesPopulated',
     value: function propertiesPopulated(_ref3) {
-      var contextComponent = _ref3.contextComponent,
+      var hostComponent = _ref3.hostComponent,
           scope = _ref3.scope,
           element = _ref3.element,
           properties = _ref3.properties;
@@ -25745,7 +25745,7 @@ var Directive = exports.Directive = function () {
   }, {
     key: 'childrenRendered',
     value: function childrenRendered(_ref4) {
-      var contextComponent = _ref4.contextComponent,
+      var hostComponent = _ref4.hostComponent,
           scope = _ref4.scope,
           element = _ref4.element,
           properties = _ref4.properties,
@@ -25757,7 +25757,7 @@ var Directive = exports.Directive = function () {
   }, {
     key: 'componentPrepared',
     value: function componentPrepared(_ref5) {
-      var contextComponent = _ref5.contextComponent,
+      var hostComponent = _ref5.hostComponent,
           scope = _ref5.scope,
           element = _ref5.element,
           properties = _ref5.properties,
@@ -25781,11 +25781,11 @@ var IfDirective = exports.IfDirective = function (_Directive) {
   _createClass(IfDirective, [{
     key: 'initialised',
     value: function initialised(_ref6) {
-      var contextComponent = _ref6.contextComponent,
+      var hostComponent = _ref6.hostComponent,
           scope = _ref6.scope,
           element = _ref6.element;
 
-      var value = this.expression.eval(contextComponent, scope);
+      var value = this.expression.eval(hostComponent, scope);
       element.$ifValue = Boolean(value);
       if (!value) return [];
     }
@@ -25806,11 +25806,11 @@ var ElifDirective = exports.ElifDirective = function (_Directive2) {
   _createClass(ElifDirective, [{
     key: 'initialised',
     value: function initialised(_ref7) {
-      var contextComponent = _ref7.contextComponent,
+      var hostComponent = _ref7.hostComponent,
           scope = _ref7.scope,
           element = _ref7.element;
 
-      var value = this.expression.eval(contextComponent, scope);
+      var value = this.expression.eval(hostComponent, scope);
       element.$ifValue = Boolean(value);
 
       if (element.parent === null) {
@@ -25856,7 +25856,7 @@ var ElseDirective = exports.ElseDirective = function (_Directive3) {
   _createClass(ElseDirective, [{
     key: 'initialised',
     value: function initialised(_ref8) {
-      var contextComponent = _ref8.contextComponent,
+      var hostComponent = _ref8.hostComponent,
           scope = _ref8.scope,
           element = _ref8.element;
 
@@ -25902,12 +25902,12 @@ var BindDirective = exports.BindDirective = function (_Directive4) {
   _createClass(BindDirective, [{
     key: 'propertiesPopulated',
     value: function propertiesPopulated(_ref9) {
-      var contextComponent = _ref9.contextComponent,
+      var hostComponent = _ref9.hostComponent,
           scope = _ref9.scope,
           element = _ref9.element,
           properties = _ref9.properties;
 
-      var value = this.expression.eval(contextComponent, scope);
+      var value = this.expression.eval(hostComponent, scope);
       if (this.target === 'class') {
         var classes = [];
         (0, _forIn3.default)(value, function (val, key) {
@@ -25936,12 +25936,12 @@ var OnDirective = exports.OnDirective = function (_Directive5) {
   _createClass(OnDirective, [{
     key: 'eventsPrepared',
     value: function eventsPrepared(_ref10) {
-      var contextComponent = _ref10.contextComponent,
+      var hostComponent = _ref10.hostComponent,
           scope = _ref10.scope,
           element = _ref10.element,
           events = _ref10.events;
 
-      var value = this.expression.eval(contextComponent, scope);
+      var value = this.expression.eval(hostComponent, scope);
       if (element instanceof _ast.CustomElement) {
         events[this.target] = value;
       }
@@ -25949,12 +25949,12 @@ var OnDirective = exports.OnDirective = function (_Directive5) {
   }, {
     key: 'propertiesPopulated',
     value: function propertiesPopulated(_ref11) {
-      var contextComponent = _ref11.contextComponent,
+      var hostComponent = _ref11.hostComponent,
           scope = _ref11.scope,
           element = _ref11.element,
           properties = _ref11.properties;
 
-      var value = this.expression.eval(contextComponent, scope);
+      var value = this.expression.eval(hostComponent, scope);
       if (element instanceof _ast.Element && (0, _includes3.default)(_html.HTML_EVENT_ATTRIBUTES, 'on' + this.target)) {
         properties['on' + this.target] = value;
       }
@@ -25976,10 +25976,10 @@ var VarDirective = exports.VarDirective = function (_Directive6) {
   _createClass(VarDirective, [{
     key: 'initialised',
     value: function initialised(_ref12) {
-      var contextComponent = _ref12.contextComponent,
+      var hostComponent = _ref12.hostComponent,
           scope = _ref12.scope;
 
-      var value = this.expression.eval(contextComponent, scope);
+      var value = this.expression.eval(hostComponent, scope);
       scope[this.target] = value;
     }
   }]);
@@ -26001,11 +26001,11 @@ var ForDirective = exports.ForDirective = function (_Directive7) {
     value: function initialised(_ref13) {
       var _this8 = this;
 
-      var contextComponent = _ref13.contextComponent,
+      var hostComponent = _ref13.hostComponent,
           scope = _ref13.scope,
           element = _ref13.element;
 
-      var value = this.expression.eval(contextComponent, scope);
+      var value = this.expression.eval(hostComponent, scope);
 
       if (!element.parent) {
         console.warn('Cannot apply for directive in root element');
@@ -26026,7 +26026,7 @@ var ForDirective = exports.ForDirective = function (_Directive7) {
         });
         scope['$index'] = i;
         scope[_this8.target] = item; // inject for $var in ..
-        var vnode = clonedNode.render(contextComponent, scope);
+        var vnode = clonedNode.render(hostComponent, scope);
         vnode.key = clonedNode.componentId; // assign a key for vnode
         vnodes.push(vnode);
       });
@@ -26049,12 +26049,12 @@ var ShowDirective = exports.ShowDirective = function (_Directive8) {
   _createClass(ShowDirective, [{
     key: 'propertiesPopulated',
     value: function propertiesPopulated(_ref14) {
-      var contextComponent = _ref14.contextComponent,
+      var hostComponent = _ref14.hostComponent,
           scope = _ref14.scope,
           element = _ref14.element,
           properties = _ref14.properties;
 
-      var value = this.expression.eval(contextComponent, scope);
+      var value = this.expression.eval(hostComponent, scope);
       if (value) {
         if (Object.hasOwnProperty(properties, 'style')) {
           delete properties.style.display;
@@ -26081,12 +26081,12 @@ var HtmlDirective = exports.HtmlDirective = function (_Directive9) {
   _createClass(HtmlDirective, [{
     key: 'propertiesPopulated',
     value: function propertiesPopulated(_ref15) {
-      var contextComponent = _ref15.contextComponent,
+      var hostComponent = _ref15.hostComponent,
           scope = _ref15.scope,
           element = _ref15.element,
           properties = _ref15.properties;
 
-      var value = this.expression.eval(contextComponent, scope);
+      var value = this.expression.eval(hostComponent, scope);
       properties.innerHTML = String(value);
     }
   }]);
@@ -26108,7 +26108,7 @@ var ModelDirective = exports.ModelDirective = function (_Directive10) {
     value: function propertiesPopulated(_ref16) {
       var _this12 = this;
 
-      var contextComponent = _ref16.contextComponent,
+      var hostComponent = _ref16.hostComponent,
           scope = _ref16.scope,
           element = _ref16.element,
           properties = _ref16.properties;
@@ -26118,7 +26118,7 @@ var ModelDirective = exports.ModelDirective = function (_Directive10) {
       }
       // disallow observable
       var segs = this.expression.exp.split('.');
-      var o = contextComponent;
+      var o = hostComponent;
       for (var i = 0; i < segs.length - 1; ++i) {
         o = o[segs[i]];
       }
@@ -26126,10 +26126,10 @@ var ModelDirective = exports.ModelDirective = function (_Directive10) {
         throw new Error('Model must be not observable to avoid two-way data flow');
       }
 
-      var value = this.expression.eval(contextComponent, scope);
+      var value = this.expression.eval(hostComponent, scope);
       properties['value'] = value;
       properties['oninput'] = function (event) {
-        contextComponent[_this12.expression.exp] = event.target.value;
+        hostComponent[_this12.expression.exp] = event.target.value;
       };
     }
   }]);
@@ -26370,20 +26370,20 @@ var Expression = exports.Expression = (_dec = utils.log, (_class = function () {
 
   _createClass(Expression, [{
     key: 'eval',
-    value: function _eval(contextComponent, scope) {
+    value: function _eval(hostComponent, scope) {
       var val = _jexlSync2.default.evaluate(this.ast, scope);
 
       log('Evaluate expression `%s`: %o', this.exp, val);
       // autobind functions
       if (val && typeof val === 'function') {
-        val = val.bind(contextComponent);
+        val = val.bind(hostComponent);
       }
       return val;
     }
   }, {
     key: 'render',
-    value: function render(contextComponent, scope) {
-      var val = this.eval(contextComponent, scope);
+    value: function render(hostComponent, scope) {
+      var val = this.eval(hostComponent, scope);
       var text = val !== null && val !== undefined ? String(val) : '';
       return new _virtualDom2.default.VText(text);
     }
@@ -26401,7 +26401,7 @@ var Text = exports.Text = function () {
 
   _createClass(Text, [{
     key: 'render',
-    value: function render(contextComponent, scope) {
+    value: function render(hostComponent, scope) {
       console.log('%o', this);
       return new _virtualDom2.default.VText(this.text);
     }
@@ -26411,12 +26411,12 @@ var Text = exports.Text = function () {
 }();
 
 var Element = exports.Element = (_dec2 = utils.log(false), (_class2 = function () {
-  function Element(contextComponentClass, tagName, attributes) {
+  function Element(hostComponentClass, tagName, attributes) {
     var parse = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
 
     _classCallCheck(this, Element);
 
-    this.contextComponentClass = contextComponentClass;
+    this.hostComponentClass = hostComponentClass;
     this.tagName = tagName;
     this.attributes = {}; // name -> value (string), except html events: onclick -> value (expression)
     this.directives = []; // @command:(target).(params..) -> expression
@@ -26475,7 +26475,7 @@ var Element = exports.Element = (_dec2 = utils.log(false), (_class2 = function (
         if (m[4]) {
           params = (0, _remove3.default)(m[4].split('.'), null);
         }
-        var directiveClass = this.contextComponentClass.prototype.$lookupDirective(m[1]);
+        var directiveClass = this.hostComponentClass.prototype.$lookupDirective(m[1]);
         if (directiveClass) {
           var directive = new directiveClass(m[1], m[3], params, exp);
           if (directive.validate()) return directive;
@@ -26545,13 +26545,13 @@ var Element = exports.Element = (_dec2 = utils.log(false), (_class2 = function (
     }
   }, {
     key: 'render',
-    value: function render(contextComponent, superScope) {
+    value: function render(hostComponent, superScope) {
       var _this = this;
 
       var scope = { $super: superScope };
 
       var result = this._process(this.directives.map(function (directive) {
-        return directive.initialised({ contextComponent: contextComponent, scope: scope, element: _this });
+        return directive.initialised({ hostComponent: hostComponent, scope: scope, element: _this });
       }));
       if (result !== true) return result;
 
@@ -26560,26 +26560,26 @@ var Element = exports.Element = (_dec2 = utils.log(false), (_class2 = function (
       (0, _forIn3.default)(this.attributes, function (attr, name) {
         if (attr instanceof Expression) {
           // events: onclick...
-          properties[name] = attr.eval(contextComponent, scope);
+          properties[name] = attr.eval(hostComponent, scope);
         } else {
           // attributes
           properties.attributes[name] = attr;
         }
       });
 
-      // let properties = _.mapValues(this.attributes, prop => prop instanceof Expression ? prop.eval(contextComponent, scope) : prop)
+      // let properties = _.mapValues(this.attributes, prop => prop instanceof Expression ? prop.eval(hostComponent, scope) : prop)
 
       result = this._process(this.directives.map(function (directive) {
-        return directive.propertiesPopulated({ contextComponent: contextComponent, scope: scope, element: _this, properties: properties });
+        return directive.propertiesPopulated({ hostComponent: hostComponent, scope: scope, element: _this, properties: properties });
       }));
       if (result !== true) return result;
 
       var children = (0, _compact3.default)((0, _flatMap3.default)(this.children, function (child) {
-        return child.render(contextComponent, scope);
+        return child.render(hostComponent, scope);
       }));
 
       result = this._process(this.directives.map(function (directive) {
-        return directive.childrenRendered({ contextComponent: contextComponent, scope: scope, element: _this, properties: properties, children: children });
+        return directive.childrenRendered({ hostComponent: hostComponent, scope: scope, element: _this, properties: properties, children: children });
       }));
       if (result !== true) return result;
 
@@ -26599,13 +26599,16 @@ var Element = exports.Element = (_dec2 = utils.log(false), (_class2 = function (
 var CustomElement = exports.CustomElement = (_dec3 = utils.log(false), (_class3 = function (_Element) {
   _inherits(CustomElement, _Element);
 
-  function CustomElement(contextComponentClass, tagName, attributes, componentClass) {
+  function CustomElement(hostComponentClass, tagName, attributes) {
     _classCallCheck(this, CustomElement);
 
-    var _this2 = _possibleConstructorReturn(this, (CustomElement.__proto__ || Object.getPrototypeOf(CustomElement)).call(this, contextComponentClass, tagName, attributes, false));
+    var _this2 = _possibleConstructorReturn(this, (CustomElement.__proto__ || Object.getPrototypeOf(CustomElement)).call(this, hostComponentClass, tagName, attributes, false));
 
-    _this2.componentClass = componentClass;
-    _this2.componentId = componentClass.$uniqueid();
+    _this2.componentClass = hostComponentClass.prototype.$lookupComponent(tagName); // custom tag for component
+    if (!_this2.componentClass) {
+      throw new Error('Cannot find component for custom tag: ' + tagName);
+    }
+    _this2.componentId = _this2.componentClass.$uniqueid();
     _this2.attributes = {};
     _this2.directives = [];
     var _iteratorNormalCompletion3 = true;
@@ -26622,10 +26625,10 @@ var CustomElement = exports.CustomElement = (_dec3 = utils.log(false), (_class3 
           if (directive) _this2.directives.push(directive);
         } else {
           // validate component props
-          if ((0, _includes3.default)(Object.keys(componentClass.prototype.$props), name)) {
+          if ((0, _includes3.default)(Object.keys(_this2.componentClass.prototype.$props), name)) {
             _this2.attributes[name] = attributes[name];
           } else {
-            console.warn('Illegal commponent props %s in %s', name, componentClass.name);
+            console.warn('Illegal commponent props %s in %s', name, _this2.componentClass.name);
           }
         }
       }
@@ -26649,50 +26652,50 @@ var CustomElement = exports.CustomElement = (_dec3 = utils.log(false), (_class3 
 
   _createClass(CustomElement, [{
     key: 'render',
-    value: function render(contextComponent, superScope) {
+    value: function render(hostComponent, superScope) {
       var _this3 = this;
 
       var scope = { $super: superScope };
 
       var result = this._process(this.directives.map(function (directive) {
-        return directive.initialised({ contextComponent: contextComponent, scope: scope, element: _this3 });
+        return directive.initialised({ hostComponent: hostComponent, scope: scope, element: _this3 });
       }));
       if (result !== true) return result;
 
       var events = {};
 
       result = this._process(this.directives.map(function (directive) {
-        return directive.eventsPrepared({ contextComponent: contextComponent, scope: scope, element: _this3, events: events });
+        return directive.eventsPrepared({ hostComponent: hostComponent, scope: scope, element: _this3, events: events });
       }));
       if (result !== true) return result;
 
       var properties = (0, _mapValues3.default)(this.attributes, function (prop) {
-        return prop instanceof Expression ? prop.eval(contextComponent, scope) : prop;
+        return prop instanceof Expression ? prop.eval(hostComponent, scope) : prop;
       });
 
       result = this._process(this.directives.map(function (directive) {
-        return directive.propertiesPopulated({ contextComponent: contextComponent, scope: scope, element: _this3, properties: properties });
+        return directive.propertiesPopulated({ hostComponent: hostComponent, scope: scope, element: _this3, properties: properties });
       }));
       if (result !== true) return result;
 
       var children = (0, _compact3.default)((0, _flatMap3.default)(this.children, function (child) {
-        return child.render(contextComponent, scope);
+        return child.render(hostComponent, scope);
       }));
 
       result = this._process(this.directives.map(function (directive) {
-        return directive.childrenRendered({ contextComponent: contextComponent, scope: scope, element: _this3, properties: properties, children: children });
+        return directive.childrenRendered({ hostComponent: hostComponent, scope: scope, element: _this3, properties: properties, children: children });
       }));
       if (result !== true) return result;
 
       /* eslint new-cap: 0 */
-      var component = contextComponent.__components__.get(this.componentId);
+      var component = hostComponent.__components__.get(this.componentId);
       if (!component) {
         log('New');
-        component = new this.componentClass.$$(this.componentId, contextComponent);
+        component = new this.componentClass.$$(this.componentId, hostComponent);
       }
 
       result = this._process(this.directives.map(function (directive) {
-        return directive.componentPrepared({ contextComponent: contextComponent, scope: scope, element: _this3, properties: properties, children: children, component: component });
+        return directive.componentPrepared({ hostComponent: hostComponent, scope: scope, element: _this3, properties: properties, children: children, component: component });
       }));
       if (result !== true) return result;
 
@@ -26727,10 +26730,10 @@ var CustomElement = exports.CustomElement = (_dec3 = utils.log(false), (_class3 
 var Slot = exports.Slot = (_dec4 = utils.log(false), (_class4 = function (_Element2) {
   _inherits(Slot, _Element2);
 
-  function Slot(contextComponentClass, tagName, attributes) {
+  function Slot(hostComponentClass, tagName, attributes) {
     _classCallCheck(this, Slot);
 
-    var _this4 = _possibleConstructorReturn(this, (Slot.__proto__ || Object.getPrototypeOf(Slot)).call(this, contextComponentClass, tagName, attributes));
+    var _this4 = _possibleConstructorReturn(this, (Slot.__proto__ || Object.getPrototypeOf(Slot)).call(this, hostComponentClass, tagName, attributes));
 
     _this4.name = attributes.name || 'default';
     return _this4;
@@ -26738,34 +26741,34 @@ var Slot = exports.Slot = (_dec4 = utils.log(false), (_class4 = function (_Eleme
 
   _createClass(Slot, [{
     key: 'render',
-    value: function render(contextComponent, superScope) {
+    value: function render(hostComponent, superScope) {
       var _this5 = this;
 
       // return multiple vnodes
       var scope = { $super: superScope };
 
       var result = this._process(this.directives.map(function (directive) {
-        return directive.initialised({ contextComponent: contextComponent, scope: scope, element: _this5 });
+        return directive.initialised({ hostComponent: hostComponent, scope: scope, element: _this5 });
       }));
       if (result !== true) return result;
 
       var properties = {}; // ignore any attributes
 
       result = this._process(this.directives.map(function (directive) {
-        return directive.propertiesPopulated({ contextComponent: contextComponent, scope: scope, element: _this5, properties: properties });
+        return directive.propertiesPopulated({ hostComponent: hostComponent, scope: scope, element: _this5, properties: properties });
       }));
       if (result !== true) return result;
 
       // NOT support slot's children. Never render them if you write
-      var children = []; // _.compact(_.flatMap(this.children, child => child.render(contextComponent, scope)))
+      var children = []; // _.compact(_.flatMap(this.children, child => child.render(hostComponent, scope)))
 
       result = this._process(this.directives.map(function (directive) {
-        return directive.childrenRendered({ contextComponent: contextComponent, scope: scope, element: _this5, properties: properties, children: children });
+        return directive.childrenRendered({ hostComponent: hostComponent, scope: scope, element: _this5, properties: properties, children: children });
       }));
       if (result !== true) return result;
 
-      if (contextComponent.__plugs__.has(this.name) && !(0, _isEmpty3.default)(contextComponent.$vslots.get(this.name))) {
-        return contextComponent.__plugs__.get(this.name);
+      if (hostComponent.__plugs__.has(this.name) && !(0, _isEmpty3.default)(hostComponent.$vslots.get(this.name))) {
+        return hostComponent.__plugs__.get(this.name);
       }
 
       return children;
@@ -27037,11 +27040,7 @@ function parse(template, contextComponentClass) {
       contextComponentClass.prototype.$slots.add(slot.name);
       return slot;
     }
-    var childComponentClass = contextComponentClass.prototype.$lookupComponent(tagName); // custom tag for component
-    if (childComponentClass) {
-      return new _ast.CustomElement(contextComponentClass, tagName, attributes, childComponentClass);
-    }
-    reportParseError('Cannot find component for custom tag: ' + tagName);
+    return new _ast.CustomElement(contextComponentClass, tagName, attributes);
   }
 
   var onOpenTag = function onOpenTag(tagName, attributes) {
@@ -27509,7 +27508,7 @@ function _initializerWarningHelper(descriptor, context) {
 }
 
 var TodoItem = (_dec = (0, _weivjs.Component)({
-  template: '\n  <li @bind:class="{completed: todo.completed, editing: editing}">\n    <span>\n      <todo-text-input @if="editing"\n                      @bind:text="todo.text"\n                      @bind:editing="editing"\n                      @on:save="handleSave"></todo-text-input>\n      <span class="view" @else>\n        <input class="toggle"\n              type="checkbox"\n              @bind:checked="todo.completed"\n              onchange="handleToggle" />\n        <label ondblclick="handleDoubleClick">\n          {{todo.text}} {{completed}}\n        </label>\n        <button class="destroy"\n                onclick="handleDelete"></button>\n      </span>\n    </span>\n  </li>\n  ',
+  template: '\n  <li @bind:class="{completed: todo.completed, editing: editing}">\n    <span>\n      <todo-text-input @if="editing"\n                      @bind:text="todo.text"\n                      @bind:editing="editing"\n                      @on:save="handleSave"></todo-text-input>\n      <span class="view" @else>\n        <input class="toggle"\n              type="checkbox"\n              @bind:checked="todo.completed"\n              onchange="handleToggle" autofocus />\n        <label ondblclick="handleDoubleClick">\n          {{todo.text}} {{completed}}\n        </label>\n        <button class="destroy"\n                onclick="handleDelete"></button>\n      </span>\n    </span>\n  </li>\n  ',
   props: {
     store: { type: 'object', required: true },
     todo: { type: 'object', required: true }

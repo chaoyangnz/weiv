@@ -123,7 +123,7 @@ This directive is to register event listeners. Typically, this method is used to
 For example: `@on:saveForm="doSave"`, never write `doSave()` which is an illegal expression in this case.
 And if you want to use native HTML event attributes to add event listener, two ways can be fine:
 - normal way: `<button onclick="doSomething">`
-- `@on` directive: `<button @on:click:native="doSomething">` [WARNING] Not implemented
+- `@on` directive: `<button @on:click="doSomething">`
 
 ### `@for`
 
