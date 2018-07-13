@@ -51,8 +51,9 @@ function $render(props: any = {}, events = {}, plugs = {}) {
     }
   })
 
-  this.__vdom__ = this.$ast.render(this, this.$scope())
+  const vdom = this.$ast.render(this, this.$scope())
   console.groupEnd()
+  return vdom
 }
 
 /**
@@ -86,13 +87,13 @@ function $emit(event, ...args) {
 }
 
 function $mount(el) {
-  if (this.__context__ !== null || this.__dom__ !== null) {
+  if (this.__host__ !== null) {
     throw new Error('Mount a child component is disallowed')
   }
   const tick = () => { // tick
     const vdom = this.__vdom__ // old vdom tree
     log('Before: %o', vdom)
-    this.$render()
+    this.__vdom__ = this.$render()
     log('After: %o', this.__vdom__)
     console.assert(vdom !== this.__vdom__)
     if (vdom) {
@@ -113,22 +114,10 @@ function $mount(el) {
   autorun(tick)
 }
 
-// filter out private properties starting from $, keep user perperties for eval context
+// filter out private properties starting from $, keep user perperties for eval host
 function $scope() {
   // TODO
   return this
-  // const scope = createViewModel(this)
-  // Object.getOwnPropertyNames(this).forEach(prop => {
-  //   if (!prop.startsWith('$') && !isObservable(this[prop])) {
-  //     scope[prop] = this[prop]
-  //   }
-  // })
-  // Object.getOwnPropertyNames(Object.getPrototypeOf(this)).forEach(prop => {
-  //   if (!prop.startsWith('$')) {
-  //     scope[prop] = this[prop]
-  //   }
-  // })
-  // return scope
 }
 
 // mix component prototype
@@ -155,24 +144,24 @@ function mixinPrototype(componentClass, recipe: Recipe) {
 }
 
 // mixin component instance
-function mixinComponent(component, id, context) {
+function mixinComponent(component, id, host) {
   Object.defineProperty(component, '__id__', { value: id })
   Object.defineProperty(component, '__components__', { value: new Map() })
-  if (context) {
-    context.__components__.set(id, component)
-    Object.defineProperty(component, '__context__', { value: context })
-    Object.defineProperty(component, '__root__', { value: context.$root })
+  if (host) {
+    host.__components__.set(id, component)
+    Object.defineProperty(component, '__host__', { value: host })
+    Object.defineProperty(component, '__root__', { value: host.$root })
   } else {
-    Object.defineProperty(component, '__context__', { value: null })
+    Object.defineProperty(component, '__host__', { value: null })
     Object.defineProperty(component, '__root__', { value: component })
   }
   Object.defineProperty(component, '__emitter__', { value: new EventEmitter() })
-  Object.defineProperty(component, '__vdom__', { value: null, writable: true })
   // <string, array<vnode>>slots save the vdom rendered in parent scope
   const plugs = new Map()
   component.$slots.forEach(slot => plugs.set(slot, []))
   Object.defineProperty(component, '__plugs__', { value: plugs })
-  Object.defineProperty(component, '__dom__', { value: null, writable: true })
+  // Object.defineProperty(component, '__vdom__', { value: null, writable: true })
+  // Object.defineProperty(component, '__dom__', { value: null, writable: true })
 }
 
 /**
@@ -188,9 +177,9 @@ export function Component(recipe: Recipe) {
     mixinPrototype(ComponentClass, recipe)
     Object.defineProperty(ComponentClass, '$uniqueid', { value: uniqueid })
     // decorated class
-    function WeivComponent(id: string, context: any) {
+    function WeivComponent(id: string, host: any) {
       let component = new ComponentClass()
-      mixinComponent(component, id || uniqueid(), context) // inject internal component properties
+      mixinComponent(component, id || uniqueid(), host) // inject internal component properties
       // log('%cNew Component: %o', 'color: white; background-color: forestgreen', component)
       return component
     }

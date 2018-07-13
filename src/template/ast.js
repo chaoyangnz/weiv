@@ -1,8 +1,6 @@
 import _ from 'lodash'
 import VDOM, { VNode } from 'virtual-dom'
 import Jexl from 'jexl-sync'
-// @flow
-
 import debug from 'debug'
 import { HTML_EVENT_ATTRIBUTES, HTML_GLOBAL_ATTRIBUTES, HTML_TAG_ATTRIBUTES } from './html'
 import * as utils from '../utils'
@@ -95,30 +93,6 @@ export class Element implements Renderer {
     throw new Error(`Illagal directive attribute format: ${name}`)
   }
 
-  closestComponent() {
-    let element = this
-    while (element != null) {
-      /* eslint no-use-before-define: 0*/
-      if (element instanceof CustomElement) return element
-      element = element.parent
-    }
-    return null
-  }
-
-  previousSiblingNode() {
-    if (this.parent === null) return null
-    const index = _.indexOf(this.parent.children, this)
-    if (index === 0) return null
-    return this.parent.children[index - 1]
-  }
-
-  nextSiblingNode() {
-    if (this.parent === null) return null
-    const index = _.indexOf(this.parent.children, this)
-    if (index === this.parent.children.length - 1) return null
-    return this.parent.children[index + 1]
-  }
-
   // true -> continue  array -> stop
   _process(results) {
     for (const result of results) {
@@ -143,8 +117,6 @@ export class Element implements Renderer {
         properties.attributes[name] = attr
       }
     })
-
-    // let properties = _.mapValues(this.attributes, prop => prop instanceof Expression ? prop.eval(hostComponent, scope) : prop)
 
     result = this._process(this.directives.map(directive => directive.propertiesPopulated({hostComponent, scope, element: this, properties})))
     if (result !== true) return result
@@ -233,10 +205,7 @@ export class CustomElement extends Element {
       }
     })
 
-    component.$render(properties, events, plugs)
-    component.__vdom__.properties.id = this.componentId // attach an id attribute
-
-    return component.__vdom__
+    return component.$render(properties, events, plugs)
   }
 }
 

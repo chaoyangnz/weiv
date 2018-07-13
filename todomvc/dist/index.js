@@ -25471,8 +25471,9 @@ function $render() {
     }
   });
 
-  this.__vdom__ = this.$ast.render(this, this.$scope());
+  var vdom = this.$ast.render(this, this.$scope());
   console.groupEnd();
+  return vdom;
 }
 
 /**
@@ -25516,14 +25517,14 @@ function $emit(event) {
 function $mount(el) {
   var _this2 = this;
 
-  if (this.__context__ !== null || this.__dom__ !== null) {
+  if (this.__host__ !== null) {
     throw new Error('Mount a child component is disallowed');
   }
   var tick = function tick() {
     // tick
     var vdom = _this2.__vdom__; // old vdom tree
     log('Before: %o', vdom);
-    _this2.$render();
+    _this2.__vdom__ = _this2.$render();
     log('After: %o', _this2.__vdom__);
     console.assert(vdom !== _this2.__vdom__);
     if (vdom) {
@@ -25544,22 +25545,10 @@ function $mount(el) {
   (0, _mobx.autorun)(tick);
 }
 
-// filter out private properties starting from $, keep user perperties for eval context
+// filter out private properties starting from $, keep user perperties for eval host
 function $scope() {
   // TODO
   return this;
-  // const scope = createViewModel(this)
-  // Object.getOwnPropertyNames(this).forEach(prop => {
-  //   if (!prop.startsWith('$') && !isObservable(this[prop])) {
-  //     scope[prop] = this[prop]
-  //   }
-  // })
-  // Object.getOwnPropertyNames(Object.getPrototypeOf(this)).forEach(prop => {
-  //   if (!prop.startsWith('$')) {
-  //     scope[prop] = this[prop]
-  //   }
-  // })
-  // return scope
 }
 
 // mix component prototype
@@ -25588,26 +25577,26 @@ function mixinPrototype(componentClass, recipe) {
 }
 
 // mixin component instance
-function mixinComponent(component, id, context) {
+function mixinComponent(component, id, host) {
   Object.defineProperty(component, '__id__', { value: id });
   Object.defineProperty(component, '__components__', { value: new Map() });
-  if (context) {
-    context.__components__.set(id, component);
-    Object.defineProperty(component, '__context__', { value: context });
-    Object.defineProperty(component, '__root__', { value: context.$root });
+  if (host) {
+    host.__components__.set(id, component);
+    Object.defineProperty(component, '__host__', { value: host });
+    Object.defineProperty(component, '__root__', { value: host.$root });
   } else {
-    Object.defineProperty(component, '__context__', { value: null });
+    Object.defineProperty(component, '__host__', { value: null });
     Object.defineProperty(component, '__root__', { value: component });
   }
   Object.defineProperty(component, '__emitter__', { value: new _fbemitter.EventEmitter() });
-  Object.defineProperty(component, '__vdom__', { value: null, writable: true });
   // <string, array<vnode>>slots save the vdom rendered in parent scope
   var plugs = new Map();
   component.$slots.forEach(function (slot) {
     return plugs.set(slot, []);
   });
   Object.defineProperty(component, '__plugs__', { value: plugs });
-  Object.defineProperty(component, '__dom__', { value: null, writable: true });
+  // Object.defineProperty(component, '__vdom__', { value: null, writable: true })
+  // Object.defineProperty(component, '__dom__', { value: null, writable: true })
 }
 
 /**
@@ -25623,9 +25612,9 @@ function Component(recipe) {
     mixinPrototype(ComponentClass, recipe);
     Object.defineProperty(ComponentClass, '$uniqueid', { value: uniqueid });
     // decorated class
-    function WeivComponent(id, context) {
+    function WeivComponent(id, host) {
       var component = new ComponentClass();
-      mixinComponent(component, id || uniqueid(), context); // inject internal component properties
+      mixinComponent(component, id || uniqueid(), host); // inject internal component properties
       // log('%cNew Component: %o', 'color: white; background-color: forestgreen', component)
       return component;
     }
@@ -26713,10 +26702,7 @@ var CustomElement = exports.CustomElement = (_dec3 = utils.log(false), (_class3 
         }
       });
 
-      component.$render(properties, events, plugs);
-      component.__vdom__.properties.id = this.componentId; // attach an id attribute
-
-      return component.__vdom__;
+      return component.$render(properties, events, plugs);
     }
   }]);
 
