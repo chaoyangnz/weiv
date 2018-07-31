@@ -1,3 +1,8 @@
+![npm](https://img.shields.io/npm/dt/weivjs.svg)
+![npm](https://img.shields.io/npm/l/weivjs.svg)
+![npm](https://img.shields.io/npm/v/weivjs.svg)
+
+
 ## What is `weiv`
 
 <img src='./weiv.svg' width="80" /> weiv.js - A home-brew UI view library for modern component-oriented web development.
