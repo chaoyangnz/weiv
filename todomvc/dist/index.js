@@ -14298,59 +14298,6 @@ module.exports = includes;
 
 /***/ }),
 
-/***/ "./node_modules/lodash/indexOf.js":
-/*!****************************************!*\
-  !*** ./node_modules/lodash/indexOf.js ***!
-  \****************************************/
-/*! no static exports found */
-/***/ (function(module, exports, __webpack_require__) {
-
-var baseIndexOf = __webpack_require__(/*! ./_baseIndexOf */ "./node_modules/lodash/_baseIndexOf.js"),
-    toInteger = __webpack_require__(/*! ./toInteger */ "./node_modules/lodash/toInteger.js");
-
-/* Built-in method references for those with the same name as other `lodash` methods. */
-var nativeMax = Math.max;
-
-/**
- * Gets the index at which the first occurrence of `value` is found in `array`
- * using [`SameValueZero`](http://ecma-international.org/ecma-262/7.0/#sec-samevaluezero)
- * for equality comparisons. If `fromIndex` is negative, it's used as the
- * offset from the end of `array`.
- *
- * @static
- * @memberOf _
- * @since 0.1.0
- * @category Array
- * @param {Array} array The array to inspect.
- * @param {*} value The value to search for.
- * @param {number} [fromIndex=0] The index to search from.
- * @returns {number} Returns the index of the matched value, else `-1`.
- * @example
- *
- * _.indexOf([1, 2, 1, 2], 2);
- * // => 1
- *
- * // Search from the `fromIndex`.
- * _.indexOf([1, 2, 1, 2], 2, 2);
- * // => 3
- */
-function indexOf(array, value, fromIndex) {
-  var length = array == null ? 0 : array.length;
-  if (!length) {
-    return -1;
-  }
-  var index = fromIndex == null ? 0 : toInteger(fromIndex);
-  if (index < 0) {
-    index = nativeMax(length + index, 0);
-  }
-  return baseIndexOf(array, value, index);
-}
-
-module.exports = indexOf;
-
-
-/***/ }),
-
 /***/ "./node_modules/lodash/isArguments.js":
 /*!********************************************!*\
   !*** ./node_modules/lodash/isArguments.js ***!
@@ -25409,6 +25356,10 @@ var _includes2 = __webpack_require__(/*! lodash/includes */ "./node_modules/loda
 
 var _includes3 = _interopRequireDefault(_includes2);
 
+exports.render = render;
+exports.lookupComponent = lookupComponent;
+exports.lookupDirective = lookupDirective;
+exports.scope = scope;
 exports.Component = Component;
 
 var _debug = __webpack_require__(/*! debug */ "./node_modules/debug/src/browser.js");
@@ -25437,41 +25388,38 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 var log = (0, _debug2.default)('weiv:render');
 
 // default render logic
-function $render() {
-  var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+function render(component) {
+  var props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  var events = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+  var plugs = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : {};
 
-  var _this = this;
-
-  var events = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-  var plugs = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
-
-  console.groupCollapsed('%cRender component: %o', 'color: white; background-color: forestgreen', this);
+  console.groupCollapsed('%cRender component: %o', 'color: white; background-color: forestgreen', component);
   // props
   Object.keys(props).forEach(function (prop) {
-    if ((0, _includes3.default)(Object.keys(_this.$props), prop)) {
+    if ((0, _includes3.default)(Object.keys(component.$props), prop)) {
       // TODO validate props type
       var value = props[prop]; // never clone as vue and angular do!!
-      Object.defineProperty(_this, prop, { value: value, configurable: true, writable: false });
+      Object.defineProperty(component, prop, { value: value, configurable: true, writable: false });
     }
   });
   // events
-  this.__emitter__.removeAllListeners();
+  component.__emitter__.removeAllListeners();
   Object.keys(events).forEach(function (event) {
-    if ((0, _includes3.default)(Object.keys(_this.$events), event)) {
+    if ((0, _includes3.default)(Object.keys(component.$events), event)) {
       // TODO validate props type
-      _this.$on(event, events[event]);
+      on(component, event, events[event]);
     }
   });
   // plugs to fill the slots
   Object.keys(plugs).forEach(function (slotName) {
-    if (_this.$slots.has(slotName)) {
-      _this.__plugs__.set(slotName, plugs[slotName]);
+    if (component.$slots.has(slotName)) {
+      component.__plugs__.set(slotName, plugs[slotName]);
     } else {
-      console.warn('Fail to find slot %s in component %o template', slotName, _this);
+      console.warn('Fail to find slot %s in component %o template', slotName, component);
     }
   });
 
-  var vdom = this.$ast.render(this, this.$scope());
+  var vdom = component.$ast.render(component, scope(component));
   console.groupEnd();
   return vdom;
 }
@@ -25479,23 +25427,35 @@ function $render() {
 /**
  * When register component in current component or globaly by weiv.component(..),
  * you put decoreated class to the Map, but it will be stored as undecoreated class
+ * @param {*} component component itself or its __proto__
+ * @param {*} name
  */
-function $lookupComponent(tag) {
-  var componentClass = this.$components[tag];
+function lookupComponent(component, tag) {
+  var componentClass = component.$components[tag];
   if (componentClass) return componentClass;
   return weiv.component(tag).$$;
 }
 
-function $lookupDirective(name) {
-  var directive = this.$directives[name];
+/**
+ * @param {*} component component itself or its __proto__
+ * @param {*} name
+ */
+function lookupDirective(component, name) {
+  var directive = component.$directives[name];
   if (directive) return directive;
   return weiv.directive(name);
 }
 
-function $on(event, listener) {
-  if ((0, _includes3.default)(Object.keys(this.$events), event)) {
+// filter out private properties starting from $, keep user perperties for eval host
+function scope(component) {
+  // TODO
+  return component;
+}
+
+function on(component, event, listener) {
+  if ((0, _includes3.default)(Object.keys(component.$events), event)) {
     // TODO validate events type
-    this.__emitter__.addListener(event, listener);
+    component.__emitter__.addListener(event, listener);
   }
 }
 
@@ -25515,25 +25475,25 @@ function $emit(event) {
 }
 
 function $mount(el) {
-  var _this2 = this;
+  var _this = this;
 
   if (this.__host__ !== null) {
     throw new Error('Mount a child component is disallowed');
   }
   var tick = function tick() {
     // tick
-    var vdom = _this2.__vdom__; // old vdom tree
+    var vdom = _this.__vdom__; // old vdom tree
     log('Before: %o', vdom);
-    _this2.__vdom__ = _this2.$render();
-    log('After: %o', _this2.__vdom__);
-    console.assert(vdom !== _this2.__vdom__);
+    _this.__vdom__ = render(_this);
+    log('After: %o', _this.__vdom__);
+    console.assert(vdom !== _this.__vdom__);
     if (vdom) {
-      var patches = _virtualDom2.default.diff(vdom, _this2.__vdom__);
+      var patches = _virtualDom2.default.diff(vdom, _this.__vdom__);
       log('Diff: %o', patches);
-      _this2.__dom__ = _virtualDom2.default.patch(_this2.__dom__, patches);
+      _this.__dom__ = _virtualDom2.default.patch(_this.__dom__, patches);
     } else {
-      var dom = _virtualDom2.default.create(_this2.__vdom__);
-      _this2.__dom__ = dom;
+      var dom = _virtualDom2.default.create(_this.__vdom__);
+      _this.__dom__ = dom;
       var mountNode = document.getElementById(el.substr(1));
       if (!mountNode) {
         throw new Error('Cannot find DOM element: ' + el);
@@ -25543,12 +25503,6 @@ function $mount(el) {
     log('After patch to DOM: %o', self.__dom__);
   };
   (0, _mobx.autorun)(tick);
-}
-
-// filter out private properties starting from $, keep user perperties for eval host
-function $scope() {
-  // TODO
-  return this;
 }
 
 // mix component prototype
@@ -25562,13 +25516,9 @@ function mixinPrototype(componentClass, recipe) {
     }) });
   Object.defineProperty(componentClass.prototype, '$directives', { value: (0, _cloneDeep3.default)(recipe.directives || []) });
   // attach methods
-  Object.defineProperty(componentClass.prototype, '$render', { value: $render });
-  Object.defineProperty(componentClass.prototype, '$lookupComponent', { value: $lookupComponent });
-  Object.defineProperty(componentClass.prototype, '$lookupDirective', { value: $lookupDirective });
-  Object.defineProperty(componentClass.prototype, '$on', { value: $on });
   Object.defineProperty(componentClass.prototype, '$emit', { value: $emit });
   Object.defineProperty(componentClass.prototype, '$mount', { value: $mount });
-  Object.defineProperty(componentClass.prototype, '$scope', { value: $scope });
+
   // attach parsed ast to component prototype
   var template = recipe.template ? recipe.template.trim() : '';
   Object.defineProperty(componentClass.prototype, '$slots', { value: new Set() }); // will populate when parsing
@@ -26271,10 +26221,6 @@ var _isArray2 = __webpack_require__(/*! lodash/isArray */ "./node_modules/lodash
 
 var _isArray3 = _interopRequireDefault(_isArray2);
 
-var _indexOf2 = __webpack_require__(/*! lodash/indexOf */ "./node_modules/lodash/indexOf.js");
-
-var _indexOf3 = _interopRequireDefault(_indexOf2);
-
 var _remove2 = __webpack_require__(/*! lodash/remove */ "./node_modules/lodash/remove.js");
 
 var _remove3 = _interopRequireDefault(_remove2);
@@ -26306,6 +26252,8 @@ var _html = __webpack_require__(/*! ./html */ "./src/template/html.js");
 var _utils = __webpack_require__(/*! ../utils */ "./src/utils.js");
 
 var utils = _interopRequireWildcard(_utils);
+
+var _component = __webpack_require__(/*! ../component */ "./src/component.js");
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -26464,40 +26412,13 @@ var Element = exports.Element = (_dec2 = utils.log(false), (_class2 = function (
         if (m[4]) {
           params = (0, _remove3.default)(m[4].split('.'), null);
         }
-        var directiveClass = this.hostComponentClass.prototype.$lookupDirective(m[1]);
+        var directiveClass = (0, _component.lookupDirective)(this.hostComponentClass.prototype, m[1]);
         if (directiveClass) {
           var directive = new directiveClass(m[1], m[3], params, exp);
           if (directive.validate()) return directive;
         }
       }
       throw new Error('Illagal directive attribute format: ' + name);
-    }
-  }, {
-    key: 'closestComponent',
-    value: function closestComponent() {
-      var element = this;
-      while (element != null) {
-        /* eslint no-use-before-define: 0*/
-        if (element instanceof CustomElement) return element;
-        element = element.parent;
-      }
-      return null;
-    }
-  }, {
-    key: 'previousSiblingNode',
-    value: function previousSiblingNode() {
-      if (this.parent === null) return null;
-      var index = (0, _indexOf3.default)(this.parent.children, this);
-      if (index === 0) return null;
-      return this.parent.children[index - 1];
-    }
-  }, {
-    key: 'nextSiblingNode',
-    value: function nextSiblingNode() {
-      if (this.parent === null) return null;
-      var index = (0, _indexOf3.default)(this.parent.children, this);
-      if (index === this.parent.children.length - 1) return null;
-      return this.parent.children[index + 1];
     }
 
     // true -> continue  array -> stop
@@ -26556,8 +26477,6 @@ var Element = exports.Element = (_dec2 = utils.log(false), (_class2 = function (
         }
       });
 
-      // let properties = _.mapValues(this.attributes, prop => prop instanceof Expression ? prop.eval(hostComponent, scope) : prop)
-
       result = this._process(this.directives.map(function (directive) {
         return directive.propertiesPopulated({ hostComponent: hostComponent, scope: scope, element: _this, properties: properties });
       }));
@@ -26593,7 +26512,7 @@ var CustomElement = exports.CustomElement = (_dec3 = utils.log(false), (_class3 
 
     var _this2 = _possibleConstructorReturn(this, (CustomElement.__proto__ || Object.getPrototypeOf(CustomElement)).call(this, hostComponentClass, tagName, attributes, false));
 
-    _this2.componentClass = hostComponentClass.prototype.$lookupComponent(tagName); // custom tag for component
+    _this2.componentClass = (0, _component.lookupComponent)(_this2.hostComponentClass.prototype, tagName); // custom tag for component
     if (!_this2.componentClass) {
       throw new Error('Cannot find component for custom tag: ' + tagName);
     }
@@ -26702,7 +26621,7 @@ var CustomElement = exports.CustomElement = (_dec3 = utils.log(false), (_class3 
         }
       });
 
-      return component.$render(properties, events, plugs);
+      return (0, _component.render)(component, properties, events, plugs);
     }
   }]);
 

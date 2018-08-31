@@ -32,13 +32,8 @@ TodoComponent instance
       |- $events
       |- $components
       |- $directives
-      |- $ast                  -> AST of compiled(or parsed) template 
-      |- $render()
-      |- $lookupComponent()
-      |- $lookupDirective()
-      |- $on()
+      |- $ast                  -> AST of compiled(or parsed) template
       |- $emit()
-      |- $scope()
       |- $mount()        
 ```
 

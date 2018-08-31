@@ -4,6 +4,7 @@ import Jexl from 'jexl-sync'
 import debug from 'debug'
 import { HTML_EVENT_ATTRIBUTES, HTML_GLOBAL_ATTRIBUTES, HTML_TAG_ATTRIBUTES } from './html'
 import * as utils from '../utils'
+import {render, lookupComponent, lookupDirective} from '../component'
 
 const log = debug('weiv:render')
 
@@ -84,7 +85,7 @@ export class Element implements Renderer {
       if (m[4]) {
         params = _.remove(m[4].split('.'), null)
       }
-      const directiveClass = this.hostComponentClass.prototype.$lookupDirective(m[1])
+      const directiveClass = lookupDirective(this.hostComponentClass.prototype, m[1])
       if (directiveClass) {
         const directive = new directiveClass(m[1], m[3], params, exp)
         if (directive.validate()) return directive
@@ -138,7 +139,7 @@ export class Element implements Renderer {
 export class CustomElement extends Element {
   constructor(hostComponentClass, tagName, attributes) {
     super(hostComponentClass, tagName, attributes, false)
-    this.componentClass = hostComponentClass.prototype.$lookupComponent(tagName) // custom tag for component
+    this.componentClass = lookupComponent(this.hostComponentClass.prototype, tagName) // custom tag for component
     if (!this.componentClass) {
       throw new Error(`Cannot find component for custom tag: ${tagName}`)
     }
@@ -205,7 +206,7 @@ export class CustomElement extends Element {
       }
     })
 
-    return component.$render(properties, events, plugs)
+    return render(component, properties, events, plugs)
   }
 }
 

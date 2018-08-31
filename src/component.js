@@ -26,32 +26,32 @@ export type Recipe = {
 }
 
 // default render logic
-function $render(props: any = {}, events = {}, plugs = {}) {
-  console.groupCollapsed('%cRender component: %o', 'color: white; background-color: forestgreen', this)
+export function render(component, props: any = {}, events = {}, plugs = {}) {
+  console.groupCollapsed('%cRender component: %o', 'color: white; background-color: forestgreen', component)
   // props
   Object.keys(props).forEach(prop => {
-    if (_.includes(Object.keys(this.$props), prop)) { // TODO validate props type
+    if (_.includes(Object.keys(component.$props), prop)) { // TODO validate props type
       const value = props[prop] // never clone as vue and angular do!!
-      Object.defineProperty(this, prop, { value: value, configurable: true, writable: false })
+      Object.defineProperty(component, prop, { value: value, configurable: true, writable: false })
     }
   })
   // events
-  this.__emitter__.removeAllListeners()
+  component.__emitter__.removeAllListeners()
   Object.keys(events).forEach(event => {
-    if (_.includes(Object.keys(this.$events), event)) { // TODO validate props type
-      this.$on(event, events[event])
+    if (_.includes(Object.keys(component.$events), event)) { // TODO validate props type
+      on(component, event, events[event])
     }
   })
   // plugs to fill the slots
   Object.keys(plugs).forEach(slotName => {
-    if (this.$slots.has(slotName)) {
-      this.__plugs__.set(slotName, plugs[slotName])
+    if (component.$slots.has(slotName)) {
+      component.__plugs__.set(slotName, plugs[slotName])
     } else {
-      console.warn('Fail to find slot %s in component %o template', slotName, this)
+      console.warn('Fail to find slot %s in component %o template', slotName, component)
     }
   })
 
-  const vdom = this.$ast.render(this, this.$scope())
+  const vdom = component.$ast.render(component, scope(component))
   console.groupEnd()
   return vdom
 }
@@ -59,22 +59,34 @@ function $render(props: any = {}, events = {}, plugs = {}) {
 /**
  * When register component in current component or globaly by weiv.component(..),
  * you put decoreated class to the Map, but it will be stored as undecoreated class
+ * @param {*} component component itself or its __proto__
+ * @param {*} name
  */
-function $lookupComponent(tag) {
-  let componentClass = this.$components[tag]
+export function lookupComponent(component, tag) {
+  let componentClass = component.$components[tag]
   if (componentClass) return componentClass
   return weiv.component(tag).$$
 }
 
-function $lookupDirective(name) {
-  let directive = this.$directives[name]
+/**
+ * @param {*} component component itself or its __proto__
+ * @param {*} name
+ */
+export function lookupDirective(component, name) {
+  let directive = component.$directives[name]
   if (directive) return directive
   return weiv.directive(name)
 }
 
-function $on(event, listener) {
-  if (_.includes(Object.keys(this.$events), event)) { // TODO validate events type
-    this.__emitter__.addListener(event, listener)
+// filter out private properties starting from $, keep user perperties for eval host
+export function scope(component) {
+  // TODO
+  return component
+}
+
+function on(component, event, listener) {
+  if (_.includes(Object.keys(component.$events), event)) { // TODO validate events type
+    component.__emitter__.addListener(event, listener)
   }
 }
 
@@ -93,7 +105,7 @@ function $mount(el) {
   const tick = () => { // tick
     const vdom = this.__vdom__ // old vdom tree
     log('Before: %o', vdom)
-    this.__vdom__ = this.$render()
+    this.__vdom__ = render(this)
     log('After: %o', this.__vdom__)
     console.assert(vdom !== this.__vdom__)
     if (vdom) {
@@ -114,12 +126,6 @@ function $mount(el) {
   autorun(tick)
 }
 
-// filter out private properties starting from $, keep user perperties for eval host
-function $scope() {
-  // TODO
-  return this
-}
-
 // mix component prototype
 function mixinPrototype(componentClass, recipe: Recipe) {
   // populate properties from recipe
@@ -129,13 +135,9 @@ function mixinPrototype(componentClass, recipe: Recipe) {
   Object.defineProperty(componentClass.prototype, '$components', { value: _.mapValues(recipe.components || {}, componentClass => componentClass.$$)})
   Object.defineProperty(componentClass.prototype, '$directives', { value: _.cloneDeep(recipe.directives || []) })
   // attach methods
-  Object.defineProperty(componentClass.prototype, '$render', { value: $render })
-  Object.defineProperty(componentClass.prototype, '$lookupComponent', { value: $lookupComponent })
-  Object.defineProperty(componentClass.prototype, '$lookupDirective', { value: $lookupDirective })
-  Object.defineProperty(componentClass.prototype, '$on', { value: $on })
   Object.defineProperty(componentClass.prototype, '$emit', { value: $emit })
   Object.defineProperty(componentClass.prototype, '$mount', { value: $mount })
-  Object.defineProperty(componentClass.prototype, '$scope', { value: $scope })
+
   // attach parsed ast to component prototype
   const template = recipe.template ? recipe.template.trim() : ''
   Object.defineProperty(componentClass.prototype, '$slots', { value: new Set() }) // will populate when parsing
