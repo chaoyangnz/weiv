@@ -16,7 +16,7 @@ For developers: [Guide for developers](guide-for-developers.md)
 
 ### TODO MVC example
 
-[Live demo](http://chaoyang.io/weiv-todomvc/)
+[Live demo](http://chaoyang.nz/weiv-todomvc/)
 
 [Source code](http://github.com/chaoyangnz/weiv-todomvc)
 
@@ -108,7 +108,7 @@ export class Todo {
 export class App {
   firstName = 'Chao'
   lastName = 'Yang'
-  blogURL = 'http://chaoyang.io'
+  blogURL = 'http://chaoyang.nz'
   location = {
     city: 'Auckland',
     country: 'New Zealand'
