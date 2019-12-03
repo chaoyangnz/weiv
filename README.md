@@ -16,7 +16,7 @@ For developers: [Guide for developers](guide-for-developers.md)
 
 ### TODO MVC example
 
-[Live demo](http://chaoyang.nz/weiv-todomvc/)
+[Live demo](http://chao.yang.to/weiv-todomvc/)
 
 [Source code](http://github.com/chaoyangnz/weiv-todomvc)
 
