@@ -1,5 +1,5 @@
 {
-  "name": "weivjs",
+  "name": "@cloudaffine/weivjs",
   "version": "0.1.0",
   "description": " A home-brew UI view library for modern component-based web development",
   "main": "lib/weiv.js",
@@ -12,7 +12,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/richdyang/weiv.git"
+    "url": "https://github.com/cloudaffine/weiv.git"
   },
   "keywords": [
     "weiv",
@@ -24,9 +24,9 @@
   "author": "Chao Yang",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/richdyang/weiv/issues"
+    "url": "https://github.com/cloudaffine/weiv/issues"
   },
-  "homepage": "https://github.com/richdyang/weiv",
+  "homepage": "https://github.com/cloudaffine/weiv",
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.0",
