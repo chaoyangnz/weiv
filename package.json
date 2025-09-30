@@ -57,7 +57,7 @@
     "fbemitter": "^2.1.1",
     "htmlparser2": "^3.9.2",
     "jexl-sync": "^1.0.5",
-    "lodash-es": "^4.17.8",
+    "lodash-es": "^4.17.21",
     "main-loop": "^3.4.0",
     "mobx": "^4.1.1",
     "virtual-dom": "^2.1.1"
