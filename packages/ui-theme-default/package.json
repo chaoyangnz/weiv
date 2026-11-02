@@ -20,12 +20,12 @@
   "license": "MPL-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/neucine/weiv.git"
+    "url": "git+https://github.com/chaoyangnz/weiv.git"
   },
   "bugs": {
-    "url": "https://github.com/neucine/weiv/issues"
+    "url": "https://github.com/chaoyangnz/weiv/issues"
   },
-  "homepage": "https://github.com/neucine/weiv#readme",
+  "homepage": "https://github.com/chaoyangnz/weiv#readme",
   "publishConfig": {
     "access": "public"
   },
