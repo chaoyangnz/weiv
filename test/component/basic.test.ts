@@ -3,7 +3,7 @@ import {
   FakeDocument,
   byTag,
   click,
-  emitDirectBrowserModule,
+  emitLegacyBrowserModule as emitDirectBrowserModule,
   findElement,
   findElements,
   installDocument,

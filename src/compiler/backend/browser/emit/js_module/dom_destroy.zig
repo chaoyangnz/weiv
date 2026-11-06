@@ -86,6 +86,8 @@ pub fn emitDestroyNode(
             try out.print(allocator, "{s}[{d}].destroy();\n", .{ refs_expr, component_node.handle_ref_id });
             try common.writeIndent(indent, out, allocator);
             try out.appendSlice(allocator, "}\n");
+            try common.writeIndent(indent, out, allocator);
+            try out.print(allocator, "{s}[{d}] = undefined;\n", .{ refs_expr, component_node.handle_ref_id });
         },
         .for_loop => |for_loop| {
             const records_var_name = try std.fmt.allocPrint(allocator, "__records_{d}", .{for_loop.state_ref_id});

@@ -1,5 +1,11 @@
-use oxc_ast::ast::*;
+mod cell_diagnostics;
+mod cells;
+mod declarations;
+mod module_cells;
+mod module_state;
+mod template_expression;
 use oxc_allocator::Allocator;
+use oxc_ast::ast::*;
 use oxc_codegen::{Codegen, CodegenOptions};
 use oxc_parser::Parser;
 use oxc_semantic::SemanticBuilder;
@@ -136,14 +142,19 @@ pub extern "C" fn weiv_script_analyze(
         let diagnostics = parsed
             .errors
             .iter()
-            .map(|error| DiagnosticRecord {
-                severity: "error".to_string(),
-                message: error.to_string(),
-                span_start: 0,
-                span_end: 0,
-                line: 0,
-                column: 0,
-                code: None,
+            .map(|error| {
+                let span = error.labels.as_ref().and_then(|labels| labels.first());
+                let start = span.map_or(0, |label| label.offset());
+                let end = span.map_or(start, |label| label.offset() + label.len());
+                DiagnosticRecord {
+                    severity: "error".to_string(),
+                    message: error.to_string(),
+                    span_start: start,
+                    span_end: end,
+                    line: 0,
+                    column: 0,
+                    code: Some("script.syntax".to_string()),
+                }
             })
             .collect();
 
@@ -192,8 +203,8 @@ pub extern "C" fn weiv_script_analyze(
                         for specifier in specifiers {
                             match specifier {
                                 ImportDeclarationSpecifier::ImportSpecifier(spec) => {
-                                    let is_type_only =
-                                        declaration_is_type_only || spec.import_kind == ImportOrExportKind::Type;
+                                    let is_type_only = declaration_is_type_only
+                                        || spec.import_kind == ImportOrExportKind::Type;
                                     let local_name = spec.local.name.as_str().to_string();
                                     response.imports.push(ImportRecord {
                                         source: source_name.clone(),
@@ -396,10 +407,14 @@ fn collect_declaration(
                     VariableDeclarationKind::Const => "immutable",
                     _ => "mutable",
                 };
-                let type_annotation = declarator
-                    .type_annotation
-                    .as_ref()
-                    .map(|annotation| annotation.span.source_text(source).trim_start_matches(':').trim().to_string());
+                let type_annotation = declarator.type_annotation.as_ref().map(|annotation| {
+                    annotation
+                        .span
+                        .source_text(source)
+                        .trim_start_matches(':')
+                        .trim()
+                        .to_string()
+                });
 
                 let mut names = Vec::new();
                 collect_binding_names(&declarator.id, &mut names);
@@ -586,8 +601,20 @@ fn collect_state_from_statement(
             );
         }
         Statement::IfStatement(if_stmt) => {
-            collect_state_from_expression(&if_stmt.test, source, top_level_bindings, state, context);
-            collect_state_from_statement(&if_stmt.consequent, source, top_level_bindings, state, context);
+            collect_state_from_expression(
+                &if_stmt.test,
+                source,
+                top_level_bindings,
+                state,
+                context,
+            );
+            collect_state_from_statement(
+                &if_stmt.consequent,
+                source,
+                top_level_bindings,
+                state,
+                context,
+            );
             if let Some(alternate) = &if_stmt.alternate {
                 collect_state_from_statement(alternate, source, top_level_bindings, state, context);
             }
@@ -633,7 +660,13 @@ fn collect_state_from_statement(
                         collect_aliases_from_declaration(decl, source, top_level_bindings, state);
                         for declarator in &decl.declarations {
                             if let Some(init) = &declarator.init {
-                                collect_state_from_expression(init, source, top_level_bindings, state, context);
+                                collect_state_from_expression(
+                                    init,
+                                    source,
+                                    top_level_bindings,
+                                    state,
+                                    context,
+                                );
                             }
                         }
                     }
@@ -652,26 +685,86 @@ fn collect_state_from_statement(
             if let Some(update) = &for_stmt.update {
                 collect_state_from_expression(update, source, top_level_bindings, state, context);
             }
-            collect_state_from_statement(&for_stmt.body, source, top_level_bindings, state, context);
+            collect_state_from_statement(
+                &for_stmt.body,
+                source,
+                top_level_bindings,
+                state,
+                context,
+            );
         }
         Statement::WhileStatement(while_stmt) => {
-            collect_state_from_expression(&while_stmt.test, source, top_level_bindings, state, context);
-            collect_state_from_statement(&while_stmt.body, source, top_level_bindings, state, context);
+            collect_state_from_expression(
+                &while_stmt.test,
+                source,
+                top_level_bindings,
+                state,
+                context,
+            );
+            collect_state_from_statement(
+                &while_stmt.body,
+                source,
+                top_level_bindings,
+                state,
+                context,
+            );
         }
         Statement::DoWhileStatement(do_while_stmt) => {
-            collect_state_from_statement(&do_while_stmt.body, source, top_level_bindings, state, context);
-            collect_state_from_expression(&do_while_stmt.test, source, top_level_bindings, state, context);
+            collect_state_from_statement(
+                &do_while_stmt.body,
+                source,
+                top_level_bindings,
+                state,
+                context,
+            );
+            collect_state_from_expression(
+                &do_while_stmt.test,
+                source,
+                top_level_bindings,
+                state,
+                context,
+            );
         }
         Statement::ForInStatement(for_in_stmt) => {
-            collect_state_from_expression(&for_in_stmt.right, source, top_level_bindings, state, context);
-            collect_state_from_statement(&for_in_stmt.body, source, top_level_bindings, state, context);
+            collect_state_from_expression(
+                &for_in_stmt.right,
+                source,
+                top_level_bindings,
+                state,
+                context,
+            );
+            collect_state_from_statement(
+                &for_in_stmt.body,
+                source,
+                top_level_bindings,
+                state,
+                context,
+            );
         }
         Statement::ForOfStatement(for_of_stmt) => {
-            collect_state_from_expression(&for_of_stmt.right, source, top_level_bindings, state, context);
-            collect_state_from_statement(&for_of_stmt.body, source, top_level_bindings, state, context);
+            collect_state_from_expression(
+                &for_of_stmt.right,
+                source,
+                top_level_bindings,
+                state,
+                context,
+            );
+            collect_state_from_statement(
+                &for_of_stmt.body,
+                source,
+                top_level_bindings,
+                state,
+                context,
+            );
         }
         Statement::SwitchStatement(switch_stmt) => {
-            collect_state_from_expression(&switch_stmt.discriminant, source, top_level_bindings, state, context);
+            collect_state_from_expression(
+                &switch_stmt.discriminant,
+                source,
+                top_level_bindings,
+                state,
+                context,
+            );
             for case in &switch_stmt.cases {
                 if let Some(test) = &case.test {
                     collect_state_from_expression(test, source, top_level_bindings, state, context);
@@ -774,7 +867,13 @@ fn analyze_helper_statement(
 ) {
     match statement {
         Statement::ExpressionStatement(expr_stmt) => {
-            analyze_helper_expression(&expr_stmt.expression, source, top_level_bindings, locals, analysis);
+            analyze_helper_expression(
+                &expr_stmt.expression,
+                source,
+                top_level_bindings,
+                locals,
+                analysis,
+            );
         }
         Statement::ReturnStatement(return_stmt) => {
             if let Some(argument) = &return_stmt.argument {
@@ -783,7 +882,13 @@ fn analyze_helper_statement(
         }
         Statement::IfStatement(if_stmt) => {
             analyze_helper_expression(&if_stmt.test, source, top_level_bindings, locals, analysis);
-            analyze_helper_statement(&if_stmt.consequent, source, top_level_bindings, locals, analysis);
+            analyze_helper_statement(
+                &if_stmt.consequent,
+                source,
+                top_level_bindings,
+                locals,
+                analysis,
+            );
             if let Some(alternate) = &if_stmt.alternate {
                 analyze_helper_statement(alternate, source, top_level_bindings, locals, analysis);
             }
@@ -808,11 +913,23 @@ fn analyze_helper_statement(
                         for declarator in &decl.declarations {
                             collect_binding_pattern_names_only(&declarator.id, locals);
                             if let Some(init) = &declarator.init {
-                                analyze_helper_expression(init, source, top_level_bindings, locals, analysis);
+                                analyze_helper_expression(
+                                    init,
+                                    source,
+                                    top_level_bindings,
+                                    locals,
+                                    analysis,
+                                );
                             }
                         }
                     }
-                    _ => analyze_helper_expression(init.to_expression(), source, top_level_bindings, locals, analysis),
+                    _ => analyze_helper_expression(
+                        init.to_expression(),
+                        source,
+                        top_level_bindings,
+                        locals,
+                        analysis,
+                    ),
                 }
             }
             if let Some(test) = &for_stmt.test {
@@ -824,15 +941,45 @@ fn analyze_helper_statement(
             analyze_helper_statement(&for_stmt.body, source, top_level_bindings, locals, analysis);
         }
         Statement::WhileStatement(while_stmt) => {
-            analyze_helper_expression(&while_stmt.test, source, top_level_bindings, locals, analysis);
-            analyze_helper_statement(&while_stmt.body, source, top_level_bindings, locals, analysis);
+            analyze_helper_expression(
+                &while_stmt.test,
+                source,
+                top_level_bindings,
+                locals,
+                analysis,
+            );
+            analyze_helper_statement(
+                &while_stmt.body,
+                source,
+                top_level_bindings,
+                locals,
+                analysis,
+            );
         }
         Statement::DoWhileStatement(do_while_stmt) => {
-            analyze_helper_statement(&do_while_stmt.body, source, top_level_bindings, locals, analysis);
-            analyze_helper_expression(&do_while_stmt.test, source, top_level_bindings, locals, analysis);
+            analyze_helper_statement(
+                &do_while_stmt.body,
+                source,
+                top_level_bindings,
+                locals,
+                analysis,
+            );
+            analyze_helper_expression(
+                &do_while_stmt.test,
+                source,
+                top_level_bindings,
+                locals,
+                analysis,
+            );
         }
         Statement::SwitchStatement(switch_stmt) => {
-            analyze_helper_expression(&switch_stmt.discriminant, source, top_level_bindings, locals, analysis);
+            analyze_helper_expression(
+                &switch_stmt.discriminant,
+                source,
+                top_level_bindings,
+                locals,
+                analysis,
+            );
             for case in &switch_stmt.cases {
                 if let Some(test) = &case.test {
                     analyze_helper_expression(test, source, top_level_bindings, locals, analysis);
@@ -878,7 +1025,9 @@ fn analyze_helper_expression(
         }
         Expression::UpdateExpression(update) => {
             analysis.contains_side_effects = true;
-            if let Some(binding) = simple_assignment_target_binding(&update.argument, source).map(|(binding, _)| binding) {
+            if let Some(binding) = simple_assignment_target_binding(&update.argument, source)
+                .map(|(binding, _)| binding)
+            {
                 analysis.writes.insert(binding);
             }
         }
@@ -890,7 +1039,13 @@ fn analyze_helper_expression(
         }
         Expression::ComputedMemberExpression(member) => {
             analyze_helper_expression(&member.object, source, top_level_bindings, locals, analysis);
-            analyze_helper_expression(&member.expression, source, top_level_bindings, locals, analysis);
+            analyze_helper_expression(
+                &member.expression,
+                source,
+                top_level_bindings,
+                locals,
+                analysis,
+            );
         }
         Expression::ChainExpression(chain) => {
             analyze_chain_expression(chain, source, top_level_bindings, locals, analysis);
@@ -905,15 +1060,39 @@ fn analyze_helper_expression(
         }
         Expression::ConditionalExpression(cond) => {
             analyze_helper_expression(&cond.test, source, top_level_bindings, locals, analysis);
-            analyze_helper_expression(&cond.consequent, source, top_level_bindings, locals, analysis);
-            analyze_helper_expression(&cond.alternate, source, top_level_bindings, locals, analysis);
+            analyze_helper_expression(
+                &cond.consequent,
+                source,
+                top_level_bindings,
+                locals,
+                analysis,
+            );
+            analyze_helper_expression(
+                &cond.alternate,
+                source,
+                top_level_bindings,
+                locals,
+                analysis,
+            );
         }
         Expression::UnaryExpression(unary) => {
-            analyze_helper_expression(&unary.argument, source, top_level_bindings, locals, analysis);
+            analyze_helper_expression(
+                &unary.argument,
+                source,
+                top_level_bindings,
+                locals,
+                analysis,
+            );
         }
         Expression::AwaitExpression(await_expr) => {
             analysis.contains_side_effects = true;
-            analyze_helper_expression(&await_expr.argument, source, top_level_bindings, locals, analysis);
+            analyze_helper_expression(
+                &await_expr.argument,
+                source,
+                top_level_bindings,
+                locals,
+                analysis,
+            );
         }
         Expression::ArrayExpression(array) => {
             for element in &array.elements {
@@ -926,10 +1105,22 @@ fn analyze_helper_expression(
             for property in &object.properties {
                 match property {
                     ObjectPropertyKind::ObjectProperty(prop) => {
-                        analyze_helper_expression(&prop.value, source, top_level_bindings, locals, analysis);
+                        analyze_helper_expression(
+                            &prop.value,
+                            source,
+                            top_level_bindings,
+                            locals,
+                            analysis,
+                        );
                     }
                     ObjectPropertyKind::SpreadProperty(spread) => {
-                        analyze_helper_expression(&spread.argument, source, top_level_bindings, locals, analysis);
+                        analyze_helper_expression(
+                            &spread.argument,
+                            source,
+                            top_level_bindings,
+                            locals,
+                            analysis,
+                        );
                     }
                 }
             }
@@ -940,7 +1131,13 @@ fn analyze_helper_expression(
             }
         }
         Expression::ParenthesizedExpression(paren) => {
-            analyze_helper_expression(&paren.expression, source, top_level_bindings, locals, analysis);
+            analyze_helper_expression(
+                &paren.expression,
+                source,
+                top_level_bindings,
+                locals,
+                analysis,
+            );
         }
         Expression::SequenceExpression(seq) => {
             for expr in &seq.expressions {
@@ -951,12 +1148,25 @@ fn analyze_helper_expression(
             let mut callback_locals = locals.clone();
             collect_formal_param_names(&callback.params, &mut callback_locals);
             if callback.expression {
-                if let Some(Statement::ExpressionStatement(stmt)) = callback.body.statements.first() {
-                    analyze_helper_expression(&stmt.expression, source, top_level_bindings, &callback_locals, analysis);
+                if let Some(Statement::ExpressionStatement(stmt)) = callback.body.statements.first()
+                {
+                    analyze_helper_expression(
+                        &stmt.expression,
+                        source,
+                        top_level_bindings,
+                        &callback_locals,
+                        analysis,
+                    );
                 }
             } else {
                 for stmt in &callback.body.statements {
-                    analyze_helper_statement(stmt, source, top_level_bindings, &mut callback_locals, analysis);
+                    analyze_helper_statement(
+                        stmt,
+                        source,
+                        top_level_bindings,
+                        &mut callback_locals,
+                        analysis,
+                    );
                 }
             }
         }
@@ -968,7 +1178,13 @@ fn analyze_helper_expression(
             }
             if let Some(body) = &callback.body {
                 for stmt in &body.statements {
-                    analyze_helper_statement(stmt, source, top_level_bindings, &mut callback_locals, analysis);
+                    analyze_helper_statement(
+                        stmt,
+                        source,
+                        top_level_bindings,
+                        &mut callback_locals,
+                        analysis,
+                    );
                 }
             }
         }
@@ -1001,10 +1217,18 @@ fn collect_state_from_expression(
                     callback_owned_candidate: context.callback_owned_candidate,
                 });
             }
-            collect_state_from_expression(&assign.right, source, top_level_bindings, state, context.nested());
+            collect_state_from_expression(
+                &assign.right,
+                source,
+                top_level_bindings,
+                state,
+                context.nested(),
+            );
         }
         Expression::UpdateExpression(update) => {
-            if let Some((binding, member_path)) = simple_assignment_target_binding(&update.argument, source) {
+            if let Some((binding, member_path)) =
+                simple_assignment_target_binding(&update.argument, source)
+            {
                 state.mutations.push(MutationRecord {
                     binding,
                     kind: "update".to_string(),
@@ -1021,38 +1245,116 @@ fn collect_state_from_expression(
             collect_state_from_call_expression(call, source, top_level_bindings, state, context);
         }
         Expression::StaticMemberExpression(member) => {
-            collect_state_from_expression(&member.object, source, top_level_bindings, state, context.nested());
+            collect_state_from_expression(
+                &member.object,
+                source,
+                top_level_bindings,
+                state,
+                context.nested(),
+            );
         }
         Expression::ComputedMemberExpression(member) => {
-            collect_state_from_expression(&member.object, source, top_level_bindings, state, context.nested());
-            collect_state_from_expression(&member.expression, source, top_level_bindings, state, context.nested());
+            collect_state_from_expression(
+                &member.object,
+                source,
+                top_level_bindings,
+                state,
+                context.nested(),
+            );
+            collect_state_from_expression(
+                &member.expression,
+                source,
+                top_level_bindings,
+                state,
+                context.nested(),
+            );
         }
         Expression::ChainExpression(chain) => {
             collect_state_from_chain_expression(chain, source, top_level_bindings, state, context);
         }
         Expression::BinaryExpression(binary) => {
-            collect_state_from_expression(&binary.left, source, top_level_bindings, state, context.nested());
-            collect_state_from_expression(&binary.right, source, top_level_bindings, state, context.nested());
+            collect_state_from_expression(
+                &binary.left,
+                source,
+                top_level_bindings,
+                state,
+                context.nested(),
+            );
+            collect_state_from_expression(
+                &binary.right,
+                source,
+                top_level_bindings,
+                state,
+                context.nested(),
+            );
         }
         Expression::LogicalExpression(logical) => {
-            collect_state_from_expression(&logical.left, source, top_level_bindings, state, context.nested());
-            collect_state_from_expression(&logical.right, source, top_level_bindings, state, context.nested());
+            collect_state_from_expression(
+                &logical.left,
+                source,
+                top_level_bindings,
+                state,
+                context.nested(),
+            );
+            collect_state_from_expression(
+                &logical.right,
+                source,
+                top_level_bindings,
+                state,
+                context.nested(),
+            );
         }
         Expression::ConditionalExpression(cond) => {
-            collect_state_from_expression(&cond.test, source, top_level_bindings, state, context.nested());
-            collect_state_from_expression(&cond.consequent, source, top_level_bindings, state, context.nested());
-            collect_state_from_expression(&cond.alternate, source, top_level_bindings, state, context.nested());
+            collect_state_from_expression(
+                &cond.test,
+                source,
+                top_level_bindings,
+                state,
+                context.nested(),
+            );
+            collect_state_from_expression(
+                &cond.consequent,
+                source,
+                top_level_bindings,
+                state,
+                context.nested(),
+            );
+            collect_state_from_expression(
+                &cond.alternate,
+                source,
+                top_level_bindings,
+                state,
+                context.nested(),
+            );
         }
         Expression::UnaryExpression(unary) => {
-            collect_state_from_expression(&unary.argument, source, top_level_bindings, state, context.nested());
+            collect_state_from_expression(
+                &unary.argument,
+                source,
+                top_level_bindings,
+                state,
+                context.nested(),
+            );
         }
         Expression::AwaitExpression(await_expr) => {
-            collect_state_from_expression(&await_expr.argument, source, top_level_bindings, state, context.nested());
+            collect_state_from_expression(
+                &await_expr.argument,
+                source,
+                top_level_bindings,
+                state,
+                context.nested(),
+            );
         }
         Expression::ArrayExpression(array) => {
             for element in &array.elements {
                 if let Some(expr) = array_expression_element(element) {
-                    collect_state_from_expression(expr, source, top_level_bindings, state, context.nested());
+                    collect_state_from_expression(
+                        expr,
+                        source,
+                        top_level_bindings,
+                        state,
+                        context.nested(),
+                    );
                 }
             }
         }
@@ -1060,39 +1362,72 @@ fn collect_state_from_expression(
             for property in &object.properties {
                 match property {
                     ObjectPropertyKind::ObjectProperty(prop) => {
-                        collect_state_from_expression(&prop.value, source, top_level_bindings, state, context.nested());
+                        collect_state_from_expression(
+                            &prop.value,
+                            source,
+                            top_level_bindings,
+                            state,
+                            context.nested(),
+                        );
                     }
                     ObjectPropertyKind::SpreadProperty(spread) => {
-                        collect_state_from_expression(&spread.argument, source, top_level_bindings, state, context.nested());
+                        collect_state_from_expression(
+                            &spread.argument,
+                            source,
+                            top_level_bindings,
+                            state,
+                            context.nested(),
+                        );
                     }
                 }
             }
         }
         Expression::TemplateLiteral(template) => {
             for expr in &template.expressions {
-                collect_state_from_expression(expr, source, top_level_bindings, state, context.nested());
+                collect_state_from_expression(
+                    expr,
+                    source,
+                    top_level_bindings,
+                    state,
+                    context.nested(),
+                );
             }
         }
         Expression::ParenthesizedExpression(paren) => {
-            collect_state_from_expression(&paren.expression, source, top_level_bindings, state, context.nested());
+            collect_state_from_expression(
+                &paren.expression,
+                source,
+                top_level_bindings,
+                state,
+                context.nested(),
+            );
         }
         Expression::SequenceExpression(seq) => {
             for expr in &seq.expressions {
-                collect_state_from_expression(expr, source, top_level_bindings, state, context.nested());
+                collect_state_from_expression(
+                    expr,
+                    source,
+                    top_level_bindings,
+                    state,
+                    context.nested(),
+                );
             }
         }
         Expression::ArrowFunctionExpression(callback) => {
             let owned_candidate = false;
-            state.callback_registrations.push(CallbackRegistrationRecord {
-                callee: "<inline>".to_string(),
-                callback_kind: "arrow".to_string(),
-                callback_span_start: callback.span.start as usize,
-                callback_span_end: callback.span.end as usize,
-                owned_candidate,
-                reason: "inline_function_value".to_string(),
-            });
+            state
+                .callback_registrations
+                .push(CallbackRegistrationRecord {
+                    callee: "<inline>".to_string(),
+                    callback_kind: "arrow".to_string(),
+                    callback_span_start: callback.span.start as usize,
+                    callback_span_end: callback.span.end as usize,
+                    owned_candidate,
+                    reason: "inline_function_value".to_string(),
+                });
             if callback.expression {
-                if let Some(Statement::ExpressionStatement(stmt)) = callback.body.statements.first() {
+                if let Some(Statement::ExpressionStatement(stmt)) = callback.body.statements.first()
+                {
                     collect_state_from_expression(
                         &stmt.expression,
                         source,
@@ -1115,14 +1450,16 @@ fn collect_state_from_expression(
         }
         Expression::FunctionExpression(callback) => {
             let owned_candidate = false;
-            state.callback_registrations.push(CallbackRegistrationRecord {
-                callee: "<inline>".to_string(),
-                callback_kind: "function".to_string(),
-                callback_span_start: callback.span.start as usize,
-                callback_span_end: callback.span.end as usize,
-                owned_candidate,
-                reason: "inline_function_value".to_string(),
-            });
+            state
+                .callback_registrations
+                .push(CallbackRegistrationRecord {
+                    callee: "<inline>".to_string(),
+                    callback_kind: "function".to_string(),
+                    callback_span_start: callback.span.start as usize,
+                    callback_span_end: callback.span.end as usize,
+                    owned_candidate,
+                    reason: "inline_function_value".to_string(),
+                });
             if let Some(body) = &callback.body {
                 for stmt in &body.statements {
                     collect_state_from_statement(
@@ -1170,12 +1507,26 @@ fn analyze_helper_call_expression(
                 let mut callback_locals = locals.clone();
                 collect_formal_param_names(&callback.params, &mut callback_locals);
                 if callback.expression {
-                    if let Some(Statement::ExpressionStatement(stmt)) = callback.body.statements.first() {
-                        analyze_helper_expression(&stmt.expression, source, top_level_bindings, &callback_locals, analysis);
+                    if let Some(Statement::ExpressionStatement(stmt)) =
+                        callback.body.statements.first()
+                    {
+                        analyze_helper_expression(
+                            &stmt.expression,
+                            source,
+                            top_level_bindings,
+                            &callback_locals,
+                            analysis,
+                        );
                     }
                 } else {
                     for stmt in &callback.body.statements {
-                        analyze_helper_statement(stmt, source, top_level_bindings, &mut callback_locals, analysis);
+                        analyze_helper_statement(
+                            stmt,
+                            source,
+                            top_level_bindings,
+                            &mut callback_locals,
+                            analysis,
+                        );
                     }
                 }
             }
@@ -1187,13 +1538,21 @@ fn analyze_helper_call_expression(
                 }
                 if let Some(body) = &callback.body {
                     for stmt in &body.statements {
-                        analyze_helper_statement(stmt, source, top_level_bindings, &mut callback_locals, analysis);
+                        analyze_helper_statement(
+                            stmt,
+                            source,
+                            top_level_bindings,
+                            &mut callback_locals,
+                            analysis,
+                        );
                     }
                 }
             }
-            _ => if let Some(expr) = argument_expression(arg) {
-                analyze_helper_expression(expr, source, top_level_bindings, locals, analysis);
-            },
+            _ => {
+                if let Some(expr) = argument_expression(arg) {
+                    analyze_helper_expression(expr, source, top_level_bindings, locals, analysis);
+                }
+            }
         }
     }
 }
@@ -1224,16 +1583,25 @@ fn collect_state_from_call_expression(
         match arg {
             Argument::ArrowFunctionExpression(callback) => {
                 let owned_candidate = is_owned_callback_callee(&call.callee, source);
-                state.callback_registrations.push(CallbackRegistrationRecord {
-                    callee: callee_name(&call.callee, source).unwrap_or_else(|| call.callee.span().source_text(source).to_string()),
-                    callback_kind: "inline_arrow".to_string(),
-                    callback_span_start: callback.span.start as usize,
-                    callback_span_end: callback.span.end as usize,
-                    owned_candidate,
-                    reason: if owned_candidate { "known_owned_boundary".to_string() } else { "unknown_registration".to_string() },
-                });
+                state
+                    .callback_registrations
+                    .push(CallbackRegistrationRecord {
+                        callee: callee_name(&call.callee, source)
+                            .unwrap_or_else(|| call.callee.span().source_text(source).to_string()),
+                        callback_kind: "inline_arrow".to_string(),
+                        callback_span_start: callback.span.start as usize,
+                        callback_span_end: callback.span.end as usize,
+                        owned_candidate,
+                        reason: if owned_candidate {
+                            "known_owned_boundary".to_string()
+                        } else {
+                            "unknown_registration".to_string()
+                        },
+                    });
                 if callback.expression {
-                    if let Some(Statement::ExpressionStatement(stmt)) = callback.body.statements.first() {
+                    if let Some(Statement::ExpressionStatement(stmt)) =
+                        callback.body.statements.first()
+                    {
                         collect_state_from_expression(
                             &stmt.expression,
                             source,
@@ -1256,14 +1624,21 @@ fn collect_state_from_call_expression(
             }
             Argument::FunctionExpression(callback) => {
                 let owned_candidate = is_owned_callback_callee(&call.callee, source);
-                state.callback_registrations.push(CallbackRegistrationRecord {
-                    callee: callee_name(&call.callee, source).unwrap_or_else(|| call.callee.span().source_text(source).to_string()),
-                    callback_kind: "inline_function".to_string(),
-                    callback_span_start: callback.span.start as usize,
-                    callback_span_end: callback.span.end as usize,
-                    owned_candidate,
-                    reason: if owned_candidate { "known_owned_boundary".to_string() } else { "unknown_registration".to_string() },
-                });
+                state
+                    .callback_registrations
+                    .push(CallbackRegistrationRecord {
+                        callee: callee_name(&call.callee, source)
+                            .unwrap_or_else(|| call.callee.span().source_text(source).to_string()),
+                        callback_kind: "inline_function".to_string(),
+                        callback_span_start: callback.span.start as usize,
+                        callback_span_end: callback.span.end as usize,
+                        owned_candidate,
+                        reason: if owned_candidate {
+                            "known_owned_boundary".to_string()
+                        } else {
+                            "unknown_registration".to_string()
+                        },
+                    });
                 if let Some(body) = &callback.body {
                     for stmt in &body.statements {
                         collect_state_from_statement(
@@ -1278,7 +1653,13 @@ fn collect_state_from_call_expression(
             }
             _ => {
                 if let Some(expr) = argument_expression(arg) {
-                    collect_state_from_expression(expr, source, top_level_bindings, state, context.nested());
+                    collect_state_from_expression(
+                        expr,
+                        source,
+                        top_level_bindings,
+                        state,
+                        context.nested(),
+                    );
                 }
             }
         }
@@ -1321,7 +1702,9 @@ fn argument_expression<'a>(arg: &'a Argument<'a>) -> Option<&'a Expression<'a>> 
     }
 }
 
-fn array_expression_element<'a>(element: &'a ArrayExpressionElement<'a>) -> Option<&'a Expression<'a>> {
+fn array_expression_element<'a>(
+    element: &'a ArrayExpressionElement<'a>,
+) -> Option<&'a Expression<'a>> {
     match element {
         ArrayExpressionElement::SpreadElement(spread) => Some(&spread.argument),
         _ => element.as_expression(),
@@ -1336,16 +1719,42 @@ fn collect_state_from_chain_expression(
     context: TraversalContext,
 ) {
     match &chain.expression {
-        ChainElement::CallExpression(call) => collect_state_from_call_expression(call, source, top_level_bindings, state, context),
+        ChainElement::CallExpression(call) => {
+            collect_state_from_call_expression(call, source, top_level_bindings, state, context)
+        }
         ChainElement::ComputedMemberExpression(member) => {
-            collect_state_from_expression(&member.object, source, top_level_bindings, state, context);
-            collect_state_from_expression(&member.expression, source, top_level_bindings, state, context);
+            collect_state_from_expression(
+                &member.object,
+                source,
+                top_level_bindings,
+                state,
+                context,
+            );
+            collect_state_from_expression(
+                &member.expression,
+                source,
+                top_level_bindings,
+                state,
+                context,
+            );
         }
         ChainElement::StaticMemberExpression(member) => {
-            collect_state_from_expression(&member.object, source, top_level_bindings, state, context);
+            collect_state_from_expression(
+                &member.object,
+                source,
+                top_level_bindings,
+                state,
+                context,
+            );
         }
         ChainElement::PrivateFieldExpression(member) => {
-            collect_state_from_expression(&member.object, source, top_level_bindings, state, context);
+            collect_state_from_expression(
+                &member.object,
+                source,
+                top_level_bindings,
+                state,
+                context,
+            );
         }
         _ => {}
     }
@@ -1359,10 +1768,18 @@ fn analyze_chain_expression(
     analysis: &mut HelperAnalysis,
 ) {
     match &chain.expression {
-        ChainElement::CallExpression(call) => analyze_helper_call_expression(call, source, top_level_bindings, locals, analysis),
+        ChainElement::CallExpression(call) => {
+            analyze_helper_call_expression(call, source, top_level_bindings, locals, analysis)
+        }
         ChainElement::ComputedMemberExpression(member) => {
             analyze_helper_expression(&member.object, source, top_level_bindings, locals, analysis);
-            analyze_helper_expression(&member.expression, source, top_level_bindings, locals, analysis);
+            analyze_helper_expression(
+                &member.expression,
+                source,
+                top_level_bindings,
+                locals,
+                analysis,
+            );
         }
         ChainElement::StaticMemberExpression(member) => {
             analyze_helper_expression(&member.object, source, top_level_bindings, locals, analysis);
@@ -1374,12 +1791,29 @@ fn analyze_chain_expression(
     }
 }
 
-fn assignment_target_binding(target: &AssignmentTarget<'_>, source: &str) -> Option<(String, Option<String>)> {
+fn assignment_target_binding(
+    target: &AssignmentTarget<'_>,
+    source: &str,
+) -> Option<(String, Option<String>)> {
     match target {
-        AssignmentTarget::AssignmentTargetIdentifier(id) => Some((id.name.as_str().to_string(), None)),
-        AssignmentTarget::ComputedMemberExpression(member) => member_expression_binding(&member.object, Some(member.expression.span().source_text(source).to_string()), source),
-        AssignmentTarget::StaticMemberExpression(member) => member_expression_binding(&member.object, Some(member.property.name.as_str().to_string()), source),
-        AssignmentTarget::PrivateFieldExpression(member) => member_expression_binding(&member.object, Some(member.field.name.as_str().to_string()), source),
+        AssignmentTarget::AssignmentTargetIdentifier(id) => {
+            Some((id.name.as_str().to_string(), None))
+        }
+        AssignmentTarget::ComputedMemberExpression(member) => member_expression_binding(
+            &member.object,
+            Some(member.expression.span().source_text(source).to_string()),
+            source,
+        ),
+        AssignmentTarget::StaticMemberExpression(member) => member_expression_binding(
+            &member.object,
+            Some(member.property.name.as_str().to_string()),
+            source,
+        ),
+        AssignmentTarget::PrivateFieldExpression(member) => member_expression_binding(
+            &member.object,
+            Some(member.field.name.as_str().to_string()),
+            source,
+        ),
         AssignmentTarget::TSAsExpression(_) => None,
         AssignmentTarget::TSSatisfiesExpression(_) => None,
         AssignmentTarget::TSNonNullExpression(_) => None,
@@ -1388,12 +1822,29 @@ fn assignment_target_binding(target: &AssignmentTarget<'_>, source: &str) -> Opt
     }
 }
 
-fn simple_assignment_target_binding(target: &SimpleAssignmentTarget<'_>, source: &str) -> Option<(String, Option<String>)> {
+fn simple_assignment_target_binding(
+    target: &SimpleAssignmentTarget<'_>,
+    source: &str,
+) -> Option<(String, Option<String>)> {
     match target {
-        SimpleAssignmentTarget::AssignmentTargetIdentifier(id) => Some((id.name.as_str().to_string(), None)),
-        SimpleAssignmentTarget::ComputedMemberExpression(member) => member_expression_binding(&member.object, Some(member.expression.span().source_text(source).to_string()), source),
-        SimpleAssignmentTarget::StaticMemberExpression(member) => member_expression_binding(&member.object, Some(member.property.name.as_str().to_string()), source),
-        SimpleAssignmentTarget::PrivateFieldExpression(member) => member_expression_binding(&member.object, Some(member.field.name.as_str().to_string()), source),
+        SimpleAssignmentTarget::AssignmentTargetIdentifier(id) => {
+            Some((id.name.as_str().to_string(), None))
+        }
+        SimpleAssignmentTarget::ComputedMemberExpression(member) => member_expression_binding(
+            &member.object,
+            Some(member.expression.span().source_text(source).to_string()),
+            source,
+        ),
+        SimpleAssignmentTarget::StaticMemberExpression(member) => member_expression_binding(
+            &member.object,
+            Some(member.property.name.as_str().to_string()),
+            source,
+        ),
+        SimpleAssignmentTarget::PrivateFieldExpression(member) => member_expression_binding(
+            &member.object,
+            Some(member.field.name.as_str().to_string()),
+            source,
+        ),
         _ => None,
     }
 }
@@ -1406,11 +1857,19 @@ fn member_expression_binding(
     match object {
         Expression::Identifier(id) => Some((id.name.as_str().to_string(), member)),
         Expression::StaticMemberExpression(parent) => {
-            let (binding, path) = member_expression_binding(&parent.object, Some(parent.property.name.as_str().to_string()), source)?;
+            let (binding, path) = member_expression_binding(
+                &parent.object,
+                Some(parent.property.name.as_str().to_string()),
+                source,
+            )?;
             Some((binding, path.or(member)))
         }
         Expression::ComputedMemberExpression(parent) => {
-            let (binding, path) = member_expression_binding(&parent.object, Some(parent.expression.span().source_text(source).to_string()), source)?;
+            let (binding, path) = member_expression_binding(
+                &parent.object,
+                Some(parent.expression.span().source_text(source).to_string()),
+                source,
+            )?;
             Some((binding, path.or(member)))
         }
         _ => None,
@@ -1426,7 +1885,10 @@ fn callee_name(callee: &Expression<'_>, source: &str) -> Option<String> {
         }
         Expression::ComputedMemberExpression(member) => {
             let object = callee_name(&member.object, source)?;
-            Some(format!("{object}[{}]", member.expression.span().source_text(source)))
+            Some(format!(
+                "{object}[{}]",
+                member.expression.span().source_text(source)
+            ))
         }
         _ => Some(callee.span().source_text(source).to_string()),
     }
@@ -1434,11 +1896,25 @@ fn callee_name(callee: &Expression<'_>, source: &str) -> Option<String> {
 
 fn mutation_from_call(callee_name: &str) -> Option<(String, String)> {
     for method in [
-        ".push", ".pop", ".shift", ".unshift", ".splice", ".sort", ".reverse", ".copyWithin",
-        ".fill", ".set", ".delete", ".clear", ".add",
+        ".push",
+        ".pop",
+        ".shift",
+        ".unshift",
+        ".splice",
+        ".sort",
+        ".reverse",
+        ".copyWithin",
+        ".fill",
+        ".set",
+        ".delete",
+        ".clear",
+        ".add",
     ] {
         if let Some(binding) = callee_name.strip_suffix(method) {
-            return Some((binding.to_string(), method.trim_start_matches('.').to_string()));
+            return Some((
+                binding.to_string(),
+                method.trim_start_matches('.').to_string(),
+            ));
         }
     }
     None
@@ -1491,217 +1967,12 @@ pub extern "C" fn weiv_rewrite_expression(
         Err(_) => return std::ptr::null_mut(),
     };
 
-    let wrapper = format!("var _ = {};", expression);
-    let allocator = Allocator::default();
-    let source_type = SourceType::ts();
-    let parsed = Parser::new(&allocator, &wrapper, source_type).parse();
-    if !parsed.errors.is_empty() {
+    let Some(result) = template_expression::rewrite(&expression, &bindings, &scope_prefix) else {
         return std::ptr::null_mut();
-    }
-
-    let init_expr = match parsed.program.body.first() {
-        Some(Statement::VariableDeclaration(decl)) => {
-            decl.declarations.first().and_then(|d| d.init.as_ref())
-        }
-        _ => None,
     };
-
-    let init_expr = match init_expr {
-        Some(expr) => expr,
-        None => return std::ptr::null_mut(),
-    };
-
-    let result = rewrite_expr(init_expr, &wrapper, &bindings, &scope_prefix);
-
     match CString::new(result) {
         Ok(c) => c.into_raw(),
         Err(_) => std::ptr::null_mut(),
-    }
-}
-
-fn rewrite_expr(
-    expr: &Expression<'_>,
-    source: &str,
-    bindings: &BTreeSet<String>,
-    prefix: &str,
-) -> String {
-    match expr {
-        Expression::Identifier(id) => {
-            let name = id.name.as_str();
-            if bindings.contains(name) {
-                format!("{prefix}.{name}")
-            } else {
-                name.to_string()
-            }
-        }
-        Expression::StaticMemberExpression(member) => {
-            let object = rewrite_expr(&member.object, source, bindings, prefix);
-            let prop = member.property.name.as_str();
-            if member.optional {
-                format!("{object}?.{prop}")
-            } else {
-                format!("{object}.{prop}")
-            }
-        }
-        Expression::ComputedMemberExpression(member) => {
-            let object = rewrite_expr(&member.object, source, bindings, prefix);
-            let prop = rewrite_expr(&member.expression, source, bindings, prefix);
-            if member.optional {
-                format!("{object}?.[{prop}]")
-            } else {
-                format!("{object}[{prop}]")
-            }
-        }
-        Expression::CallExpression(call) => {
-            let callee = rewrite_expr(&call.callee, source, bindings, prefix);
-            let args: Vec<String> = call
-                .arguments
-                .iter()
-                .map(|arg| rewrite_argument(arg, source, bindings, prefix))
-                .collect();
-            let args_str = args.join(", ");
-            if call.optional {
-                format!("{callee}?.({args_str})")
-            } else {
-                format!("{callee}({args_str})")
-            }
-        }
-        Expression::BinaryExpression(binary) => {
-            let left = rewrite_expr(&binary.left, source, bindings, prefix);
-            let op = binary.operator.as_str();
-            let right = rewrite_expr(&binary.right, source, bindings, prefix);
-            format!("{left} {op} {right}")
-        }
-        Expression::LogicalExpression(logical) => {
-            let left = rewrite_expr(&logical.left, source, bindings, prefix);
-            let op = logical.operator.as_str();
-            let right = rewrite_expr(&logical.right, source, bindings, prefix);
-            format!("{left} {op} {right}")
-        }
-        Expression::UnaryExpression(unary) => {
-            let arg = rewrite_expr(&unary.argument, source, bindings, prefix);
-            let op = unary.operator.as_str();
-            if op == "typeof" || op == "void" || op == "delete" {
-                format!("{op} {arg}")
-            } else {
-                format!("{op}{arg}")
-            }
-        }
-        Expression::ConditionalExpression(cond) => {
-            let test = rewrite_expr(&cond.test, source, bindings, prefix);
-            let consequent = rewrite_expr(&cond.consequent, source, bindings, prefix);
-            let alternate = rewrite_expr(&cond.alternate, source, bindings, prefix);
-            format!("{test} ? {consequent} : {alternate}")
-        }
-        Expression::ParenthesizedExpression(paren) => {
-            let inner = rewrite_expr(&paren.expression, source, bindings, prefix);
-            format!("({inner})")
-        }
-        Expression::TemplateLiteral(template) => {
-            let mut result = String::from("`");
-            for (i, quasi) in template.quasis.iter().enumerate() {
-                result.push_str(quasi.value.raw.as_str());
-                if i < template.expressions.len() {
-                    result.push_str("${");
-                    result.push_str(&rewrite_expr(&template.expressions[i], source, bindings, prefix));
-                    result.push('}');
-                }
-            }
-            result.push('`');
-            result
-        }
-        Expression::ArrayExpression(array) => {
-            let elements: Vec<String> = array
-                .elements
-                .iter()
-                .map(|el| match el {
-                    ArrayExpressionElement::SpreadElement(spread) => {
-                        format!("...{}", rewrite_expr(&spread.argument, source, bindings, prefix))
-                    }
-                    _ => {
-                        if let Some(e) = el.as_expression() {
-                            rewrite_expr(e, source, bindings, prefix)
-                        } else {
-                            el.span().source_text(source).to_string()
-                        }
-                    }
-                })
-                .collect();
-            format!("[{}]", elements.join(", "))
-        }
-        Expression::ObjectExpression(object) => {
-            let props: Vec<String> = object
-                .properties
-                .iter()
-                .map(|prop| match prop {
-                    ObjectPropertyKind::ObjectProperty(p) => {
-                        let value = rewrite_expr(&p.value, source, bindings, prefix);
-                        if p.shorthand {
-                            value
-                        } else {
-                            let key = p.key.span().source_text(source);
-                            format!("{key}: {value}")
-                        }
-                    }
-                    ObjectPropertyKind::SpreadProperty(spread) => {
-                        format!("...{}", rewrite_expr(&spread.argument, source, bindings, prefix))
-                    }
-                })
-                .collect();
-            format!("{{ {} }}", props.join(", "))
-        }
-        Expression::ArrowFunctionExpression(arrow) => {
-            let params: Vec<String> = arrow
-                .params
-                .items
-                .iter()
-                .map(|p| p.pattern.span().source_text(source).to_string())
-                .collect();
-            let params_str = if params.len() == 1 && !source[arrow.params.span.start as usize..arrow.params.span.end as usize].contains('(') {
-                params[0].clone()
-            } else {
-                format!("({})", params.join(", "))
-            };
-
-            let mut inner_bindings = bindings.clone();
-            for p in &params {
-                inner_bindings.remove(p.as_str());
-            }
-
-            if arrow.expression {
-                if let Some(Statement::ExpressionStatement(stmt)) = arrow.body.statements.first() {
-                    let body = rewrite_expr(&stmt.expression, source, &inner_bindings, prefix);
-                    format!("{params_str} => {body}")
-                } else {
-                    arrow.span.source_text(source).to_string()
-                }
-            } else {
-                arrow.span.source_text(source).to_string()
-            }
-        }
-        _ => {
-            expr.span().source_text(source).to_string()
-        }
-    }
-}
-
-fn rewrite_argument(
-    arg: &Argument<'_>,
-    source: &str,
-    bindings: &BTreeSet<String>,
-    prefix: &str,
-) -> String {
-    match arg {
-        Argument::SpreadElement(spread) => {
-            format!("...{}", rewrite_expr(&spread.argument, source, bindings, prefix))
-        }
-        _ => {
-            if let Some(expr) = arg.as_expression() {
-                rewrite_expr(expr, source, bindings, prefix)
-            } else {
-                arg.span().source_text(source).to_string()
-            }
-        }
     }
 }
 
@@ -1720,6 +1991,138 @@ fn transpile_source(source: &str, source_path: &str) -> Option<String> {
     let _ = Transformer::new(&allocator, Path::new(source_path), &options)
         .build_with_scoping(scoping, &mut program);
 
-    let generated = Codegen::new().with_options(CodegenOptions::default()).build(&program);
+    let generated = Codegen::new()
+        .with_options(CodegenOptions::default())
+        .build(&program);
     Some(generated.code)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn weiv_lower_cells(
+    source: *const c_char,
+    source_path: *const c_char,
+    bindings: *const c_char,
+) -> *mut c_char {
+    let Some(source) = parse_required_cstr(source) else {
+        return std::ptr::null_mut();
+    };
+    let Some(path) = parse_required_cstr(source_path) else {
+        return std::ptr::null_mut();
+    };
+    let Some(bindings) = parse_required_cstr(bindings) else {
+        return std::ptr::null_mut();
+    };
+    let names: Vec<String> = match serde_json::from_str(&bindings) {
+        Ok(names) => names,
+        Err(_) => return std::ptr::null_mut(),
+    };
+    let result = match cells::lower(&source, &path, &names) {
+        Ok(code) => serde_json::json!({"code": code, "error": null}),
+        Err(error) => serde_json::json!({"code": "", "error": error}),
+    };
+    CString::new(result.to_string()).map_or(std::ptr::null_mut(), CString::into_raw)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn weiv_cell_script_diagnostics(
+    source: *const c_char,
+    path: *const c_char,
+    bindings: *const c_char,
+    module: bool,
+) -> *mut c_char {
+    let (Some(source), Some(path), Some(bindings)) = (
+        parse_required_cstr(source),
+        parse_required_cstr(path),
+        parse_required_cstr(bindings),
+    ) else {
+        return std::ptr::null_mut();
+    };
+    let Ok(names) = serde_json::from_str::<Vec<String>>(&bindings) else {
+        return std::ptr::null_mut();
+    };
+    let result = cell_diagnostics::inspect(&source, &path, &names, module);
+    CString::new(serde_json::to_string(&result).unwrap())
+        .map_or(std::ptr::null_mut(), CString::into_raw)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn weiv_cell_expression_supported(source: *const c_char) -> bool {
+    parse_required_cstr(source).is_some_and(|source| cells::validate_expression(&source))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn weiv_cell_handler_supported(source: *const c_char) -> bool {
+    parse_required_cstr(source).is_some_and(|source| cells::validate_handler_expression(&source))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn weiv_cell_handler_kind(source: *const c_char) -> u8 {
+    parse_required_cstr(source).map_or(0, |source| template_expression::handler_kind(&source))
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn weiv_lower_cells_with_expressions(
+    source: *const c_char,
+    path: *const c_char,
+    bindings: *const c_char,
+    expressions: *const c_char,
+) -> *mut c_char {
+    let (Some(source), Some(path), Some(bindings), Some(expressions)) = (
+        parse_required_cstr(source),
+        parse_required_cstr(path),
+        parse_required_cstr(bindings),
+        parse_required_cstr(expressions),
+    ) else {
+        return std::ptr::null_mut();
+    };
+    let Ok(names) = serde_json::from_str::<Vec<String>>(&bindings) else {
+        return std::ptr::null_mut();
+    };
+    let result = match cells::lower_with_expressions(&source, &path, &names, &expressions) {
+        Ok(code) => serde_json::json!({"code":code,"error":null}),
+        Err(error) => serde_json::json!({"code":"","error":error}),
+    };
+    CString::new(result.to_string()).map_or(std::ptr::null_mut(), CString::into_raw)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn weiv_lower_module_cells(
+    source: *const c_char,
+    path: *const c_char,
+    companion: *const c_char,
+    bindings: *const c_char,
+) -> *mut c_char {
+    let (Some(source), Some(path), Some(companion), Some(bindings)) = (
+        parse_required_cstr(source),
+        parse_required_cstr(path),
+        parse_required_cstr(companion),
+        parse_required_cstr(bindings),
+    ) else {
+        return std::ptr::null_mut();
+    };
+    let Ok(names) = serde_json::from_str::<Vec<String>>(&bindings) else {
+        return std::ptr::null_mut();
+    };
+    let result = match module_cells::lower(&source, &path, &companion, &names) {
+        Ok(code) => serde_json::json!({"code": code, "error": null}),
+        Err(error) => serde_json::json!({"code": "", "error": error}),
+    };
+    CString::new(result.to_string()).map_or(std::ptr::null_mut(), CString::into_raw)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn weiv_analyze_module_state(
+    source: *const c_char,
+    path: *const c_char,
+) -> *mut c_char {
+    let Some(source) = parse_required_cstr(source) else {
+        return std::ptr::null_mut();
+    };
+    let Some(path) = parse_required_cstr(path) else {
+        return std::ptr::null_mut();
+    };
+    serde_json::to_string(&module_state::analyze(&source, &path))
+        .ok()
+        .and_then(|json| CString::new(json).ok())
+        .map_or(std::ptr::null_mut(), CString::into_raw)
 }

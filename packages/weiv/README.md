@@ -19,6 +19,10 @@ Then run:
 npx weiv --help
 ```
 
+The current source enables managed reactivity by default. Published installations
+need a matching compiler/runtime release; this documentation update does not
+publish packages.
+
 ## CLI Usage
 
 ```bash
@@ -54,160 +58,100 @@ You can build normal components without any `weiv:*` imports.
 </script>
 ```
 
-Use `weiv:*` imports only when you need shared state or routing.
+Managed project state needs no observable import. Use `weiv:observable` for explicit external integration boundaries and `weiv:router` for routing.
 
-### When state changes reach the DOM
+### State contract: managed reactivity by default
 
-Weiv bindings render **from component state to the DOM**. For example,
-`:value="name"` writes `name` to an input; it does not copy user edits back to
-`name`. An `@input` handler must read the input and assign `name` if that is the
-intended behavior.
-
-There are two timing steps to distinguish: **when an update is scheduled** and
-**how the update runs once it starts**. Weiv uses these paths:
-
-```mermaid
-flowchart TD
-  subgraph current["Current JavaScript call — synchronous"]
-    event["@event handler or weivUpdate"] --> local["Change local state"]
-    local --> boundary["Owned boundary updates affected DOM regions"]
-
-    tracked["Compiler tracked object write"] --> pathSet["Add path IDs to module pending Set"]
-    observable["Shared observable write"] --> pathMap["Add changed paths to observable pending Map"]
-  end
-
-  subgraph later["Scheduled microtasks — start later, run synchronously"]
-    trackedFlush["Tracked flush: take and clear Set"] --> instances["Update subscribed instances in sequence"]
-    observableFlush["Observable flush: take and clear Map"] --> listeners["Notify subscribers in sequence"]
-    listeners --> componentUpdates["Each component updates affected DOM regions"]
-  end
-
-  pathSet -. "schedule one microtask" .-> trackedFlush
-  pathMap -. "schedule one microtask" .-> observableFlush
-  boundary --> paint["Browser may paint after JavaScript yields"]
-  instances --> paint
-  componentUpdates --> paint
-```
-
-| Change source | During the current JavaScript call | Later work |
-|---|---|---|
-| Local state changed by a template `@event` handler or `weivUpdate` | The owned update boundary runs the callback, then synchronously finds changed bindings and updates affected DOM regions. | If the callback returns a Promise, the boundary also checks for changes when it settles. |
-| Compiler tracked object or array write | The Proxy records affected path IDs in a pending `Set` scoped to the generated component module. | One scheduled microtask takes and clears those paths, then synchronously updates subscribed instances in sequence. |
-| Shared `weiv:observable` write | The Proxy records changed property paths in a pending `Map` scoped to the observable root. | One scheduled microtask takes and clears the map, then synchronously calls each subscriber in sequence. A generated component subscriber synchronously updates its affected DOM regions. |
-
-The `Set` and `Map` are separate mechanisms, not one global change queue. Several
-writes before a scheduled flush are combined. Only the **start** of a scheduled
-microtask is deferred: its callback and the component updates inside it run
-synchronously until they return. For a shared observable used by components A
-and B, the sequence is:
-
-```text
-Current call:       write observable → record change → schedule notification microtask
-After call returns: notification microtask starts
-                   → notify A → update A's DOM
-                   → notify B → update B's DOM
-                   → notification microtask ends
-Later:              browser may paint a frame containing both updates
-```
-
-DOM writes take effect immediately in the in-memory DOM. The browser decides
-when to paint; Weiv does not force a paint after each component update. If an
-owned event boundary consumes pending compiler tracked paths, its scheduled
-tracked flush may later find its `Set` empty. That does not clear a shared
-observable's pending `Map` or suppress its subscriber notifications.
-
-### Updates from external callbacks
-
-Weiv flushes local state changes automatically after template handlers such as
-`@click="openFiles"`. It also owns callbacks passed to the component script's
-locally wrapped `setTimeout`, `setInterval`, `queueMicrotask`, and
-`requestAnimationFrame`.
-
-A callback registered with another API runs outside that update boundary. If it
-changes template-bound local state, wrap the change in `weivUpdate`. This applies
-to browser listeners, Tauri events, external stores, and similar subscriptions.
-**The `weivUpdate` examples below require `weivjs@0.1.2` or newer; published
-`0.1.1` does not provide it.** See the `0.1.1` workaround below. With `0.1.2`,
-a keyboard shortcut can update a panel directly:
+Supported template-dependent local state is reactive automatically. The CLI app
+builder and Vite/Bun plugins also manage project modules, so components and normal
+JavaScript consumers share one state instance with native live exports.
 
 ```html
+<template><p>{{ count }}</p></template>
 <script lang="ts">
-  let panelMode = "none";
-
-  window.addEventListener("keydown", (event) => {
-    if (!(event.metaKey && event.key.toLowerCase() === "p")) return;
-    weivUpdate(() => {
-      panelMode = "files";
-    });
-  });
+  let count = 0;
+  window.addEventListener("advance", () => { count++; });
 </script>
 ```
 
-The same pattern works with Tauri's event API:
+The callback needs no `weivUpdate()` wrapper. Supported writes notify regardless
+of whether they come from a template handler, timer, Promise or external callback.
+Initial mounting is synchronous. Later state changes are immediate in JavaScript;
+Weiv batches their DOM patches into microtasks, merging changes into one pending
+update per component. Destroying a component releases subscriptions and cancels
+its pending update without destroying shared state.
 
-```html
-<script lang="ts">
-  import { listen } from "@tauri-apps/api/event";
-
-  let latestRunText = "";
-  listen<string>("run-event", (event) => {
-    weivUpdate(() => {
-      latestRunText = event.payload;
-    });
-  });
-</script>
+```js
+count++;
+// State is current; the DOM still represents the previous batch.
+await new Promise(resolve => queueMicrotask(resolve));
+// The queued batch has patched the DOM. Writes during delivery can queue another wave.
 ```
 
-`weivUpdate` is available inside each `.weiv` component script in `0.1.2` and
-newer. Do not import or declare it. It runs the callback immediately,
-then flushes changed bindings.
-If the callback returns a Promise, it flushes again when the Promise settles.
-Call it in the external callback at the point where state changes. A hidden
-button or synthetic click is unnecessary. If no component state changes, no
-update boundary is needed. Clean up external subscriptions when their lifetime
-should end; `weivUpdate` handles updates, not listener disposal.
+The supported mutable data is primitive values, ordinary plain/null-prototype
+records and arrays. Use `let`/`const`, not `var`, for managed state. Native/class
+instances, accessors, read-only data descriptors and non-extensible mutable data
+are outside this contract; use an explicit adapter or an immutable `snapshot()`.
+Execution-only native objects can remain raw without becoming reactive data.
 
-**Published `weivjs@0.1.1` caveat:** that release does not inject `weivUpdate`
-into component scripts. Calling it throws `ReferenceError: weivUpdate is not
-defined`. In `0.1.1`, schedule the state change through the component script's
-locally wrapped `queueMicrotask`, which runs its callback in Weiv's update
-boundary:
+Project ownership is explicit: the plugins discover static component imports
+from their entry files and compile the graph together. Vite defaults to its project
+root; Bun defaults to the project/entry root. Configure `root` for a monorepo and
+`components` for additional roots used by a custom loader. Code in `node_modules`
+or outside the managed root is not automatically transformed into shared state.
+Known constants and pure helpers need no blanket reactivity warning.
 
-```html
-<script lang="ts">
-  let panelMode = "none";
+`emit js` emits a standalone component: its local state is managed, but it does
+not take ownership of arbitrary imported modules. Use the app builder or bundler
+plugins for automatic project shared state. CLI app ownership starts at the root
+component's folder; plugins use their project/configured root. Existing literal dynamic loaders in
+managed JS/TS modules are supported; dynamic imports in component scripts/templates
+and computed managed-module targets have an explicit loader/adapter diagnostic.
 
-  window.addEventListener("keydown", (event) => {
-    if (!(event.metaKey && event.key.toLowerCase() === "p")) return;
-    queueMicrotask(() => {
-      panelMode = "files";
-    });
-  });
-</script>
+### External state and explicit observables
+
+External mutable state needs a known notification contract. Weiv recognizes
+explicit observables and warns at template dependencies whose ownership or update
+coverage cannot be verified. Follow the diagnostic's source location and guidance
+rather than assuming any imported object is reactive.
+
+```js
+const raw = library.getState();
+const tracked = observable(raw);
+raw.count++;     // A retained raw reference bypasses notification.
+tracked.count++; // Writes through the observable notify subscribers.
 ```
 
-For a Tauri subscription in `0.1.1`, also defer registration to a microtask:
-that package initializes imported aliases after top-level component script
-calls, so a direct top-level `listen(...)` can fail before mount.
+If a library mutates its retained raw state, subscribe to that library and transfer
+changes into supported observable data. Wrapping its result cannot intercept old
+raw references. Dispose external subscriptions when their lifetime ends.
 
-```html
-<script lang="ts">
-  import { listen } from "@tauri-apps/api/event";
+### Migrating from legacy reactivity
 
-  let latestRunText = "";
-  queueMicrotask(() => {
-    listen<string>("run-event", (event) => {
-      queueMicrotask(() => {
-        latestRunText = event.payload;
-      });
-    });
-  });
-</script>
+The default managed mode batches DOM updates into microtasks. Code that reads DOM
+or layout immediately after a handler must wait for the batch. Existing
+`weivUpdate(callback)` calls may stay: managed mode executes the callback and
+preserves its value/error/Promise; the call does not force a synchronous DOM flush.
+Update unsupported managed declarations/types using the compiler's diagnostics.
+Use a matching compiler/runtime version; incompatible older observable metadata
+requires an explicit transfer rather than mixing graph internals.
+
+A deprecated compatibility mode is available during migration:
+
+```sh
+weiv emit js-legacy src/App.weiv
+weiv emit app-legacy src/App.weiv dist
 ```
 
-A focused `0.1.1` browser-event fixture was compiled and mounted to verify
-that the rendered state updates after the microtask. Upgrade to `0.1.2` to
-use `weivUpdate` directly.
+```js
+weiv({ reactivity: "legacy" }) // Vite or Bun plugin
+```
+
+Legacy retains owned-handler synchronous checks and manual `weivUpdate` requirements
+for external local mutations. New code should use the default managed mode. Legacy
+will be removed in a future breaking release after application migrations; no
+removal date is imposed by this change. This source change requires a matching
+compiler/runtime release before it is available through a published npm update.
 
 ### DOM bindings and input state
 
@@ -271,11 +215,8 @@ Shared state example:
 
 ```ts
 // state/counter.ts
-import { observable } from "weiv:observable";
-
-export const counter = observable({
-  value: 0
-});
+// Inside the project managed by the app builder or bundler plugin:
+export const counter = { value: 0 };
 ```
 
 ```html
@@ -317,19 +258,38 @@ export default defineConfig({
 });
 ```
 
+The default is managed reactivity. For custom entry loaders use `weiv({ components: ["src/App.weiv"] })`; for a wider monorepo ownership boundary set `root`. Development changes rebuild the managed graph and reload the page to preserve canonical module identity.
+
 You can then import `.weiv` files directly in your app. The plugin emits both
 the component JavaScript and its scoped `<style>` CSS through Vite.
 
 ## Bun Plugin
 
 ```ts
-// bunfig.toml uses a JS/TS plugin file, for example build.ts
+// build.ts — run with bun build.ts
 import { weiv } from "weivjs/bun";
 
-export default {
+const result = await Bun.build({
+  entrypoints: ["./src/main.ts"],
+  outdir: "./dist",
+  target: "browser",
   plugins: [weiv()]
-};
+});
+if (!result.success) throw new AggregateError(result.logs, "Build failed");
 ```
+
+Both plugins accept the same ownership and migration options:
+
+| Option | Default | Purpose |
+| --- | --- | --- |
+| `reactivity` | `"managed"` | Use `"legacy"` only for deprecated migration compatibility. |
+| `root` | Project root (Vite); project/entry root (Bun) | Set the managed module boundary, for example a monorepo root. |
+| `components` | Discovered component roots | Add component file paths for custom loading paths. Relative paths resolve from the managed root. |
+
+Entry discovery follows static/literal imports. Vite HTML module scripts must use
+file entries; move inline module code into a source file. Adding a component root
+does not make arbitrary library internals reactive. Keep external mutable data
+behind an observable or subscription adapter.
 
 ## Optional `weiv:*` Typings
 

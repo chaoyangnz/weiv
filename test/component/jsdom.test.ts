@@ -1,6 +1,6 @@
 import { test } from "bun:test";
 import {
-  emitDirectBrowserModule,
+  emitLegacyBrowserModule as emitDirectBrowserModule,
   installJsdom,
   loadModules,
 } from "./support";

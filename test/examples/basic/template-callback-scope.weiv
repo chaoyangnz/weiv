@@ -1,0 +1,13 @@
+<template>
+  <button @click="increment">Increment</button>
+  <p>{{ JSON.stringify(rows.map(({count: local}) => { const next = local + count; return {local, next}; })) }}</p>
+  <p class="spread">{{ Math.max(...values) }}</p>
+  <p class="default">{{ rows.map((value=rows[0])=>value.count+count).join(',') }}</p>
+</template>
+<script lang="ts">
+let count = 0;
+const rows = [{count: 4}];
+const value = 900;
+let values = [1];
+function increment() { count++; values = [values[0] + 1]; }
+</script>

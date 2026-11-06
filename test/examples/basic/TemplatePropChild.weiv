@@ -1,0 +1,2 @@
+<template><span>{{ props.describedBy }}</span></template>
+<script lang="ts">export let props: { describedBy: string };</script>

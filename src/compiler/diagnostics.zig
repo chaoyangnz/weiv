@@ -300,7 +300,7 @@ pub fn appendScriptDiagnostics(
             source_path,
             absolute_span,
             computeLocation(source, absolute_span),
-            false,
+            !script.ok,
         );
     }
 }

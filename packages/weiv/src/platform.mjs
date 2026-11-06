@@ -1,6 +1,7 @@
-import { accessSync, constants } from "node:fs";
+import { accessSync, constants, existsSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const require = createRequire(import.meta.url);
 
@@ -17,6 +18,9 @@ export function resolveWeivBinaryPath() {
     assertExecutable(process.env.WEIV_BINARY_PATH, "WEIV_BINARY_PATH");
     return process.env.WEIV_BINARY_PATH;
   }
+
+  const localBinary = resolveSourceCheckoutBinary();
+  if (localBinary) return localBinary;
 
   const key = `${process.platform}-${process.arch}`;
   const packageName = PLATFORM_PACKAGES[key];
@@ -42,6 +46,21 @@ export function resolveWeivBinaryPath() {
       ].join("\n")
     );
   }
+}
+
+function resolveSourceCheckoutBinary() {
+  const moduleDir = dirname(fileURLToPath(import.meta.url));
+  const packagePath = resolve(moduleDir, "../package.json");
+  const checkoutRoot = resolve(moduleDir, "../../..");
+  const checkoutPackagePath = join(checkoutRoot, "packages", "weiv", "package.json");
+  if (!existsSync(checkoutPackagePath) || realpathSync(packagePath) !== realpathSync(checkoutPackagePath)) {
+    return null;
+  }
+
+  const binaryName = process.platform === "win32" ? "weiv.exe" : "weiv";
+  const candidate = join(checkoutRoot, "zig-out", "bin", binaryName);
+  assertExecutable(candidate, "Weiv source checkout (run zig build or set WEIV_BINARY_PATH)");
+  return candidate;
 }
 
 function assertExecutable(path, source) {

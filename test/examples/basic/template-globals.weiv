@@ -1,0 +1,6 @@
+<template><p>{{ Math.round(zoom * 100) }}%</p><button @click="increase">Zoom</button><input #for="item in items" :value="String(item.id)" /></template>
+<script lang="ts">
+let zoom = 1;
+let items = [{ id: 7 }, { id: 8 }];
+function increase() { zoom = 1.25; }
+</script>

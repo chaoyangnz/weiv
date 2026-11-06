@@ -206,6 +206,7 @@ fn emitChildRegionUpdateFunction(
     allocator: std.mem.Allocator,
 ) !void {
     try out.print(allocator, "function updateRegion_child_{d}(instance, scope, refs) {{\n", .{component_node.handle_ref_id});
+    try out.print(allocator, "  if (!refs[{d}]) return;\n", .{component_node.handle_ref_id});
     try emitChildComponentUpdateBody(component_node, bindings_json, out, allocator, 1, "scope", "refs");
     try out.appendSlice(allocator, "}\n");
 }
@@ -559,7 +560,7 @@ fn emitBoundAttributeUpdate(
         try out.appendSlice(allocator, ";\n");
         try common.writeIndent(indent, out, allocator);
         try out.print(allocator, "const __static_{d}_{s} = ", .{ ref_id, suffix });
-        try common.emitString(static_value.?, out, allocator);
+        try common.emitHtmlString(static_value.?, out, allocator);
         try out.appendSlice(allocator, ".trim();\n");
         try common.writeIndent(indent, out, allocator);
         try out.print(allocator, "const __dynamic_{d}_{s} = __value_{d}_{s} === false || __value_{d}_{s} === true || __value_{d}_{s} === null || __value_{d}_{s} === undefined ? \"\" : String(__value_{d}_{s}).trim();\n", .{
@@ -737,6 +738,24 @@ fn emitBoundAttributeUpdate(
             ref_id,
             suffix,
         });
+        try common.writeIndent(indent, out, allocator);
+        try out.appendSlice(allocator, "}\n");
+        return;
+    }
+
+    if (std.mem.startsWith(u8, target_name, "aria-")) {
+        try common.writeIndent(indent, out, allocator);
+        try out.print(allocator, "const __value_{d}_{s} = ", .{ ref_id, suffix });
+        try expression_codegen.emitResolvedExpression(expression, scope_expr, bindings_json, out, allocator);
+        try out.appendSlice(allocator, ";\n");
+        try common.writeIndent(indent, out, allocator);
+        try out.print(allocator, "if (__value_{d}_{s} === null || __value_{d}_{s} === undefined) {{\n", .{ ref_id, suffix, ref_id, suffix });
+        try common.writeIndent(indent + 1, out, allocator);
+        try out.print(allocator, "{s}[{d}].removeAttribute(\"{s}\");\n", .{ refs_expr, ref_id, target_name });
+        try common.writeIndent(indent, out, allocator);
+        try out.appendSlice(allocator, "} else {\n");
+        try common.writeIndent(indent + 1, out, allocator);
+        try out.print(allocator, "{s}[{d}].setAttribute(\"{s}\", String(__value_{d}_{s}));\n", .{ refs_expr, ref_id, target_name, ref_id, suffix });
         try common.writeIndent(indent, out, allocator);
         try out.appendSlice(allocator, "}\n");
         return;

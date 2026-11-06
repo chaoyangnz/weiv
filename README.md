@@ -5,13 +5,13 @@
 Frontend, with room to breathe.
 
 `weiv` is a compiler-first frontend framework for single-file components,
-direct DOM updates, and zero runtime by default.
+direct DOM updates, and a shared reactive runtime.
 
 - single-file components with clear template, script, and style boundaries
 - TypeScript-friendly authoring without JSX
 - plain local state by default
-- explicit shared state only when it crosses component boundaries
-- zero runtime by default; optional tiny runtime surface when needed
+- automatic supported shared state inside the managed project boundary
+- explicit observable or subscription boundaries for external mutable state
 - direct DOM updates instead of a framework-wide VDOM layer
 - runtime-level routing integrated with emitted component lifecycle
 
@@ -20,7 +20,7 @@ direct DOM updates, and zero runtime by default.
 Runnable today, still pre-v1.
 
 The current checkpoint includes a working direct-DOM browser path,
-compiler-driven invalidation, slot composition, shared observable runtime
+managed local/shared reactivity by default, slot composition, external observable
 integration, runtime routing, and growing runtime/component verification.
 
 The project is now beyond the initial experimental phase, but still needs:
@@ -48,8 +48,13 @@ npx weiv --help
 npx weiv dev path/to/App.weiv
 ```
 
-When browser listeners, Tauri events, or other external callbacks change local
-component state, use the [external callback update guide](packages/weiv/README.md#updates-from-external-callbacks).
+Supported local state updates automatically, including writes from browser events,
+timers, Promises and external callbacks. State writes are immediate; DOM patches
+are batched into microtasks. The app builder and Vite/Bun plugins also manage
+supported project shared state. See the [state contract and migration guide](packages/weiv/README.md#state-contract-managed-reactivity-by-default).
+
+This describes the current source. Published packages require a matching compiler
+and runtime release to provide this default.
 
 If you want a static bundle instead of the dev server:
 

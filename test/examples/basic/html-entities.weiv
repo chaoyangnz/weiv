@@ -1,0 +1,2 @@
+<template><p title="WORKSPACE &amp; DATA">WORKSPACE &amp; DATA &#x1F642; &copy; &mdash; &unknown;</p></template>
+<script lang="ts">export let props = {};</script>

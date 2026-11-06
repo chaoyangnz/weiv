@@ -17,9 +17,23 @@ cpSync(resolve(srcRoot, "index.mjs"), resolve(distRoot, "index.mjs"));
 cpSync(resolve(srcRoot, "vite.mjs"), resolve(distRoot, "vite.mjs"));
 cpSync(resolve(srcRoot, "bun.mjs"), resolve(distRoot, "bun.mjs"));
 cpSync(resolve(srcRoot, "platform.mjs"), resolve(distRoot, "platform.mjs"));
+cpSync(resolve(srcRoot, "managed.mjs"), resolve(distRoot, "managed.mjs"));
 cpSync(resolve(srcRoot, "run-bin.mjs"), resolve(distRoot, "run-bin.mjs"));
 
 mkdirSync(resolve(distRoot, "runtime"), { recursive: true });
+transpileRuntimeTsToJs(resolve(canonicalRuntimeRoot, "index.ts"), resolve(distRoot, "runtime", "index.js"));
+transpileRuntimeTsToJs(
+  resolve(canonicalRuntimeRoot, "binding.ts"),
+  resolve(distRoot, "runtime", "binding.js"),
+);
+transpileRuntimeTsToJs(
+  resolve(canonicalRuntimeRoot, "cell.ts"),
+  resolve(distRoot, "runtime", "cell.js"),
+);
+transpileRuntimeTsToJs(
+  resolve(canonicalRuntimeRoot, "reactive-core.ts"),
+  resolve(distRoot, "runtime", "reactive-core.js"),
+);
 transpileRuntimeTsToJs(
   resolve(canonicalRuntimeRoot, "observable.ts"),
   resolve(distRoot, "runtime", "observable.js"),

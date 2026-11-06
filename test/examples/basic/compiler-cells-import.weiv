@@ -1,0 +1,6 @@
+<template><p>{{ count }} / {{ shared.count }}</p></template>
+<script lang="ts">
+  import { shared } from "./compiler-cells-state.mjs";
+  let count = 0;
+  window.addEventListener("cells-mixed", () => { count++; shared.count++; });
+</script>

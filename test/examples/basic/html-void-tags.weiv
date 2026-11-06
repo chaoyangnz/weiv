@@ -1,0 +1,2 @@
+<template><label>Name<input name="name"></label><br><img alt="preview"></template>
+<script lang="ts">export let props = {};</script>

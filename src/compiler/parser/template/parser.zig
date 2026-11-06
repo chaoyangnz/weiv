@@ -68,12 +68,13 @@ fn parseElement(source: []const u8, allocator: std.mem.Allocator, index: *usize)
     const open_start = index.*;
     const gt = common.findOpenTagEnd(source, open_start) orelse return error.UnterminatedTag;
     const open_end = gt + 1;
-    const self_closing = gt > open_start and source[gt - 1] == '/';
-    const raw_inner = source[open_start + 1 .. if (self_closing) gt - 1 else gt];
+    const explicit_self_closing = gt > open_start and source[gt - 1] == '/';
+    const raw_inner = source[open_start + 1 .. if (explicit_self_closing) gt - 1 else gt];
     const inner = std.mem.trim(u8, raw_inner, &std.ascii.whitespace);
 
     var parts = std.mem.tokenizeAny(u8, inner, &std.ascii.whitespace);
     const tag_name = parts.next() orelse return error.UnterminatedTag;
+    const self_closing = explicit_self_closing or isHtmlVoidTag(tag_name);
     const attrs_source = std.mem.trim(u8, inner[tag_name.len..], &std.ascii.whitespace);
     const attrs_base_offset = @intFromPtr(attrs_source.ptr) - @intFromPtr(source.ptr);
     const raw_attributes = try attrs.parseAttributes(attrs_source, attrs_base_offset, allocator);
@@ -109,6 +110,17 @@ fn parseElement(source: []const u8, allocator: std.mem.Allocator, index: *usize)
             .span = .{ .start = open_start, .end = index.* },
         },
     };
+}
+
+fn isHtmlVoidTag(tag_name: []const u8) bool {
+    const void_tags = [_][]const u8{
+        "area", "base", "br", "col", "embed", "hr", "img", "input",
+        "link", "meta", "param", "source", "track", "wbr",
+    };
+    for (void_tags) |void_tag| {
+        if (std.ascii.eqlIgnoreCase(tag_name, void_tag)) return true;
+    }
+    return false;
 }
 
 fn parseSlotOutlet(

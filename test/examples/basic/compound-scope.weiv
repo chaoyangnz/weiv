@@ -1,0 +1,6 @@
+<template><section #for="workspace in workspaces"><div #if="workspace.children.length || pendingFor(workspace.id).length">{{ props.view.locked || props.actions.text(workspace.id) }}</div></section></template>
+<script lang="ts">
+export let props: { view: { locked: string }, actions: { text: (id: string) => string } };
+let workspaces = [{ id: "first", children: [] }];
+function pendingFor(id: string) { return id === "first" ? [1] : []; }
+</script>

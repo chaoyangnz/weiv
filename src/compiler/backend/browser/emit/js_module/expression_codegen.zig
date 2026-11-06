@@ -1,12 +1,16 @@
 const std = @import("std");
 const script_backend = @import("../../../../../ffi/script_backend.zig");
 
+pub fn isCellExpression(source: []const u8) bool {
+    return std.mem.startsWith(u8, source, "\x00weiv:");
+}
+
 fn isPropertyAccessExpr(expr: []const u8, ident_start: usize) bool {
     var cursor = ident_start;
     while (cursor > 0) {
         cursor -= 1;
         if (isWhitespace(expr[cursor])) continue;
-        return expr[cursor] == '.';
+        return expr[cursor] == '.' and !(cursor >= 2 and std.mem.eql(u8, expr[cursor - 2 .. cursor + 1], "..."));
     }
     return false;
 }
@@ -29,6 +33,28 @@ fn isKeyword(ident: []const u8) bool {
     return false;
 }
 
+fn isTemplateGlobal(ident: []const u8) bool {
+    const globals = [_][]const u8{
+        "Math",     "String",             "Number",             "Boolean", "BigInt",   "Array",      "Object",
+        "JSON",     "Date",               "Intl",               "RegExp",  "parseInt", "parseFloat", "isNaN",
+        "isFinite", "encodeURIComponent", "decodeURIComponent",
+    };
+    for (globals) |global| {
+        if (std.mem.eql(u8, ident, global)) return true;
+    }
+    return false;
+}
+
+fn appendScopedRoot(ident: []const u8, scope_expr: []const u8, out: *std.ArrayList(u8), allocator: std.mem.Allocator) !void {
+    if (std.mem.eql(u8, ident, "globalThis")) {
+        try out.appendSlice(allocator, ident);
+    } else if (isTemplateGlobal(ident)) {
+        try out.print(allocator, "({s}.{s} ?? globalThis.{s})", .{ scope_expr, ident, ident });
+    } else {
+        try out.print(allocator, "{s}.{s}", .{ scope_expr, ident });
+    }
+}
+
 fn isIdentStart(ch: u8) bool {
     return std.ascii.isAlphabetic(ch) or ch == '_' or ch == '$';
 }
@@ -47,10 +73,21 @@ pub fn emitResolvedExpression(
     bindings_json: []const u8,
     out: *std.ArrayList(u8),
     allocator: std.mem.Allocator,
-) !void {
+) anyerror!void {
     const trimmed = std.mem.trim(u8, expression, &std.ascii.whitespace);
     if (trimmed.len == 0) {
         try out.appendSlice(allocator, "undefined");
+        return;
+    }
+    if (std.mem.startsWith(u8, trimmed, "\x00weiv:")) {
+        var parts = std.mem.splitScalar(u8, trimmed[6..], ':');
+        const id = parts.next() orelse return error.InvalidCellExpression;
+        _ = std.fmt.parseInt(usize, id, 10) catch return error.InvalidCellExpression;
+        const argument = parts.next() orelse return error.InvalidCellExpression;
+        if (parts.next() != null or (!std.mem.eql(u8, argument, "render") and !std.mem.eql(u8, argument, "event") and !std.mem.eql(u8, argument, "payload"))) return error.InvalidCellExpression;
+        try out.print(allocator, "((__weiv_context) => __weiv_context.__weiv_eval[{s}](__weiv_context", .{id});
+        if (!std.mem.eql(u8, argument, "render")) try out.print(allocator, ", {s}", .{argument});
+        try out.print(allocator, "))({s})", .{scope_expr});
         return;
     }
 
@@ -59,11 +96,25 @@ pub fn emitResolvedExpression(
         return;
     }
 
-    if (isSimpleAccessExpression(trimmed)) {
-        try out.appendSlice(allocator, scope_expr);
-        try out.append(allocator, '.');
-        try out.appendSlice(allocator, trimmed);
+    if (try tryRewriteTemplateLiteral(trimmed, scope_expr, bindings_json, out, allocator)) {
         return;
+    }
+
+    if (isSimpleAccessExpression(trimmed)) {
+        const root_end = std.mem.indexOfScalar(u8, trimmed, '.') orelse trimmed.len;
+        try appendScopedRoot(trimmed[0..root_end], scope_expr, out, allocator);
+        try out.appendSlice(allocator, trimmed[root_end..]);
+        return;
+    }
+
+    // Object shorthand, callback locals and spread operands need lexical AST
+    // rewriting; token scanning cannot distinguish all of their roles.
+    if ((std.mem.indexOfScalar(u8, trimmed, '{') != null or std.mem.indexOf(u8, trimmed, "...") != null or std.mem.indexOf(u8, trimmed, "=>") != null) and bindings_json.len > 0) {
+        if (script_backend.rewriteExpression(trimmed, bindings_json, scope_expr, allocator)) |rewritten| {
+            defer allocator.free(rewritten);
+            try out.appendSlice(allocator, rewritten);
+            return;
+        } else |_| {}
     }
 
     if (try tryRewriteScopedCallExpression(trimmed, scope_expr, out, allocator)) {
@@ -83,6 +134,50 @@ pub fn emitResolvedExpression(
     }
 
     return error.UnsupportedTemplateExpression;
+}
+
+fn tryRewriteTemplateLiteral(
+    expression: []const u8,
+    scope_expr: []const u8,
+    bindings_json: []const u8,
+    out: *std.ArrayList(u8),
+    allocator: std.mem.Allocator,
+) anyerror!bool {
+    if (expression.len < 2 or expression[0] != '`' or expression[expression.len - 1] != '`') return false;
+    var rewritten = std.ArrayList(u8).empty;
+    defer rewritten.deinit(allocator);
+    var cursor: usize = 0;
+    while (cursor < expression.len) {
+        if (expression[cursor] == '\\' and cursor + 1 < expression.len) {
+            try rewritten.appendSlice(allocator, expression[cursor .. cursor + 2]);
+            cursor += 2;
+            continue;
+        }
+        if (cursor + 1 < expression.len and expression[cursor] == '$' and expression[cursor + 1] == '{') {
+            const start = cursor + 2;
+            var end = start;
+            var depth: usize = 1;
+            while (end < expression.len and depth > 0) : (end += 1) {
+                if (expression[end] == '\'' or expression[end] == '"') {
+                    end = (scanQuotedString(expression, end) orelse return false);
+                    continue;
+                }
+                if (expression[end] == '{') depth += 1;
+                if (expression[end] == '}') depth -= 1;
+            }
+            if (depth != 0) return false;
+            const inner = expression[start .. end - 1];
+            try rewritten.appendSlice(allocator, "${");
+            try emitResolvedExpression(inner, scope_expr, bindings_json, &rewritten, allocator);
+            try rewritten.append(allocator, '}');
+            cursor = end;
+            continue;
+        }
+        try rewritten.append(allocator, expression[cursor]);
+        cursor += 1;
+    }
+    try out.appendSlice(allocator, rewritten.items);
+    return true;
 }
 
 fn isLiteralExpression(expression: []const u8) bool {
@@ -186,9 +281,7 @@ fn tryRewriteScopedExpressionWithLocals(
                 continue;
             }
 
-            try rewritten.appendSlice(allocator, scope_expr);
-            try rewritten.append(allocator, '.');
-            try rewritten.appendSlice(allocator, ident);
+            try appendScopedRoot(ident, scope_expr, &rewritten, allocator);
             continue;
         }
 
@@ -230,9 +323,9 @@ fn tryRewriteScopedCallExpression(
     var rewritten = std.ArrayList(u8).empty;
     defer rewritten.deinit(allocator);
 
-    try rewritten.appendSlice(allocator, scope_expr);
-    try rewritten.append(allocator, '.');
-    try rewritten.appendSlice(allocator, callee);
+    const root_end = std.mem.indexOfScalar(u8, callee, '.') orelse callee.len;
+    try appendScopedRoot(callee[0..root_end], scope_expr, &rewritten, allocator);
+    try rewritten.appendSlice(allocator, callee[root_end..]);
     try rewritten.append(allocator, '(');
 
     const args_source = expression[open_paren + 1 .. close_paren];
@@ -249,7 +342,7 @@ fn tryRewriteScopedCallExpression(
     }
 
     try rewritten.append(allocator, ')');
-    if (suffix.len != 0) try rewritten.appendSlice(allocator, suffix);
+    if (suffix.len != 0 and !try appendScopedCallSuffix(suffix, scope_expr, &rewritten, allocator)) return false;
     try out.appendSlice(allocator, rewritten.items);
     return true;
 }
@@ -319,6 +412,42 @@ fn isSimpleCallSuffixExpression(expression: []const u8) bool {
         if (expression[cursor] != '.') return false;
         cursor += 1;
         if (!consumeIdentifier(expression, &cursor)) return false;
+        if (cursor < expression.len and expression[cursor] == '(') {
+            const end = findMatchingParen(expression, cursor) orelse return false;
+            cursor = end + 1;
+        }
+    }
+    return true;
+}
+
+fn appendScopedCallSuffix(
+    suffix: []const u8,
+    scope_expr: []const u8,
+    out: *std.ArrayList(u8),
+    allocator: std.mem.Allocator,
+) !bool {
+    var cursor: usize = 0;
+    while (cursor < suffix.len) {
+        if (suffix[cursor] != '.') return false;
+        const start = cursor;
+        cursor += 1;
+        if (!consumeIdentifier(suffix, &cursor)) return false;
+        try out.appendSlice(allocator, suffix[start..cursor]);
+        if (cursor >= suffix.len or suffix[cursor] != '(') continue;
+        const close = findMatchingParen(suffix, cursor) orelse return false;
+        try out.append(allocator, '(');
+        var args = std.ArrayList([]const u8).empty;
+        defer args.deinit(allocator);
+        try splitCallArguments(suffix[cursor + 1 .. close], &args, allocator);
+        for (args.items, 0..) |arg, idx| {
+            const trimmed = std.mem.trim(u8, arg, &std.ascii.whitespace);
+            if (trimmed.len == 0) continue;
+            if (idx > 0) try out.appendSlice(allocator, ", ");
+            if (try tryRewriteArrowCallbackExpression(trimmed, scope_expr, out, allocator)) continue;
+            if (!try tryRewriteScopedExpression(trimmed, scope_expr, out, allocator)) return false;
+        }
+        try out.append(allocator, ')');
+        cursor = close + 1;
     }
     return true;
 }

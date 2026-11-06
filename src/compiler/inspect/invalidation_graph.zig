@@ -546,7 +546,7 @@ fn isPropertyAccess(expr: []const u8, ident_start: usize) bool {
     while (idx > 0) {
         idx -= 1;
         if (isWhitespace(expr[idx])) continue;
-        return expr[idx] == '.';
+        return expr[idx] == '.' and !(idx >= 2 and std.mem.eql(u8, expr[idx - 2 .. idx + 1], "..."));
     }
     return false;
 }

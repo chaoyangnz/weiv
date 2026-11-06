@@ -178,7 +178,7 @@ pub const BundleGraph = struct {
             var browser_component_model = try browser_component.build(&node.model, allocator);
             defer browser_component_model.deinit(allocator);
 
-            const js = try js_module.emitModule(&browser_component_model, allocator);
+            const js = try js_module.emitModuleWithCells(&browser_component_model, false, allocator);
             defer allocator.free(js);
             const rewritten_js = try runtime_imports.rewriteRuntimeImportSpecifiers(js, node.module_rel_path, allocator);
             defer allocator.free(rewritten_js);
@@ -304,6 +304,11 @@ pub const BundleGraph = struct {
     ) !void {
         if (runtime_imports.isWeivRuntimeSpecifier(source_specifier)) {
             try self.copyWeivRuntimeModule(out_dir, allocator);
+            if (std.mem.eql(u8, source_specifier, runtime_imports.weiv_virtual_cells_specifier)) {
+                const cell_path = try runtime_imports.runtimeSource("cell", allocator);
+                defer allocator.free(cell_path);
+                try self.copyWeivRuntimeDependency(out_dir, cell_path, "__weiv_runtime/cell.js", allocator);
+            }
             return;
         }
         if (std.fs.path.isAbsolute(source_specifier)) return;
@@ -352,16 +357,14 @@ pub const BundleGraph = struct {
         }
     }
 
-    fn copyWeivRuntimeModule(self: *BundleGraph, out_dir: std.Io.Dir, allocator: std.mem.Allocator) !void {
-        const runtime_source = try std.fs.path.join(allocator, &.{ "packages", "weiv", "src", "runtime", "index.ts" });
-        defer allocator.free(runtime_source);
-        const runtime_abs_source = try std.Io.Dir.cwd().realPathFileAlloc(std.Io.Threaded.global_single_threaded.io(), runtime_source, allocator);
+    pub fn copyWeivRuntimeModule(self: *BundleGraph, out_dir: std.Io.Dir, allocator: std.mem.Allocator) !void {
+        const runtime_abs_source = try runtime_imports.runtimeSource("index", allocator);
         defer allocator.free(runtime_abs_source);
 
         try self.copyWeivRuntimeDependency(out_dir, runtime_abs_source, runtime_imports.weiv_runtime_output_entry, allocator);
     }
 
-    fn copyWeivRuntimeDependency(
+    pub fn copyWeivRuntimeDependency(
         self: *BundleGraph,
         out_dir: std.Io.Dir,
         abs_source: []const u8,

@@ -1,3 +1,4 @@
+const state_dependencies = @import("compiler/project/state_dependencies.zig");
 const std = @import("std");
 const browser_backend = @import("compiler/backend/browser/index.zig");
 const compiler_compile = @import("compiler/compile.zig");
@@ -53,17 +54,19 @@ pub fn run(
     defer args.deinit();
 
     _ = args.next();
-    const first = args.next() orelse {
+    var command = args.next() orelse {
         try printUsage();
         return;
     };
-    const command = if (std.mem.eql(u8, first, "--json-diagnostics")) blk: {
-        json_diagnostics_mode = true;
-        break :blk args.next() orelse {
+    while (std.mem.eql(u8, command, "--json-diagnostics") or std.mem.eql(u8, command, "--runtime-dir")) {
+        if (std.mem.eql(u8, command, "--json-diagnostics")) json_diagnostics_mode = true else {
+            @import("compiler/backend/browser/emit/app/runtime_imports.zig").configured_runtime_dir = args.next() orelse return error.MissingRuntimeDirectory;
+        }
+        command = args.next() orelse {
             try printUsage();
             return;
         };
-    } else first;
+    }
 
     if (std.mem.eql(u8, command, "inspect")) {
         const subcommand = args.next() orelse {
@@ -103,6 +106,22 @@ pub fn run(
             try printUsage();
             return;
         };
+        if (std.mem.eql(u8, phase, "state-boundaries")) {
+            const path = args.next() orelse {
+                try printUsage();
+                return;
+            };
+            try runAnalyzeStateBoundaries(path, allocator);
+            return;
+        }
+        if (std.mem.eql(u8, phase, "module-state")) {
+            const path = args.next() orelse {
+                try printUsage();
+                return;
+            };
+            try runAnalyzeModuleState(path, allocator);
+            return;
+        }
         if (std.mem.eql(u8, phase, "script")) {
             const path = args.next() orelse {
                 try printUsage();
@@ -147,6 +166,46 @@ pub fn run(
             try printUsage();
             return;
         };
+        if (std.mem.eql(u8, phase, "managed-project")) {
+            const manifest = args.next() orelse return error.MissingModulePath;
+            const output = args.next() orelse return error.MissingOutputDirectory;
+            app_emit.emitManagedProject(manifest, output, json_diagnostics_mode, allocator) catch |err| {
+                if (err == error.Reported) return err;
+                try printCliStageError("emit managed-project", manifest, .bundle, "app.managed_emit_failed", err, allocator);
+                return error.Reported;
+            };
+            return;
+        }
+        if (std.mem.eql(u8, phase, "app-cells")) {
+            const root_path = args.next() orelse return error.MissingComponentPath;
+            const out_dir = args.next() orelse return error.MissingOutputDirectory;
+            app_emit.emitAppCells(root_path, out_dir, json_diagnostics_mode, allocator) catch |err| {
+                if (err == error.Reported) return err;
+                try printCliStageError("emit app-cells", root_path, .bundle, "app.cells_emit_failed", err, allocator);
+                return error.Reported;
+            };
+            return;
+        }
+        if (std.mem.eql(u8, phase, "module-cells")) {
+            const path = args.next() orelse return error.MissingModulePath;
+            const companion = args.next() orelse return error.MissingModuleCompanion;
+            const bindings = args.next() orelse return error.MissingModuleBindings;
+            const source = try std.Io.Dir.cwd().readFileAlloc(std.Io.Threaded.global_single_threaded.io(), path, allocator, .limited(1024 * 1024));
+            defer allocator.free(source);
+            const code = script_backend.lowerModuleCells(source, path, companion, bindings, allocator) catch |err| {
+                var bag = compiler_diagnostics.DiagnosticBag.init();
+                defer bag.deinit(allocator);
+                if (try @import("compiler/project/cell_diagnostics.zig").inspectScript(.{ .text = source, .path = path, .document = source }, bindings, true, &bag, allocator)) {
+                    try printComponentDiagnosticsFailure("emit module-cells", path, bag.diagnostics.items);
+                    return error.Reported;
+                }
+                try printCliStageError("emit module-cells", path, .emit, "emit.module_cells_unsupported", err, allocator);
+                return error.Reported;
+            };
+            defer allocator.free(code);
+            try writeOutput(null, code);
+            return;
+        }
         if (std.mem.eql(u8, phase, "ast")) {
             const path = args.next() orelse {
                 try printUsage();
@@ -192,13 +251,13 @@ pub fn run(
             try runEmitInvalidationGraph(path, out_path, allocator);
             return;
         }
-        if (std.mem.eql(u8, phase, "js")) {
+        if (std.mem.eql(u8, phase, "js") or std.mem.eql(u8, phase, "js-cells") or std.mem.eql(u8, phase, "js-legacy")) {
             const path = args.next() orelse {
                 try printUsage();
                 return;
             };
             const out_path = args.next();
-            try runEmitJs(path, out_path, allocator);
+            try runEmitJsMode(path, out_path, !std.mem.eql(u8, phase, "js-legacy"), allocator);
             return;
         }
         if (std.mem.eql(u8, phase, "css")) {
@@ -210,7 +269,7 @@ pub fn run(
             try runEmitCss(path, out_path, allocator);
             return;
         }
-        if (std.mem.eql(u8, phase, "app")) {
+        if (std.mem.eql(u8, phase, "app") or std.mem.eql(u8, phase, "app-legacy")) {
             const root_path = args.next() orelse {
                 try printUsage();
                 return;
@@ -219,7 +278,7 @@ pub fn run(
                 try printUsage();
                 return;
             };
-            try runEmitApp(root_path, out_dir, allocator);
+            try runEmitAppMode(root_path, out_dir, !std.mem.eql(u8, phase, "app-legacy"), allocator);
             return;
         }
         try printUsage();
@@ -326,13 +385,13 @@ pub fn run(
                 try runEmitInvalidationGraph(path, out_path, allocator);
                 return;
             }
-            if (std.mem.eql(u8, phase, "js")) {
+            if (std.mem.eql(u8, phase, "js") or std.mem.eql(u8, phase, "js-cells") or std.mem.eql(u8, phase, "js-legacy")) {
                 const path = args.next() orelse {
                     try printUsage();
                     return;
                 };
                 const out_path = args.next();
-                try runEmitJs(path, out_path, allocator);
+                try runEmitJsMode(path, out_path, !std.mem.eql(u8, phase, "js-legacy"), allocator);
                 return;
             }
             if (std.mem.eql(u8, phase, "css")) {
@@ -344,7 +403,17 @@ pub fn run(
                 try runEmitCss(path, out_path, allocator);
                 return;
             }
-            if (std.mem.eql(u8, phase, "app")) {
+            if (std.mem.eql(u8, phase, "app-cells")) {
+                const root_path = args.next() orelse return error.MissingComponentPath;
+                const out_dir = args.next() orelse return error.MissingOutputDirectory;
+                app_emit.emitAppCells(root_path, out_dir, json_diagnostics_mode, allocator) catch |err| {
+                    if (err == error.Reported) return err;
+                    try printCliStageError("emit app-cells", root_path, .bundle, "app.cells_emit_failed", err, allocator);
+                    return error.Reported;
+                };
+                return;
+            }
+            if (std.mem.eql(u8, phase, "app") or std.mem.eql(u8, phase, "app-legacy")) {
                 const root_path = args.next() orelse {
                     try printUsage();
                     return;
@@ -353,7 +422,7 @@ pub fn run(
                     try printUsage();
                     return;
                 };
-                try runEmitApp(root_path, out_dir, allocator);
+                try runEmitAppMode(root_path, out_dir, !std.mem.eql(u8, phase, "app-legacy"), allocator);
                 return;
             }
             try printUsage();
@@ -422,13 +491,13 @@ pub fn run(
         return;
     }
 
-    if (std.mem.eql(u8, command, "emit-js")) {
+    if (std.mem.eql(u8, command, "emit-js") or std.mem.eql(u8, command, "emit-js-legacy")) {
         const path = args.next() orelse {
             try printUsage();
             return;
         };
         const out_path = args.next();
-        try runEmitJs(path, out_path, allocator);
+        try runEmitJsMode(path, out_path, !std.mem.eql(u8, command, "emit-js-legacy"), allocator);
         return;
     }
 
@@ -442,7 +511,7 @@ pub fn run(
         return;
     }
 
-    if (std.mem.eql(u8, command, "emit-app")) {
+    if (std.mem.eql(u8, command, "emit-app") or std.mem.eql(u8, command, "emit-app-legacy")) {
         const root_path = args.next() orelse {
             try printUsage();
             return;
@@ -451,7 +520,7 @@ pub fn run(
             try printUsage();
             return;
         };
-        try runEmitApp(root_path, out_dir, allocator);
+        try runEmitAppMode(root_path, out_dir, !std.mem.eql(u8, command, "emit-app-legacy"), allocator);
         return;
     }
 
@@ -507,6 +576,61 @@ fn loadComponent(path: []const u8, allocator: std.mem.Allocator) !LoadedComponen
         .source = source,
         .model = model,
     };
+}
+
+fn analyzeStateBoundaries(model: *const @import("compiler/component_unit.zig").ComponentUnit, allocator: std.mem.Allocator) ![]compiler_diagnostics.Diagnostic {
+    return state_dependencies.analyze(model, allocator);
+}
+
+fn writeStateBoundaryReport(path: []const u8, entries: []const compiler_diagnostics.Diagnostic, allocator: std.mem.Allocator) ![]u8 {
+    var out = std.Io.Writer.Allocating.init(allocator);
+    defer out.deinit();
+    try out.writer.print("{{\n  \"sourcePath\": {f},\n  \"mode\": \"state-boundaries\",\n  \"coverage\": \"initializers-helper-reads-and-assignment-sources\",\n  \"diagnostics\": [\n", .{std.json.fmt(path, .{})});
+    try compiler_diagnostics.writeJsonDiagnostics(&out.writer, entries, "    ");
+    try out.writer.writeAll("  ]\n}\n");
+    return out.toOwnedSlice();
+}
+
+fn runAnalyzeStateBoundaries(path: []const u8, allocator: std.mem.Allocator) !void {
+    var loaded = try loadComponent(path, allocator);
+    defer loaded.deinit(allocator);
+    const entries = try analyzeStateBoundaries(&loaded.model, allocator);
+    defer {
+        for (entries) |*entry| entry.deinit(allocator);
+        allocator.free(entries);
+    }
+    const report = try writeStateBoundaryReport(path, entries, allocator);
+    defer allocator.free(report);
+    try std.Io.File.stdout().writeStreamingAll(std.Io.Threaded.global_single_threaded.io(), report);
+}
+
+fn printStateBoundaryWarnings(model: *const @import("compiler/component_unit.zig").ComponentUnit, allocator: std.mem.Allocator) !void {
+    const entries = try analyzeStateBoundaries(model, allocator);
+    defer {
+        for (entries) |*entry| entry.deinit(allocator);
+        allocator.free(entries);
+    }
+    if (entries.len == 0) return;
+    const formatted = if (json_diagnostics_mode) try writeStateBoundaryReport(model.source_path, entries, allocator) else blk: {
+        var out = std.Io.Writer.Allocating.init(allocator);
+        defer out.deinit();
+        try compiler_diagnostics.writeTextDiagnostics(&out.writer, entries, "");
+        break :blk try out.toOwnedSlice();
+    };
+    defer allocator.free(formatted);
+    try std.Io.File.stderr().writeStreamingAll(std.Io.Threaded.global_single_threaded.io(), formatted);
+}
+
+fn runAnalyzeModuleState(path: []const u8, allocator: std.mem.Allocator) !void {
+    const source = std.Io.Dir.cwd().readFileAlloc(std.Io.Threaded.global_single_threaded.io(), path, allocator, .limited(1024 * 1024)) catch |err| {
+        try printCliStageError("analyze module-state", path, .script_facts, "cli.read_failed", err, allocator);
+        return error.Reported;
+    };
+    defer allocator.free(source);
+    const analysis = try script_backend.analyzeModuleStateRaw(source, path, allocator);
+    defer allocator.free(analysis);
+    try std.Io.File.stdout().writeStreamingAll(std.Io.Threaded.global_single_threaded.io(), analysis);
+    try std.Io.File.stdout().writeStreamingAll(std.Io.Threaded.global_single_threaded.io(), "\n");
 }
 
 fn runAnalyzeScript(path: []const u8, allocator: std.mem.Allocator) !void {
@@ -686,6 +810,10 @@ fn writeOutputFile(path: []const u8, data: []const u8) !void {
 }
 
 fn runEmitJs(path: []const u8, out_path: ?[]const u8, allocator: std.mem.Allocator) !void {
+    return runEmitJsMode(path, out_path, true, allocator);
+}
+
+fn runEmitJsMode(path: []const u8, out_path: ?[]const u8, cells: bool, allocator: std.mem.Allocator) !void {
     var loaded = try loadComponent(path, allocator);
     defer loaded.deinit(allocator);
 
@@ -699,11 +827,21 @@ fn runEmitJs(path: []const u8, out_path: ?[]const u8, allocator: std.mem.Allocat
     };
     defer browser_component_model.deinit(allocator);
 
-    const js = js_module.emitModule(&browser_component_model, allocator) catch |err| {
+    const js = js_module.emitModuleWithCells(&browser_component_model, cells, allocator) catch |err| {
+        if (cells) {
+            var bag = compiler_diagnostics.DiagnosticBag.init();
+            defer bag.deinit(allocator);
+            try js_module.collectCellDiagnostics(&browser_component_model, null, &bag, allocator);
+            if (bag.hasFatal()) {
+                try printComponentDiagnosticsFailure("emit js-cells", path, bag.diagnostics.items);
+                return error.Reported;
+            }
+        }
         try printCliStageError("emit js", path, .emit, "emit.js_failed", err, allocator);
         return error.Reported;
     };
     defer allocator.free(js);
+    if (cells) try printStateBoundaryWarnings(&loaded.model, allocator);
     try writeOutput(out_path, js);
 }
 
@@ -724,6 +862,10 @@ fn runEmitCss(path: []const u8, out_path: ?[]const u8, allocator: std.mem.Alloca
 }
 
 fn runEmitApp(root_path: []const u8, out_dir: []const u8, allocator: std.mem.Allocator) !void {
+    return runEmitAppMode(root_path, out_dir, true, allocator);
+}
+
+fn runEmitAppMode(root_path: []const u8, out_dir: []const u8, cells: bool, allocator: std.mem.Allocator) !void {
     var validation = app_emit.validateApp(root_path, allocator) catch |err| {
         try printCliStageError("validate app", root_path, .bundle, "app.validate_failed", err, allocator);
         return error.Reported;
@@ -735,7 +877,11 @@ fn runEmitApp(root_path: []const u8, out_dir: []const u8, allocator: std.mem.All
         return error.Reported;
     }
 
-    app_emit.emitApp(root_path, out_dir, allocator) catch |err| {
+    if (cells) app_emit.emitAppCells(root_path, out_dir, json_diagnostics_mode, allocator) catch |err| {
+        if (err == error.Reported) return err;
+        try printCliStageError("emit app", root_path, .bundle, "app.emit_failed", err, allocator);
+        return error.Reported;
+    } else app_emit.emitAppLegacy(root_path, out_dir, allocator) catch |err| {
         try printCliStageError("emit app", root_path, .bundle, "app.emit_failed", err, allocator);
         return error.Reported;
     };
@@ -776,6 +922,10 @@ fn printUsage() !void {
         \\  weiv emit render-tree <path> [out-file]
         \\  weiv emit invalidation-graph <path> [out-file]
         \\  weiv emit js <path> [out-file]
+        \\  weiv emit js-legacy <path> [out-file]  (deprecated compatibility mode)
+        \\  weiv emit app-legacy <root.weiv> <out-dir>  (deprecated compatibility mode)
+        \\  weiv emit managed-project <manifest.json> <out-dir>  (bundler integration)
+        \\  weiv --runtime-dir <directory> <command>  (packaged runtime location)
         \\  weiv emit css <path> [out-file]
         \\  weiv compile <root.weiv> [out-dir]
         \\  weiv dev <root.weiv> [out-dir]
@@ -794,6 +944,11 @@ fn printUsage() !void {
         \\  weiv compile emit app <root.weiv> <out-dir>
         \\  weiv analyze-script <path>
         \\  weiv analyze-component <path>
+        \\  weiv analyze state-boundaries <path> (experimental dependency diagnostics)
+        \\  weiv analyze module-state <path>     (module provenance facts)
+        \\  weiv emit js-cells <path> [out-file]  (compatibility alias of js)
+        \\  weiv emit app-cells <root.weiv> <out-dir>  (compatibility alias of app)
+        \\  weiv emit module-cells <path> <companion-import> <bindings-json>  (internal prototype)
         \\  weiv emit-js <path> [out-file]
         \\  weiv emit-css <path> [out-file]
         \\  weiv emit-app <root.weiv> <out-dir>

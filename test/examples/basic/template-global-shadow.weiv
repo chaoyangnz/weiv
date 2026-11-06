@@ -1,0 +1,2 @@
+<template><p>{{ Math.round(1) }}</p></template>
+<script lang="ts">const Math = { round: (_value: number) => 42 };</script>

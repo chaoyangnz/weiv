@@ -4,7 +4,7 @@ import {
   assertEqual,
   byTag,
   click,
-  emitDirectBrowserModule,
+  emitLegacyBrowserModule as emitDirectBrowserModule,
   findElement,
   installDocument,
   loadModules,

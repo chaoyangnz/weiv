@@ -1,0 +1,10 @@
+<template><button @click="change">Change</button><button @click="open">Open</button><button @click="close">Close</button><section #if="tabOpen"><NestedConditionalChild #if="available" :value="value" /></section></template>
+<script lang="ts">
+import * as NestedConditionalChild from "./NestedConditionalChild.weiv";
+let tabOpen = false;
+let available = false;
+let value = 0;
+function open() { tabOpen = true; available = true; value = 10; }
+function change() { value += 1; }
+function close() { tabOpen = false; }
+</script>

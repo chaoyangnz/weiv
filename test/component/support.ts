@@ -380,8 +380,18 @@ export function emitDirectBrowserModule(componentPath: string): string {
   return emitCommand(["emit-js", componentPath]);
 }
 
+// Synchronous DOM fixtures remain explicit compatibility coverage while the
+// managed compiler and plugin integration suites exercise the new default.
+export function emitLegacyBrowserModule(componentPath: string): string {
+  return emitCommand(["emit-js-legacy", componentPath]);
+}
+
 export function emitApp(rootPath: string, outDir: string): void {
   emitCommand(["emit-app", rootPath, outDir]);
+}
+
+export function emitLegacyApp(rootPath: string, outDir: string): void {
+  emitCommand(["emit-app-legacy", rootPath, outDir]);
 }
 
 export async function loadModules(files: Record<string, string>) {

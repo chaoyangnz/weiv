@@ -22,7 +22,7 @@ const style = browser_backend.emit.scoped_css;
 fn emitComponentJs(model: *const component.ComponentUnit, allocator: std.mem.Allocator) ![]u8 {
     var browser_component_model = try browser_component.build(model, allocator);
     defer browser_component_model.deinit(allocator);
-    return try js_module.emitModule(&browser_component_model, allocator);
+    return try js_module.emitModuleWithCells(&browser_component_model, false, allocator);
 }
 
 test "Atelier immutable local binding remains valid after tracked-root setup" {
@@ -57,6 +57,29 @@ test "Atelier imported function is initialized before top-level registration" {
     try std.testing.expect(initialized < registration);
 }
 
+test "type-only imports are absent from runtime setup" {
+    const allocator = std.testing.allocator;
+    const source =
+        \\<template><p>{{ label }}</p></template>
+        \\<script lang="ts">
+        \\import type { Standalone } from "./types.ts";
+        \\import { format, type Inline } from "./format.ts";
+        \\let label: Standalone | Inline = format("ready");
+        \\</script>
+    ;
+    var model = try compiler_compile.compile(source, "type-imports.weiv", allocator);
+    defer model.deinit(allocator);
+    const js = try emitComponentJs(&model, allocator);
+    defer allocator.free(js);
+    try std.testing.expect(std.mem.indexOf(u8, js, "__weiv_import_Standalone") == null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "__weiv_import_Inline") == null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "__weiv_scope.Standalone") == null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "__weiv_scope.Inline") == null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "__weiv_register(\"Standalone\"") == null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "__weiv_register(\"Inline\"") == null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "__weiv_import_format") != null);
+}
+
 test "Atelier compound loop expression resolves both item and component helper" {
     const allocator = std.testing.allocator;
     const source =
@@ -71,6 +94,23 @@ test "Atelier compound loop expression resolves both item and component helper" 
     const js = try emitComponentJs(&model, allocator);
     defer allocator.free(js);
     try std.testing.expect(std.mem.indexOf(u8, js, "scope.message.role === 'user' ? 'You' : scope.engineName()") != null);
+}
+
+test "malformed TypeScript halts with a syntax location" {
+    const allocator = std.testing.allocator;
+    const source =
+        \\<template><button @click="click">Go</button></template>
+        \\<script lang="ts">let id = "a"; let rows: any[] = []; function click() { rows.some((row: any) => row.id === id; }</script>
+    ;
+    var report = try compiler_compile.compileReport(source, "malformed-script.weiv", allocator);
+    defer report.deinit(allocator);
+    try std.testing.expectEqual(@as(?compiler_diagnostics.Stage, .script_facts), report.halted_after);
+    try std.testing.expect(report.halt_error != null);
+    try std.testing.expect(report.diagnostics.len > 0);
+    try std.testing.expect(report.diagnostics[0].fatal);
+    try std.testing.expectEqualStrings("script.syntax", report.diagnostics[0].code);
+    try std.testing.expect(report.diagnostics[0].location != null);
+    try std.testing.expect(report.diagnostics[0].location.?.column > 1);
 }
 
 test "template dependency analysis uses bound expression references" {
@@ -1918,7 +1958,7 @@ test "todomvc direct app emit emits browser-direct entry files" {
     const out_dir = try std.fs.path.join(allocator, &.{ tmp_root, "direct-bundle" });
     defer allocator.free(out_dir);
 
-    try app_emit.emitApp("test/examples/todomvc/App.weiv", out_dir, allocator);
+    try app_emit.emitAppLegacy("test/examples/todomvc/App.weiv", out_dir, allocator);
 
     const bundle_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "direct-bundle/bundle.mjs", allocator, .limited(1024 * 1024));
     defer allocator.free(bundle_js);
@@ -2060,7 +2100,7 @@ test "classic todo app emits multi-file app emit" {
     const out_dir = try std.fs.path.join(allocator, &.{ tmp_root, "bundle" });
     defer allocator.free(out_dir);
 
-    try app_emit.emitApp("test/examples/classic-todo/App.weiv", out_dir, allocator);
+    try app_emit.emitAppLegacy("test/examples/classic-todo/App.weiv", out_dir, allocator);
 
     const app_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "bundle/bundle.mjs", allocator, .limited(1024 * 1024));
     defer allocator.free(app_js);
@@ -2113,7 +2153,7 @@ test "todomvc verification app emits multi-file app emit" {
     const out_dir = try std.fs.path.join(allocator, &.{ tmp_root, "todomvc-bundle" });
     defer allocator.free(out_dir);
 
-    try app_emit.emitApp("test/examples/todomvc/App.weiv", out_dir, allocator);
+    try app_emit.emitAppLegacy("test/examples/todomvc/App.weiv", out_dir, allocator);
 
     const app_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "todomvc-bundle/bundle.mjs", allocator, .limited(1024 * 1024));
     defer allocator.free(app_js);
@@ -2184,7 +2224,7 @@ test "kanib app emits multi-file app emit" {
     const out_dir = try std.fs.path.join(allocator, &.{ tmp_root, "kanib-bundle" });
     defer allocator.free(out_dir);
 
-    try app_emit.emitApp("test/examples/kanib/App.weiv", out_dir, allocator);
+    try app_emit.emitAppLegacy("test/examples/kanib/App.weiv", out_dir, allocator);
 
     const bundle_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "kanib-bundle/bundle.mjs", allocator, .limited(1024 * 1024));
     defer allocator.free(bundle_js);
@@ -2238,7 +2278,7 @@ test "basic counter app emit emits inferred preview props" {
     const out_dir = try std.fs.path.join(allocator, &.{ tmp_root, "counter-bundle" });
     defer allocator.free(out_dir);
 
-    try app_emit.emitApp("test/examples/basic/basic-counter.weiv", out_dir, allocator);
+    try app_emit.emitAppLegacy("test/examples/basic/basic-counter.weiv", out_dir, allocator);
 
     const props_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "counter-bundle/props.mjs", allocator, .limited(1024 * 1024));
     defer allocator.free(props_js);
@@ -2256,7 +2296,7 @@ test "imported helper app emit copies runtime JS dependencies" {
     const out_dir = try std.fs.path.join(allocator, &.{ tmp_root, "imported-helper-bundle" });
     defer allocator.free(out_dir);
 
-    try app_emit.emitApp("test/examples/imported-helper/App.weiv", out_dir, allocator);
+    try app_emit.emitAppLegacy("test/examples/imported-helper/App.weiv", out_dir, allocator);
 
     const app_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "imported-helper-bundle/App.mjs", allocator, .limited(1024 * 1024));
     defer allocator.free(app_js);
@@ -2285,7 +2325,7 @@ test "imported TS helper app emit transpiles and copies TS dependencies" {
     const out_dir = try std.fs.path.join(allocator, &.{ tmp_root, "imported-ts-helper-bundle" });
     defer allocator.free(out_dir);
 
-    try app_emit.emitApp("test/examples/imported-ts-helper/App.weiv", out_dir, allocator);
+    try app_emit.emitAppLegacy("test/examples/imported-ts-helper/App.weiv", out_dir, allocator);
 
     const app_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "imported-ts-helper-bundle/App.mjs", allocator, .limited(1024 * 1024));
     defer allocator.free(app_js);
@@ -2314,7 +2354,7 @@ test "emit app rewrites bare imports for strict CSP" {
     const out_dir = try std.fs.path.join(allocator, &.{ tmp_root, "bare-import-bundle" });
     defer allocator.free(out_dir);
 
-    try app_emit.emitApp("test/examples/bare-import/App.weiv", out_dir, allocator);
+    try app_emit.emitAppLegacy("test/examples/bare-import/App.weiv", out_dir, allocator);
 
     const dir = try std.Io.Dir.cwd().openDir(std.Io.Threaded.global_single_threaded.io(), out_dir, .{});
     const html = try dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "index.html", allocator, .limited(64 * 1024));
@@ -3013,6 +3053,8 @@ test "unowned callback mutation reports conservative diagnostic" {
     try std.testing.expectEqualStrings("callback.unowned_mutation", diagnostic.kind);
     try std.testing.expectEqualStrings("count", diagnostic.name);
     try std.testing.expect(std.mem.indexOf(u8, diagnostic.message, "callback boundary that Weiv does not own") != null);
+    try std.testing.expect(std.mem.indexOf(u8, diagnostic.message, "without updating the DOM") != null);
+    try std.testing.expect(std.mem.indexOf(u8, diagnostic.message, "weivUpdate(() => { ... })") != null);
 }
 
 test "external listeners require an explicit owned update boundary" {
@@ -3911,4 +3953,28 @@ test "template grouping without slot assignment is rejected duplicate coverage" 
         error.InvalidSlotTemplatePlacement,
         compiler_compile.compile(source, "inline-invalid-slot-template.weiv", allocator),
     );
+}
+
+test "experimental state boundary diagnostics own their data and locate template dependencies" {
+    const allocator = std.testing.allocator;
+    const source =
+        \\<template>
+        \\  <p>{{ store.count }}</p>
+        \\</template>
+        \\<script lang="ts">
+        \\  import { store } from "third-party";
+        \\</script>
+    ;
+    var model = try compiler_compile.compile(source, "boundary-memory.weiv", allocator);
+    defer model.deinit(allocator);
+    const entries = try @import("compiler/project/state_dependencies.zig").analyze(&model, allocator);
+    defer {
+        for (entries) |*entry| entry.deinit(allocator);
+        allocator.free(entries);
+    }
+    try std.testing.expectEqual(@as(usize, 1), entries.len);
+    try std.testing.expectEqualStrings("reactivity.unverified_dependency", entries[0].code);
+    try std.testing.expectEqualStrings("store.count", source[entries[0].span.?.start..entries[0].span.?.end]);
+    try std.testing.expectEqual(@as(u32, 2), entries[0].location.?.line);
+    try std.testing.expect(!entries[0].fatal);
 }

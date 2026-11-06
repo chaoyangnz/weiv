@@ -1,0 +1,5 @@
+<template><p>{{ props.items.map(item => item.name).join(separator) }}</p><p>{{ props.items.filter(item => item.active).length }}</p></template>
+<script lang="ts">
+export let props: { items: { name: string; active: boolean }[] };
+const separator = "-";
+</script>

@@ -25,6 +25,7 @@ pub const Graph = struct {
     allocator: std.mem.Allocator,
     table: tracked_paths.Table,
     regions: std.ArrayList(Region) = .empty,
+    retain_imported_calls: bool = false,
 
     pub fn deinit(self: *Graph) void {
         for (self.regions.items) |*item| item.deinit(self.allocator);
@@ -38,7 +39,11 @@ pub const Graph = struct {
 };
 
 pub fn build(model: *const component.ComponentUnit, tree: *const render_tree.Document, allocator: std.mem.Allocator) !Graph {
-    var graph = Graph{ .allocator = allocator, .table = tracked_paths.Table.init(model, allocator) };
+    return buildWithCells(model, tree, true, allocator);
+}
+
+pub fn buildWithCells(model: *const component.ComponentUnit, tree: *const render_tree.Document, cells: bool, allocator: std.mem.Allocator) !Graph {
+    var graph = Graph{ .allocator = allocator, .table = tracked_paths.Table.init(model, allocator), .retain_imported_calls = cells };
     errdefer graph.deinit();
     try collectNodes(model, tree.nodes, &graph);
     return graph;
@@ -87,7 +92,7 @@ fn collectNodes(model: *const component.ComponentUnit, nodes: []const render_tre
 }
 
 fn appendExpression(model: *const component.ComponentUnit, graph: *Graph, kind: []const u8, ref_id: usize, name: ?[]const u8, expr: []const u8) !void {
-    var deps = dependencies.DepList{};
+    var deps = dependencies.DepList{ .retain_imported_calls = graph.retain_imported_calls };
     errdefer deps.deinit(graph.allocator);
     try dependencies.collectExpressionDeps(model, expr, &.{}, &deps, graph.allocator);
     dependencies.retainVisibleBindingDeps(model, &deps);
@@ -125,7 +130,7 @@ fn appendStructural(model: *const component.ComponentUnit, graph: *Graph, node: 
 }
 
 fn createRegion(model: *const component.ComponentUnit, graph: *Graph, kind: []const u8, ref_id: usize, name: ?[]const u8, node: render_tree.Node) !Region {
-    var deps = dependencies.DepList{};
+    var deps = dependencies.DepList{ .retain_imported_calls = graph.retain_imported_calls };
     errdefer deps.deinit(graph.allocator);
     try dependencies.collectNodeDeps(model, node, &.{}, &deps, graph.allocator);
     dependencies.retainVisibleBindingDeps(model, &deps);

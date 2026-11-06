@@ -8,6 +8,17 @@ They are not all equal:
 - some are focused compiler/runtime fixtures
 - some are negative fixtures used to prove diagnostics or unsupported cases
 
+## Reactivity mode
+
+CLI app builds and Vite/Bun plugins use managed reactivity by default. Supported
+local and project shared state notify automatically; later DOM patches are batched
+into microtasks. Some characterization tests explicitly select the deprecated
+legacy emitter to preserve migration coverage. A fixture containing `weivUpdate`
+is not a requirement to wrap supported writes in new applications.
+
+See the [current state contract](../../packages/weiv/README.md#state-contract-managed-reactivity-by-default)
+and [migration options](../../packages/weiv/README.md#migrating-from-legacy-reactivity).
+
 ## Reference Examples
 
 Good small examples to read first:
@@ -37,7 +48,7 @@ Current role:
 
 These exist mainly to pressure-test specific behaviors:
 
-- [Timer Callback](./basic/timer-callback.weiv): owned callback scheduling
+- [Timer Callback](./basic/timer-callback.weiv): callback-driven state updates
 - [Imported Helper](./imported-helper/App.weiv): runtime JS import copying
 - [Imported TS Helper](./imported-ts-helper/App.weiv): TS helper transpile +
   import rewriting

@@ -2,9 +2,23 @@ const std = @import("std");
 const sir = @import("../../../../sema/sir.zig");
 const script_backend = @import("../../../../../ffi/script_backend.zig");
 
+pub var configured_runtime_dir: ?[]const u8 = null;
+
+pub fn runtimeSource(name: []const u8, allocator: std.mem.Allocator) ![:0]u8 {
+    const root = configured_runtime_dir orelse "packages/weiv/src/runtime";
+    for ([_][]const u8{ ".ts", ".js" }) |extension| {
+        const candidate = try std.fmt.allocPrint(allocator, "{s}/{s}{s}", .{ root, name, extension });
+        defer allocator.free(candidate);
+        const path = std.Io.Dir.cwd().realPathFileAlloc(std.Io.Threaded.global_single_threaded.io(), candidate, allocator) catch continue;
+        return path;
+    }
+    return error.WeivRuntimeNotFound;
+}
+
 pub const weiv_runtime_legacy_package_specifier = "@weiv/runtime";
 pub const weiv_virtual_observable_specifier = "weiv:observable";
 pub const weiv_virtual_router_specifier = "weiv:router";
+pub const weiv_virtual_cells_specifier = "weiv:cells";
 pub const weiv_runtime_output_entry = "__weiv_runtime/index.js";
 pub const weiv_runtime_observable_output_entry = "__weiv_runtime/observable.js";
 pub const weiv_runtime_router_output_entry = "__weiv_runtime/router.js";
@@ -207,10 +221,12 @@ fn relativeBundleSpecifier(from_dir: []const u8, to_path: []const u8, allocator:
 pub fn isWeivRuntimeSpecifier(source_specifier: []const u8) bool {
     return std.mem.eql(u8, source_specifier, weiv_runtime_legacy_package_specifier) or
         std.mem.eql(u8, source_specifier, weiv_virtual_observable_specifier) or
+        std.mem.eql(u8, source_specifier, weiv_virtual_cells_specifier) or
         std.mem.eql(u8, source_specifier, weiv_virtual_router_specifier);
 }
 
-fn runtimeOutputEntryForSpecifier(source_specifier: []const u8) []const u8 {
+pub fn runtimeOutputEntryForSpecifier(source_specifier: []const u8) []const u8 {
+    if (std.mem.eql(u8, source_specifier, weiv_virtual_cells_specifier)) return "__weiv_runtime/cell.js";
     if (std.mem.eql(u8, source_specifier, weiv_virtual_observable_specifier)) {
         return weiv_runtime_observable_output_entry;
     }

@@ -1,0 +1,2 @@
+<template><output>{{ props.value }}</output></template>
+<script lang="ts">export let props: { value: number };</script>

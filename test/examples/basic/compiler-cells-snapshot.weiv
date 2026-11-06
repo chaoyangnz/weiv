@@ -1,0 +1,8 @@
+<template><p class="captured">{{ captured.nested.count }}</p></template>
+<script lang="ts">
+  import { snapshot } from "weiv:observable";
+  const original = { nested: { count: 1 } };
+  let captured = snapshot(original);
+  window.addEventListener("snapshot-source", () => { original.nested.count++; });
+  window.addEventListener("snapshot-capture", () => { captured = snapshot(original); });
+</script>

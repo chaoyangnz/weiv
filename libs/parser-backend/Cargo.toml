@@ -10,6 +10,7 @@ name = "weiv_parser_backend"
 [dependencies]
 oxc_allocator = "0.116"
 oxc_ast = "0.116"
+oxc_ast_visit = "0.116"
 oxc_codegen = "0.116"
 oxc_parser = "0.116"
 oxc_semantic = "0.116"

@@ -131,7 +131,7 @@ fn validateStateModelDiagnostics(
                 diagnostics,
                 "callback.unowned_mutation",
                 mutation.binding,
-                "Mutation happens inside a callback boundary that Weiv does not own, so updates are conservative here",
+                "Mutation happens inside a callback boundary that Weiv does not own; local state may change without updating the DOM. Wrap the mutation in weivUpdate(() => { ... })",
                 .{ .start = mutation.span_start, .end = mutation.span_end },
                 allocator,
             );
@@ -536,7 +536,7 @@ fn isPropertyAccessExpression(expr: []const u8, ident_start: usize) bool {
     while (cursor > 0) {
         cursor -= 1;
         if (expr[cursor] == ' ' or expr[cursor] == '\n' or expr[cursor] == '\r' or expr[cursor] == '\t') continue;
-        return expr[cursor] == '.';
+        return expr[cursor] == '.' and !(cursor >= 2 and std.mem.eql(u8, expr[cursor - 2 .. cursor + 1], "..."));
     }
     return false;
 }

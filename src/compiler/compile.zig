@@ -79,6 +79,12 @@ pub fn compileReport(
     report.script = parsed_script.facts;
     report.script_js = parsed_script.transpiled_code;
     try compiler_diagnostics.appendScriptDiagnostics(&bag, source, source_path, sfc_document, &report.script.?, allocator);
+    if (!report.script.?.ok) {
+        report.diagnostics = try bag.toOwnedSlice(allocator);
+        report.halted_after = .script_facts;
+        report.halt_error = error.InvalidScript;
+        return report;
+    }
 
     var resolver = slot_resolver.NeighbourSlotResolver.init(allocator, source_path, &report.script.?);
     defer resolver.deinit();

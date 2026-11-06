@@ -5,4 +5,7 @@ pub const AppValidationReport = bundle.AppValidationReport;
 pub const BundleGraph = graph.BundleGraph;
 
 pub const emitApp = bundle.emitApp;
+pub const emitAppLegacy = bundle.emitAppLegacy;
+pub const emitManagedProject = bundle.emitManagedProject;
+pub const emitAppCells = bundle.emitAppCells;
 pub const validateApp = bundle.validateApp;

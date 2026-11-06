@@ -1,0 +1,5 @@
+<template><TemplatePropChild :describedBy="`help-${props.id}`" /></template>
+<script lang="ts">
+import * as TemplatePropChild from "./TemplatePropChild.weiv";
+export let props: { id: string };
+</script>

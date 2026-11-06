@@ -1,10 +1,11 @@
+import { reactiveScheduler, sharedRuntime } from "./reactive-core.ts";
+
 type Listener = (paths: ReadonlySet<string> | null) => void;
 
 const WEIV_OBSERVABLE = Symbol.for("weiv.observable");
 
 type RootState = {
   pending: Map<NodeState, Set<string> | null>;
-  scheduled: boolean;
 };
 
 type NodeState = {
@@ -12,14 +13,39 @@ type NodeState = {
   target: object;
   proxy: object;
   listeners: Set<Listener>;
-  parents: Map<NodeState, Set<string>>;
+  parents: Map<WeakRef<NodeState>, Set<PropertyKey>>;
+  parentRefs: WeakMap<NodeState, WeakRef<NodeState>>;
 };
 
-const rawToNode = new WeakMap<object, NodeState>();
-const proxyToNode = new WeakMap<object, NodeState>();
+const { rawToNode, proxyToNode, snapshots } = sharedRuntime("weiv.reactivity.observable.v1", () => ({
+  rawToNode: new WeakMap<object, NodeState>(),
+  proxyToNode: new WeakMap<object, NodeState>(),
+  // Explicit snapshots are immutable inputs, not new mutable observable roots.
+  snapshots: new WeakSet<object>(),
+}));
 
 function isObject(value: unknown): value is object {
   return typeof value === "object" && value !== null;
+}
+
+function validateObservableValue(value: unknown, seen = new WeakSet<object>()) {
+  if (!isObject(value) || snapshots.has(value) || seen.has(value) || rawToNode.has(value) || proxyToNode.has(value)) return;
+  getObservableNode(value); // Reject incompatible metadata before mutating a graph.
+  seen.add(value);
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null && !(Array.isArray(value) && prototype === Array.prototype)) {
+    throw new TypeError("Weiv observable state supports only plain objects and arrays; adapt native or class values into plain data");
+  }
+  if (!Object.isExtensible(value)) {
+    throw new TypeError("Weiv observable state requires extensible objects and arrays");
+  }
+  for (const key of Reflect.ownKeys(value)) {
+    const descriptor = Reflect.getOwnPropertyDescriptor(value, key)!;
+    if (!("value" in descriptor) || !descriptor.writable) {
+      throw new TypeError("Weiv observable state requires writable data properties; accessors and read-only properties are unsupported");
+    }
+    validateObservableValue(descriptor.value, seen);
+  }
 }
 
 function defineObservableBrand(target: object, node: NodeState) {
@@ -33,9 +59,12 @@ function defineObservableBrand(target: object, node: NodeState) {
 
 function getObservableNode(value: unknown): NodeState | undefined {
   if (!isObject(value)) return undefined;
-  const direct = proxyToNode.get(value);
+  const direct = proxyToNode.get(value) ?? rawToNode.get(value);
   if (direct) return direct;
-  return Reflect.get(value, WEIV_OBSERVABLE) as NodeState | undefined;
+  if (Reflect.get(value, WEIV_OBSERVABLE) != null) {
+    throw new TypeError("Incompatible Weiv observable runtime or realm; use one compatible runtime or snapshot() to transfer read-only data");
+  }
+  return undefined;
 }
 
 function unwrapValue<T>(value: T): T {
@@ -45,41 +74,51 @@ function unwrapValue<T>(value: T): T {
 }
 
 function scheduleFlush(root: RootState) {
-  if (root.scheduled) return;
-  root.scheduled = true;
-  queueMicrotask(() => {
-    root.scheduled = false;
-    if (root.pending.size === 0) return;
-
-    const notifying = Array.from(root.pending);
+  reactiveScheduler.notify(root, () => {
+    const notifying = Array.from(root.pending, ([node, paths]) => ({
+      node, paths, listeners: Array.from(node.listeners),
+    }));
     root.pending.clear();
-
-    for (const [node, paths] of notifying) {
-      for (const listener of node.listeners) {
-        listener(paths);
+    return () => {
+      const errors: unknown[] = [];
+      for (const { node, paths, listeners } of notifying) {
+        for (const listener of listeners) {
+          if (!node.listeners.has(listener)) continue;
+          try { listener(paths); } catch (error) { errors.push(error); }
+        }
       }
-    }
+      if (errors.length) throw new AggregateError(errors, "Weiv observable subscribers failed");
+    };
   });
 }
 
 function linkParent(child: NodeState, parent: NodeState, key: PropertyKey) {
-  if (typeof key === "symbol") return;
-  let keys = child.parents.get(parent);
-  if (!keys) child.parents.set(parent, (keys = new Set()));
-  keys.add(String(key));
+  let reference = child.parentRefs.get(parent);
+  if (!reference) {
+    reference = new WeakRef(parent);
+    child.parentRefs.set(parent, reference);
+  }
+  let keys = child.parents.get(reference);
+  if (!keys) child.parents.set(reference, (keys = new Set()));
+  keys.add(key);
 }
 
 function unlinkParent(child: NodeState, parent: NodeState, key: PropertyKey) {
-  const keys = child.parents.get(parent);
-  keys?.delete(String(key));
-  if (keys?.size === 0) child.parents.delete(parent);
+  const reference = child.parentRefs.get(parent);
+  if (!reference) return;
+  const keys = child.parents.get(reference);
+  keys?.delete(key);
+  if (keys?.size === 0) {
+    child.parents.delete(reference);
+    child.parentRefs.delete(parent);
+  }
 }
 
 function unlinkRemovedChildren(previous: unknown, next: unknown, parent: NodeState, key: PropertyKey) {
   if (!isObject(previous)) return;
-  if (Object.is(previous, next)) return;
+  if (Object.is(unwrapValue(previous), unwrapValue(next))) return;
 
-  const previousNode = rawToNode.get(previous);
+  const previousNode = rawToNode.get(previous) ?? proxyToNode.get(previous);
   if (!previousNode) return;
 
   unlinkParent(previousNode, parent, key);
@@ -102,7 +141,12 @@ function markChanged(node: NodeState, key: PropertyKey) {
     } else {
       existing?.add(current.path);
     }
-    for (const [parent, keys] of current.node.parents) {
+    for (const [reference, keys] of current.node.parents) {
+      const parent = reference.deref();
+      if (!parent) {
+        current.node.parents.delete(reference);
+        continue;
+      }
       if (current.ancestors.has(parent)) {
         parent.root.pending.set(parent, null);
         touchedRoots.add(parent.root);
@@ -111,7 +155,7 @@ function markChanged(node: NodeState, key: PropertyKey) {
       for (const parentKey of keys) {
         queue.push({
           node: parent,
-          path: current.path === null ? null : `${parentKey}.${current.path}`,
+          path: current.path === null || typeof parentKey === "symbol" ? null : `${parentKey}.${current.path}`,
           ancestors: new Set([...current.ancestors, parent]),
         });
       }
@@ -122,7 +166,7 @@ function markChanged(node: NodeState, key: PropertyKey) {
 }
 
 function ensureObservableNode(target: object, root: RootState, parent: NodeState | null, key?: PropertyKey): NodeState {
-  const existing = rawToNode.get(target);
+  const existing = rawToNode.get(target) ?? proxyToNode.get(target);
   if (existing) {
     if (parent && key !== undefined) linkParent(existing, parent, key);
     return existing;
@@ -134,6 +178,7 @@ function ensureObservableNode(target: object, root: RootState, parent: NodeState
     proxy: undefined as unknown as object,
     listeners: new Set(),
     parents: new Map(),
+    parentRefs: new WeakMap(),
   };
   if (parent && key !== undefined) linkParent(node, parent, key);
 
@@ -141,39 +186,97 @@ function ensureObservableNode(target: object, root: RootState, parent: NodeState
     get(currentTarget, prop, receiver) {
       const value = Reflect.get(currentTarget, prop, receiver);
       if (prop === WEIV_OBSERVABLE) return value;
-      if (!isObject(value)) return value;
+      if (!isObject(value) || snapshots.has(value)) return value;
       return ensureObservableNode(value, root, node, prop).proxy;
     },
 
     set(currentTarget, prop, value, receiver) {
-      const previous = Reflect.get(currentTarget, prop, receiver);
-      const next = unwrapValue(value);
-      unlinkRemovedChildren(previous, next, node, prop);
+      // Ordinary receiver semantics delegate a write back through defineProperty
+      // when this proxy receives it. Another receiver must keep its own identity
+      // and validation rules, and must not dirty this target.
+      return Reflect.set(currentTarget, prop, value, receiver);
+    },
 
-      const updated = Reflect.set(currentTarget, prop, next, receiver);
-      if (!updated) return false;
-
-      if (isObject(next)) {
-        ensureObservableNode(next, root, node, prop);
+    getOwnPropertyDescriptor(currentTarget, prop) {
+      const descriptor = Reflect.getOwnPropertyDescriptor(currentTarget, prop);
+      if (descriptor && prop !== WEIV_OBSERVABLE && isObject(descriptor.value) && !snapshots.has(descriptor.value)) {
+        descriptor.value = ensureObservableNode(descriptor.value, root, node, prop).proxy;
       }
+      return descriptor;
+    },
 
-      if (!Object.is(previous, next)) {
-        markChanged(node, prop);
-        if (Array.isArray(currentTarget) && prop !== "length") markChanged(node, "length");
+    defineProperty(currentTarget, prop, descriptor) {
+      const previous = Reflect.getOwnPropertyDescriptor(currentTarget, prop);
+      if ("get" in descriptor || "set" in descriptor || !(descriptor.writable ?? previous?.writable ?? false)) {
+        throw new TypeError("Weiv observable state requires writable data properties; use snapshot() for immutable views");
       }
-      return true;
+      const normalized = { ...descriptor };
+      if ("value" in descriptor) {
+        if (Array.isArray(currentTarget) && prop === "length") {
+          // Length stores a number, not the coercion input. Let the engine
+          // perform its native conversions before capturing removed children:
+          // valueOf may itself insert new children that must later detach.
+          if (typeof descriptor.value !== "number") {
+            const length = [];
+            Reflect.defineProperty(length, "length", { value: descriptor.value });
+            normalized.value = length.length;
+          }
+        } else {
+          normalized.value = unwrapValue(descriptor.value);
+          validateObservableValue(normalized.value);
+        }
+      }
+      const oldLength = Array.isArray(currentTarget) ? currentTarget.length : undefined;
+      // Length reduction can remove many child edges, including non-enumerable
+      // indices. A failed reduction may still delete a suffix before hitting a
+      // non-configurable index, so inspect the actual result in finally.
+      const truncating = oldLength !== undefined && prop === "length" && "value" in descriptor &&
+        !(typeof normalized.value === "number" && normalized.value >= oldLength);
+      const indices = truncating ? Reflect.ownKeys(currentTarget).filter(isArrayIndex).map(key =>
+        [key, Reflect.getOwnPropertyDescriptor(currentTarget, key)!.value] as const) : [];
+      try {
+        return Reflect.defineProperty(currentTarget, prop, normalized);
+      } finally {
+        const actual = Reflect.getOwnPropertyDescriptor(currentTarget, prop);
+        const next = actual?.value;
+        unlinkRemovedChildren(previous?.value, next, node, prop);
+        if (isObject(next) && !snapshots.has(next)) ensureObservableNode(next, root, node, prop);
+        const changed = previous === undefined ? actual !== undefined : actual === undefined ||
+          !Object.is(unwrapValue(previous.value), unwrapValue(next)) || previous.enumerable !== actual.enumerable ||
+          previous.configurable !== actual.configurable || previous.writable !== actual.writable;
+        if (changed) markChanged(node, prop);
+        for (const [key, child] of indices) {
+          if (Reflect.getOwnPropertyDescriptor(currentTarget, key)) continue;
+          unlinkRemovedChildren(child, undefined, node, key);
+          markChanged(node, key);
+        }
+        if (Array.isArray(currentTarget) && currentTarget.length !== oldLength && prop !== "length") markChanged(node, "length");
+      }
     },
 
     deleteProperty(currentTarget, prop) {
-      const previous = Reflect.get(currentTarget, prop);
-      const hadKey = Reflect.has(currentTarget, prop);
+      const previous = Reflect.getOwnPropertyDescriptor(currentTarget, prop);
       const updated = Reflect.deleteProperty(currentTarget, prop);
-      if (updated && hadKey) {
-        unlinkRemovedChildren(previous, undefined, node, prop);
+      if (updated && previous) {
+        unlinkRemovedChildren(previous.value, undefined, node, prop);
         markChanged(node, prop);
         if (Array.isArray(currentTarget) && prop !== "length") markChanged(node, "length");
       }
       return updated;
+    },
+
+    setPrototypeOf(currentTarget, prototype) {
+      if (prototype !== null && prototype !== Object.prototype && !(Array.isArray(currentTarget) && prototype === Array.prototype)) {
+        throw new TypeError("Weiv observable state supports only plain object and array prototypes");
+      }
+      if (Reflect.getPrototypeOf(currentTarget) === prototype) return true;
+      const updated = Reflect.setPrototypeOf(currentTarget, prototype);
+      if (updated) markChanged(node, WEIV_OBSERVABLE); // Unknown property path.
+      return updated;
+    },
+
+    preventExtensions() {
+      throw new TypeError("Weiv observable state must remain extensible; use snapshot() for an immutable view");
     },
   });
 
@@ -181,18 +284,35 @@ function ensureObservableNode(target: object, root: RootState, parent: NodeState
   defineObservableBrand(target, node);
   rawToNode.set(target, node);
   proxyToNode.set(proxy, node);
+  // An already-observable child can be mutated through another owner before
+  // this parent is ever read. Register every initial edge, including cycles,
+  // before publishing the graph; lazy getters alone would lose that change.
+  for (const childKey of Reflect.ownKeys(target)) {
+    if (childKey === WEIV_OBSERVABLE) continue;
+    const child = Reflect.getOwnPropertyDescriptor(target, childKey)?.value;
+    if (isObject(child) && !snapshots.has(child)) ensureObservableNode(child, root, node, childKey);
+  }
   return node;
 }
 
+function isArrayIndex(key: PropertyKey): key is string {
+  if (typeof key !== "string") return false;
+  const index = Number(key);
+  return Number.isInteger(index) && index >= 0 && index < 0xffffffff && String(index) === key;
+}
+
 export function observable<T extends object>(value: T): T {
+  if (isObject(value) && snapshots.has(value)) throw new TypeError("observable() cannot make an explicit snapshot mutable; store it as a read-only cell value instead");
+  if (!isObject(value)) throw new TypeError("observable() expects a plain object or array");
   const existing = getObservableNode(value);
   if (existing) {
     return existing.proxy as T;
   }
 
+  validateObservableValue(value);
+
   const root: RootState = {
     pending: new Map(),
-    scheduled: false,
   };
 
   return ensureObservableNode(value, root, null).proxy as T;
@@ -203,9 +323,12 @@ export function subscribe<T extends object>(value: T, listener: Listener): () =>
   if (!node) {
     throw new Error("subscribe() expects a value created by observable()");
   }
-  node.listeners.add(listener);
+  // Each subscription has its own identity. A disposed registration must not
+  // become live again in a captured wave when the same callback resubscribes.
+  const registration: Listener = paths => listener(paths);
+  node.listeners.add(registration);
   return () => {
-    node.listeners.delete(listener);
+    node.listeners.delete(registration);
   };
 }
 
@@ -215,21 +338,26 @@ export function snapshot<T>(value: T): T {
   function clone(current: unknown): unknown {
     if (!isObject(current)) return current;
 
-      const node = getObservableNode(current);
+    // A snapshot is the explicit data-transfer adapter. It may read a foreign
+    // proxy's enumerable data without trusting that runtime's private metadata.
+    const node = proxyToNode.get(current) ?? rawToNode.get(current);
     const source = node?.target ?? current;
 
     const existing = seen.get(source);
     if (existing) return existing;
 
-    const out: Record<string | symbol, unknown> | unknown[] = Array.isArray(source) ? [] : {};
+    const out: Record<string | symbol, unknown> | unknown[] = Array.isArray(source)
+      ? new Array(source.length) : Object.create(Object.getPrototypeOf(source) === null ? null : Object.prototype);
     seen.set(source, out);
 
     for (const key of Reflect.ownKeys(source)) {
+      if (key === WEIV_OBSERVABLE) continue;
       const descriptor = Reflect.getOwnPropertyDescriptor(source, key);
       if (!descriptor || !descriptor.enumerable) continue;
-      out[key as keyof typeof out] = clone(Reflect.get(source, key));
+      Object.defineProperty(out, key, { value: clone(Reflect.get(source, key)), enumerable: true, writable: true, configurable: true });
     }
 
+    snapshots.add(out);
     return Object.freeze(out);
   }
 
@@ -237,7 +365,7 @@ export function snapshot<T>(value: T): T {
 }
 
 export function isObservable(value: unknown): boolean {
-  return getObservableNode(value) != null;
+  return isObject(value) && (proxyToNode.has(value) || rawToNode.has(value));
 }
 
 export function observableBrandSymbol(): symbol {

@@ -1,0 +1,38 @@
+<template>
+  <p class="scalar">{{ count }}</p>
+  <p class="object">{{ state.count }}</p>
+</template>
+<script lang="ts">
+  let count = 0;
+  const state = { count: 0 };
+
+  window.addEventListener("contract-async", (event) => {
+    event.detail.result = weivUpdate(async () => {
+      count = 1;
+      try {
+        await event.detail.gate;
+      } finally {
+        count = 2;
+      }
+    });
+  });
+  window.addEventListener("contract-detached", () => {
+    weivUpdate(() => {
+      Promise.resolve().then(() => { count = 3; });
+    });
+  });
+  window.addEventListener("contract-throw", (event) => {
+    try {
+      weivUpdate(() => {
+        count = 4;
+        throw event.detail.error;
+      });
+    } catch (error) {
+      event.detail.caught = error;
+    }
+  });
+  window.addEventListener("contract-object", () => {
+    state.count += 1;
+    state.count += 1;
+  });
+</script>

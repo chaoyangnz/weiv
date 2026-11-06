@@ -54,6 +54,7 @@ fn emitSingleSlotFallbackHelper(
         "function createSlotFallbackFragment_{d}(instance, scope) {{\n  const refs = instance.refs;\n  const fragment = document.createDocumentFragment();\n",
         .{slot_outlet.handle_ref_id},
     );
+    try out.print(allocator, "  fragment.__weiv_namespace = refs[{d}].parentNode?.localName === \"foreignObject\" ? undefined : refs[{d}].parentNode?.namespaceURI;\n", .{ slot_outlet.start_ref_id, slot_outlet.start_ref_id });
     for (slot_outlet.fallback_children) |child| {
         try dom_create.emitCreateNode(child, "fragment", scope_id, out, allocator, 1, "scope", "refs");
     }
@@ -75,6 +76,7 @@ fn emitProjectedSlotHelpers(
             "function mountProjectedSlot_{d}_{d}(start, end, ownerInstance) {{\n  const instance = {{ refs: [], refresh: () => ownerInstance.refresh(), update: () => ownerInstance.update() }};\n  const refs = instance.refs;\n  const fragment = document.createDocumentFragment();\n",
             .{ component_node.handle_ref_id, idx },
         );
+        try out.appendSlice(allocator, "  fragment.__weiv_namespace = start.parentNode?.localName === \"foreignObject\" ? undefined : start.parentNode?.namespaceURI;\n");
         for (slot_provision.children) |child| {
             try dom_create.emitCreateNode(child, "fragment", scope_id, out, allocator, 1, "instance.refresh()", "refs");
         }
@@ -103,6 +105,7 @@ fn emitSingleConditionalHelper(
         "function createConditionalFragment_{d}(instance, scope, refs, isConsequent) {{\n  const fragment = document.createDocumentFragment();\n",
         .{conditional.start_ref_id},
     );
+    try out.print(allocator, "  fragment.__weiv_namespace = refs[{d}].parentNode?.localName === \"foreignObject\" ? undefined : refs[{d}].parentNode?.namespaceURI;\n", .{ conditional.start_ref_id, conditional.start_ref_id });
     try out.appendSlice(allocator, "  if (isConsequent) {\n");
     for (conditional.consequent) |node| {
         try dom_create.emitCreateNode(node, "fragment", scope_id, out, allocator, 2, "scope", "refs");
@@ -275,7 +278,7 @@ fn emitKeyedGenericLoopHelper(
     for (for_loop.body) |node| {
         try dom_update.emitUpdateNode(node, out, allocator, 2, "loopScope", "entryRefs");
     }
-    try out.appendSlice(allocator, "  }\n  const fragment = document.createDocumentFragment();\n");
+    try out.appendSlice(allocator, "  }\n  const fragment = document.createDocumentFragment();\n  fragment.__weiv_namespace = parent.localName === \"foreignObject\" ? undefined : parent.namespaceURI;\n");
     for (for_loop.body) |node| {
         try dom_create.emitCreateNode(node, "fragment", scope_id, out, allocator, 1, "loopScope", "entryRefs");
     }

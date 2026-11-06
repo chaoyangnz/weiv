@@ -86,17 +86,19 @@ formatter, keep it at the top level of `compiler/`.
 
 - `sema/` identifies script bindings, template references, mutations, and
   callback ownership. It reports cases that cannot be tracked precisely.
-  External registrations are unowned unless their mutation is enclosed in
-  the component-provided `weivUpdate` boundary.
+  Managed writes notify independently of the callback that performs them.
+  Unsupported ownership/effect cases retain explicit boundary diagnostics.
 - `lower/` preserves bound template references in LIR. Script state and callback
   facts remain in the unit for backend analysis.
 - `backend/browser/` decides which DOM regions depend on those values and
   emits their update operations. Browser-specific proxy and scheduler code
-  belongs here, not in semantic analysis. The browser setup supplies
-  `weivUpdate` as a component-scoped function for external callbacks.
+  belongs here, not in semantic analysis. Managed state writes are immediate;
+  dependent DOM updates are batched into microtasks. `weivUpdate` remains a
+  callback-compatible passthrough in managed mode.
 - `packages/weiv/src/runtime/observable.ts` provides explicitly shared state.
-  Its public `observable` and `subscribe` API is separate from compiler-owned
-  local state tracking. Generated browser modules bridge imported observables
+  Its public `observable` and `subscribe` API supplies an explicit external-state
+  boundary over the same reactive core used by managed local/shared state.
+  Generated browser modules bridge imported observables
   into selective updates by their imported binding names. Aliases of the same
   observable share one listener and invalidate each matching binding name.
 - `inspect/invalidation_graph.zig` explains the analyzed graph. Its
@@ -150,3 +152,27 @@ The default app output directory is `dist`.
 - SIR is the semantic pair of `ScriptFacts` and `TemplateBindings`. There is no
   separate `SirDocument` allocation or ownership layer.
 - `ComponentUnit` names the owned compilation snapshot, not another IR stage.
+
+## State contract reference
+
+Current author-facing guarantees are in
+[the package README](../../packages/weiv/README.md#state-contract-managed-reactivity-by-default).
+The state semantics, ownership decision, acceptance criteria, and next
+steps live in the sibling architecture repository:
+[Predictable Component State Contract](../../../weiv-arch/docs/component-state-contract.md).
+
+The default `emit js` path uses original-script lexical lowering in
+`libs/parser-backend/src/cells.rs` and the common runtime cell scope. `emit app`
+and the Vite/Bun plugins manage the reachable component/module graph together,
+preserving canonical identity and live exports. `emit js-cells`/`app-cells` remain
+compatibility aliases. `emit js-legacy`/`app-legacy` select the deprecated boundary
+implementation during migration.
+
+The internal `emit managed-project <manifest.json> <out-dir>` command accepts a
+project root and component roots and writes canonical module/source mappings for
+bundlers. Original JS/TS consumers are redirected to those same emitted modules.
+`--runtime-dir` selects matching source or packaged runtime files independently
+of the caller's working directory. Boundary warnings support JSON diagnostics.
+Standalone component output manages locals but cannot claim imported-module
+ownership without the managed graph. The bounded contract and retirement plan
+live in weiv-arch; no universal JavaScript effect inference is implied.

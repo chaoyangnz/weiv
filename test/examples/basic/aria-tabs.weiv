@@ -1,0 +1,6 @@
+<template><div role="tablist"><button role="tab" :aria-selected="activeTab === 'light'" @click="selectLight">Light</button><button role="tab" :aria-selected="activeTab === 'color'" @click="selectColor">Color</button></div></template>
+<script lang="ts">
+let activeTab = "light";
+function selectLight() { activeTab = "light"; }
+function selectColor() { activeTab = "color"; }
+</script>

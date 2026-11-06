@@ -25,11 +25,12 @@ try {
   );
   writeFileSync(
     join(tempRoot, "App.weiv"),
-    `<template><h1 v-if="title" class="proof">{{ title }}</h1></template>
-<script lang="ts">let title = "Scoped CSS proof";</script>
+    `<template><h1 v-if="title" class="proof">{{ title }}</h1><Child /></template>
+<script lang="ts">import * as Child from "./Child.weiv"; let title = "Scoped CSS proof";</script>
 <style>.proof { color: rebeccapurple; }</style>
 `,
   );
+  writeFileSync(join(tempRoot, "Child.weiv"), '<template><span>Sibling component proof</span></template><script lang="ts">export let props = {};</script>');
 
   await build({
     root: tempRoot,
@@ -55,6 +56,9 @@ try {
   }
   if (!js.includes("data-weiv-scope")) {
     throw new Error("Vite JavaScript output omitted Weiv scope metadata");
+  }
+  if (!js.includes("Sibling component proof")) {
+    throw new Error("Vite did not bundle the sibling Weiv component");
   }
   if (!warnings.some((warning) => warning.includes("directive.vue_structural_syntax") && warning.includes("use #if"))) {
     throw new Error(`Vite did not report the Vue structural syntax warning: ${warnings.join("\n")}`);

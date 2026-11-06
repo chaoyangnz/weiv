@@ -1,0 +1,2 @@
+<template><button><svg viewBox="0 0 10 10"><path d="M0 0L10 10" /><circle #if="visible" cx="5" cy="5" r="2" /><rect #for="item in rects" width="1" height="1" /><foreignObject><div #if="visible">HTML child</div></foreignObject></svg></button></template>
+<script lang="ts">let visible = true; let rects = [1, 2];</script>

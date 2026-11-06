@@ -7,6 +7,7 @@ const tracked_roots = @import("tracked_roots.zig");
 // Dependency analysis used by the browser runtime-region plan.
 pub const DepList = struct {
     items: std.ArrayList([]const u8) = .empty,
+    retain_imported_calls: bool = false,
 
     pub fn deinit(self: *DepList, allocator: std.mem.Allocator) void {
         self.items.deinit(allocator);
@@ -108,7 +109,7 @@ fn collectExpressionDepsWithTrail(
     if (component_model.lir_document.findExpression(expr)) |facts| {
         for (facts.references) |reference| {
             const ident = reference.name;
-            if (reference.call and tracked_roots.isImportedBinding(component_model, ident)) continue;
+            if (reference.call and !deps.retain_imported_calls and tracked_roots.isImportedBinding(component_model, ident)) continue;
             if (reference.call) {
                 if (findVisibleBinding(component_model, ident)) |binding| {
                     try deps.appendUnique(allocator, ident);
@@ -141,7 +142,7 @@ fn collectExpressionDepsWithTrail(
 
         if (isKeyword(ident)) continue;
         if (isPropertyAccessExpr(expr, start)) continue;
-        if (call and tracked_roots.isImportedBinding(component_model, ident)) continue;
+        if (call and !deps.retain_imported_calls and tracked_roots.isImportedBinding(component_model, ident)) continue;
 
         if (call) {
             if (findVisibleBinding(component_model, ident)) |binding| {
@@ -194,7 +195,7 @@ fn isPropertyAccessExpr(expr: []const u8, ident_start: usize) bool {
     while (cursor > 0) {
         cursor -= 1;
         if (isWhitespace(expr[cursor])) continue;
-        return expr[cursor] == '.';
+        return expr[cursor] == '.' and !(cursor >= 2 and std.mem.eql(u8, expr[cursor - 2 .. cursor + 1], "..."));
     }
     return false;
 }

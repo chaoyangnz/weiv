@@ -171,7 +171,7 @@ fn isPropertyAccessExpr(expr: []const u8, ident_start: usize) bool {
     while (cursor > 0) {
         cursor -= 1;
         if (isWhitespace(expr[cursor])) continue;
-        return expr[cursor] == '.';
+        return expr[cursor] == '.' and !(cursor >= 2 and std.mem.eql(u8, expr[cursor - 2 .. cursor + 1], "..."));
     }
     return false;
 }

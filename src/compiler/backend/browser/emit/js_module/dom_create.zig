@@ -41,7 +41,7 @@ pub fn emitCreateNode(
         .text => |text| {
             try common.writeIndent(indent, out, allocator);
             try out.print(allocator, "{s}.append(document.createTextNode(", .{parent_ref});
-            try common.emitString(text.content, out, allocator);
+            try common.emitHtmlString(text.content, out, allocator);
             try out.appendSlice(allocator, "));\n");
         },
         .interpolation => |interp| {
@@ -96,7 +96,11 @@ pub fn emitCreateNode(
             const var_name = try common.refVarName(element.ref_id, allocator);
             defer allocator.free(var_name);
             try common.writeIndent(indent, out, allocator);
-            try out.print(allocator, "const {s} = document.createElement(\"{s}\");\n", .{ var_name, element.tag_name });
+            if (std.mem.eql(u8, element.tag_name, "svg")) {
+                try out.print(allocator, "const {s} = document.createElementNS(\"http://www.w3.org/2000/svg\", \"svg\");\n", .{var_name});
+            } else {
+                try out.print(allocator, "const {s} = ({s}.namespaceURI === \"http://www.w3.org/2000/svg\" && {s}.localName !== \"foreignObject\") || {s}.__weiv_namespace === \"http://www.w3.org/2000/svg\" ? document.createElementNS(\"http://www.w3.org/2000/svg\", \"{s}\") : document.createElement(\"{s}\");\n", .{ var_name, parent_ref, parent_ref, parent_ref, element.tag_name, element.tag_name });
+            }
             try common.writeIndent(indent, out, allocator);
             try out.print(allocator, "{s}[{d}] = {s};\n", .{ refs_expr, element.ref_id, var_name });
             try common.writeIndent(indent, out, allocator);
@@ -108,7 +112,7 @@ pub fn emitCreateNode(
                 } else {
                     try out.print(allocator, "{s}.setAttribute(\"{s}\", ", .{ var_name, attribute.name });
                 }
-                try common.emitString(attribute.value orelse "", out, allocator);
+                try common.emitHtmlString(attribute.value orelse "", out, allocator);
                 try out.appendSlice(allocator, if (std.mem.eql(u8, attribute.name, "style")) ";\n" else ");\n");
             }
             for (element.event_effects) |effect| {
@@ -120,6 +124,13 @@ pub fn emitCreateNode(
                         try out.appendSlice(allocator, "const resolved = ");
                         try expression_codegen.emitResolvedExpression(event_dir.expression, scope_expr, "", out, allocator);
                         try out.appendSlice(allocator, ";\n");
+                        if (expression_codegen.isCellExpression(event_dir.expression)) {
+                            try common.writeIndent(indent + 1, out, allocator);
+                            try out.appendSlice(allocator, "return resolved;\n");
+                            try common.writeIndent(indent, out, allocator);
+                            try out.appendSlice(allocator, "}));\n");
+                            continue;
+                        }
                         try common.writeIndent(indent + 1, out, allocator);
                         try out.appendSlice(allocator, "if (typeof resolved === \"function\") {\n");
                         try common.writeIndent(indent + 2, out, allocator);

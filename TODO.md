@@ -24,6 +24,9 @@
 
 ## Should-Have (v1 quality bar)
 
+- [x] Bounded managed state contract and default CLI/Vite/Bun adoption — see [`weiv-arch/docs/component-state-contract.md`](../weiv-arch/docs/component-state-contract.md) and `packages/weiv/README.md`
+- [ ] Migrate maintained legacy consumers and retire compatibility mode in a future breaking release — see [`reactivity rollout`](../weiv-arch/docs/reactivity-rollout.md)
+
 - [ ] Dependency precision — direct imported observable member paths are selective; extend safe precision to compound expressions and dynamic access
 - [x] Observable-to-region mapping — shared state wakes regions depending on the imported binding, not the whole component
 - [x] IDE `emit` typing — sibling VS Code extension supplies virtual TypeScript declarations from `export interface Emits`

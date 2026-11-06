@@ -1,0 +1,61 @@
+<template>
+  <p class="count">{{ count }}</p>
+  <p class="object">{{ state.n }}</p>
+  <p class="shadow">{{ shadow() }}</p>
+  <button @click="increment">Increment</button>
+</template>
+<script lang="ts">
+  export let props: { initial: number };
+  let count = props.initial;
+  let state = { n: 0 };
+  let callable: any;
+  let optional: any = null;
+  function shadow() { let count = 40; return ++count; }
+  function increment() { count++; }
+  window.addEventListener("cells-write", () => { count++; state.n++; });
+  window.addEventListener("cells-async", (event) => {
+    event.detail.result = (async () => {
+      count++;
+      await event.detail.first;
+      count++;
+      await event.detail.second;
+      count++;
+    })();
+  });
+  window.addEventListener("cells-detached", () => {
+    void Promise.resolve().then(() => { count++; });
+  });
+  window.addEventListener("cells-expression", (event) => {
+    event.detail.post = count++;
+    event.detail.pre = ++count;
+    event.detail.shorthand = { count };
+    callable = function () { "use strict"; return this === undefined; };
+    event.detail.receiver = callable();
+    event.detail.parenthesizedReceiver = (callable as any)();
+    event.detail.sequenceReceiver = (0, callable)();
+    callable = undefined;
+    event.detail.argumentCalls = 0;
+    event.detail.optional = callable?.(event.detail.argumentCalls++);
+    callable = 5;
+    try { callable(event.detail.argumentCalls++); }
+    catch (error) { event.detail.nonCallable = error instanceof TypeError; }
+    for (count of [7, 8]) { state.n = count; }
+  });
+  window.addEventListener("cells-replace", (event) => {
+    event.detail.old = state;
+    state = { n: 10 };
+    state.n++;
+  });
+  window.addEventListener("cells-return", (event) => {
+    const assigned = (state = { n: 20 });
+    event.detail.same = assigned === state;
+    assigned.n++;
+    event.detail.optionalSame = (optional ??= { n: 1 }) === optional;
+    event.detail.calls = 0;
+    event.detail.skipped = (state ||= (() => { event.detail.calls++; return { n: 99 }; })()) === state;
+  });
+  window.addEventListener("cells-throw", (event) => {
+    try { count++; throw event.detail.error; }
+    catch (error) { event.detail.caught = error; }
+  });
+</script>

@@ -166,7 +166,7 @@ pub fn emitPrelude(out: *std.ArrayList(u8), allocator: std.mem.Allocator) !void 
         \\}
         \\
         \\function __weiv_wrapTrackedValue(rootId, currentPath, value) {
-        \\  if (!value || (typeof value !== "object" && typeof value !== "function")) {
+        \\  if (!value || typeof value !== "object") {
         \\    return value;
         \\  }
         \\  const proxy = new Proxy(value, {
@@ -259,6 +259,7 @@ pub fn emitPrelude(out: *std.ArrayList(u8), allocator: std.mem.Allocator) !void 
         \\}
         \\
         \\function runOwnedBoundary(instance, callback) {
+        \\  if (instance.cellManaged) return callback();
         \\  let beforeScope = cloneScope(instance.refresh());
         \\  let result;
         \\  try {

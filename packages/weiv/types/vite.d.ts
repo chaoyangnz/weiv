@@ -1,11 +1,12 @@
-export type WeivVitePlugin = {
-  name: string;
-  enforce?: "pre" | "post";
-  resolveId?: (id: string) => string | null | undefined;
-  load?: (id: string) => string | null | undefined;
-  transform?: (code: string, id: string) => { code: string; map: null } | null | undefined;
-};
+export type WeivVitePlugin = import("vite").Plugin;
 
-export type WeivVitePluginOptions = Record<string, never>;
+export type WeivVitePluginOptions = {
+  /** Managed reactivity is the default. Legacy is a deprecated migration mode. */
+  reactivity?: "managed" | "legacy";
+  /** Root of the modules whose state Weiv may manage. Defaults to Vite's root. */
+  root?: string;
+  /** Additional component roots for custom entry/alias loaders. */
+  components?: string[];
+};
 
 export function weiv(options?: WeivVitePluginOptions): WeivVitePlugin;
