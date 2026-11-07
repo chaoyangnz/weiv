@@ -1,6 +1,6 @@
 const std = @import("std");
 const region_graph = @import("../../region_graph.zig");
-const common = @import("common.zig");
+const js_output = @import("output.zig");
 
 pub fn emitTrackedStateGraphMetadata(graph: *const region_graph.Graph, out: *std.ArrayList(u8), allocator: std.mem.Allocator) !void {
     try out.appendSlice(allocator, "export const trackedStateGraph = ");
@@ -17,7 +17,7 @@ fn emitTrackedStateGraphObject(
     for (graph.table.roots.items, 0..) |root, idx| {
         if (idx > 0) try out.appendSlice(allocator, ", ");
         try out.print(allocator, "{{ rootId: {d}, bindingName: ", .{root.id});
-        try common.emitString(root.binding_name, out, allocator);
+        try js_output.emitString(root.binding_name, out, allocator);
         try out.appendSlice(allocator, ", kind: \"");
         try out.appendSlice(allocator, root.kind);
         try out.appendSlice(allocator, "\" }");
@@ -26,7 +26,7 @@ fn emitTrackedStateGraphObject(
     for (graph.table.paths.items, 0..) |path, idx| {
         if (idx > 0) try out.appendSlice(allocator, ", ");
         try out.print(allocator, "{{ pathId: {d}, rootId: {d}, path: ", .{ path.id, path.root_id });
-        try common.emitString(path.path, out, allocator);
+        try js_output.emitString(path.path, out, allocator);
         if (path.parent_path_id) |parent_id| {
             try out.print(allocator, ", parentPathId: {d} }}", .{parent_id});
         } else {

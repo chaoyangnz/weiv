@@ -1,20 +1,19 @@
 const std = @import("std");
-const types = @import("types.zig");
-const lowerer = @import("lowerer.zig");
-pub const debug = @import("debug.zig");
+const tree = @import("tree.zig");
+const lower_pass = @import("lower.zig");
 
-pub const UnsupportedNodeKind = types.UnsupportedNodeKind;
-pub const TextNode = types.TextNode;
-pub const InterpolationNode = types.InterpolationNode;
-pub const ElementNode = types.ElementNode;
-pub const ConditionalNode = types.ConditionalNode;
-pub const ForLoopNode = types.ForLoopNode;
-pub const ComponentNode = types.ComponentNode;
-pub const SlotOutletNode = types.SlotOutletNode;
-pub const NodeTag = types.NodeTag;
-pub const Node = types.Node;
-pub const Document = types.Document;
+pub const UnsupportedNodeKind = tree.UnsupportedNodeKind;
+pub const TextNode = tree.TextNode;
+pub const InterpolationNode = tree.InterpolationNode;
+pub const ElementNode = tree.ElementNode;
+pub const ConditionalNode = tree.ConditionalNode;
+pub const ForLoopNode = tree.ForLoopNode;
+pub const ComponentNode = tree.ComponentNode;
+pub const SlotOutletNode = tree.SlotOutletNode;
+pub const NodeTag = tree.NodeTag;
+pub const Node = tree.Node;
+pub const Document = tree.Document;
 
 pub fn lower(document: *const @import("../../../lower/lir.zig").Document, allocator: std.mem.Allocator) anyerror!Document {
-    return try lowerer.lower(document, allocator);
+    return try lower_pass.lower(document, allocator);
 }

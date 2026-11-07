@@ -1,6 +1,4 @@
 const std = @import("std");
-const browser_render_tree = @import("../../render_tree/index.zig");
-const sir = @import("../../../../sema/sir.zig");
 const html_entities = @import("html_entities.zig");
 
 pub fn emitString(value: []const u8, out: *std.ArrayList(u8), allocator: std.mem.Allocator) !void {
@@ -51,7 +49,7 @@ pub fn emitHtmlString(value: []const u8, out: *std.ArrayList(u8), allocator: std
 fn decodeNumericEntity(entity: []const u8) ?u21 {
     if (entity.len < 2 or entity[0] != '#') return null;
     const hex = entity.len > 2 and (entity[1] == 'x' or entity[1] == 'X');
-    const digits = entity[if (hex) @as(usize, 2) else 1 ..];
+    const digits = entity[if (hex) @as(usize, 2) else 1..];
     if (digits.len == 0) return null;
     const codepoint = std.fmt.parseInt(u21, digits, if (hex) 16 else 10) catch return null;
     if (codepoint == 0 or codepoint > 0x10FFFF or (codepoint >= 0xD800 and codepoint <= 0xDFFF)) return 0xFFFD;
@@ -67,57 +65,4 @@ pub fn writeIndent(indent: usize, out: *std.ArrayList(u8), allocator: std.mem.Al
     while (i < indent) : (i += 1) {
         try out.appendSlice(allocator, "  ");
     }
-}
-
-pub fn shouldPreserveImport(record: sir.ScriptImport, script: *const sir.ScriptFacts) bool {
-    if (std.mem.eql(u8, record.kind, "side_effect")) return true;
-    for (script.bindings) |binding| {
-        if (!std.mem.eql(u8, binding.name, record.local_name)) continue;
-        return !std.mem.eql(u8, binding.kind, "type_only");
-    }
-    return true;
-}
-
-pub fn emittedRuntimeImportSpecifier(source: []const u8, allocator: std.mem.Allocator) ![]u8 {
-    return rewriteModuleExtension(source, allocator);
-}
-
-pub fn emittedDirectImportSpecifier(source: []const u8, allocator: std.mem.Allocator) ![]u8 {
-    if (std.mem.endsWith(u8, source, ".weiv")) {
-        return try std.fmt.allocPrint(allocator, "{s}.mjs", .{source[0 .. source.len - ".weiv".len]});
-    }
-    return rewriteModuleExtension(source, allocator);
-}
-
-pub fn rewriteModuleExtension(source: []const u8, allocator: std.mem.Allocator) ![]u8 {
-    if (std.mem.endsWith(u8, source, ".ts")) {
-        return try std.fmt.allocPrint(allocator, "{s}.js", .{source[0 .. source.len - ".ts".len]});
-    }
-    if (std.mem.endsWith(u8, source, ".mts")) {
-        return try std.fmt.allocPrint(allocator, "{s}.mjs", .{source[0 .. source.len - ".mts".len]});
-    }
-    return try allocator.dupe(u8, source);
-}
-
-pub fn emitProjectedSlotObject(
-    component_node: browser_render_tree.ComponentNode,
-    owner_instance_expr: []const u8,
-    out: *std.ArrayList(u8),
-    allocator: std.mem.Allocator,
-) !void {
-    try out.appendSlice(allocator, "{ ");
-    for (component_node.slot_provisions, 0..) |slot_provision, idx| {
-        if (idx > 0) try out.appendSlice(allocator, ", ");
-        if (slot_provision.name) |name| {
-            try emitString(name, out, allocator);
-        } else {
-            try out.appendSlice(allocator, "default");
-        }
-        try out.print(allocator, ": {{ mountIntoBoundary: (start, end) => mountProjectedSlot_{d}_{d}(start, end, {s}) }}", .{
-            component_node.handle_ref_id,
-            idx,
-            owner_instance_expr,
-        });
-    }
-    try out.appendSlice(allocator, " }");
 }

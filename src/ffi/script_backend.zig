@@ -1,5 +1,5 @@
 const std = @import("std");
-const script_facts = @import("../compiler/sema/script_facts.zig");
+const script_facts_decoder = @import("../compiler/sema/decode_script_facts.zig");
 
 const backend = struct {
     extern fn weiv_script_analyze(source: [*:0]const u8, source_path: [*:0]const u8) ?[*:0]u8;
@@ -113,10 +113,10 @@ pub fn analyzeScript(
     source: []const u8,
     source_path: []const u8,
     allocator: std.mem.Allocator,
-) !script_facts.ParsedScript {
+) !script_facts_decoder.DecodedScript {
     const json = try analyzeScriptRaw(source, source_path, allocator);
     defer allocator.free(json);
-    return try script_facts.parseFromJson(json, allocator);
+    return try script_facts_decoder.decode(json, allocator);
 }
 
 pub fn rewriteExpression(

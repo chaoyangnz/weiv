@@ -152,42 +152,6 @@ test("experimental subscriptions and timer names preserve user lexical bindings"
   } finally { rmSync(dir, { recursive: true, force: true }); }
 }, 30000);
 
-test("experimental weivUpdate compatibility retains callback results and automatic scheduling", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "weiv-cells-wrapper-"));
-  const path = join(dir, "Wrapper.weiv");
-  writeFileSync(path, `<template><p>{{ count }}</p></template><script lang="ts">
-    let count=0;
-    window.addEventListener('cells-wrapper',event=>{
-      try {event.detail.value=weivUpdate(()=>{count++;if(event.detail.error)throw event.detail.error;return event.detail.input})}
-      catch(error){event.detail.caught=error}
-    });
-    window.addEventListener('cells-wrapper-async',event=>{
-      event.detail.value=weivUpdate(()=>{
-        const task=(async()=>{count++;await event.detail.wait;count++;return event.detail.input})();
-        event.detail.original=task;return task;
-      });
-    });
-  </script>`);
-  try {
-    const f = await fixture(path);
-    try {
-      const view = f.mount();
-      const input = { result: true };
-      expect(f.send("cells-wrapper", { input }).value).toBe(input);
-      expect(view.text("p")).toBe("0");
-      await tick();expect(view.text("p")).toBe("1");
-      const error = new Error("wrapper");
-      expect(f.send("cells-wrapper", { error }).caught).toBe(error);
-      await tick();expect(view.text("p")).toBe("2");
-      let release!: () => void;
-      const detail = f.send("cells-wrapper-async", { input, wait: new Promise<void>(resolve => { release = resolve; }) });
-      expect(detail.value).toBe(detail.original);
-      await tick();expect(view.text("p")).toBe("3");
-      release();expect(await detail.value).toBe(input);
-      await tick();expect(view.text("p")).toBe("4");
-    } finally { f.close(); }
-  } finally { rmSync(dir, { recursive: true, force: true }); }
-}, 30000);
 
 test("experimental lowering preserves expression results, shorthand and call receivers", async () => {
   const f = await fixture();

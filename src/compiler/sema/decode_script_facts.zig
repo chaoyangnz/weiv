@@ -97,12 +97,12 @@ const JsonCallbackRegistrationFacts = struct {
     reason: []const u8,
 };
 
-pub const ParsedScript = struct {
+pub const DecodedScript = struct {
     facts: sir.ScriptFacts,
     transpiled_code: []const u8,
 };
 
-pub fn parseFromJson(json_source: []const u8, allocator: std.mem.Allocator) !ParsedScript {
+pub fn decode(json_source: []const u8, allocator: std.mem.Allocator) !DecodedScript {
     const parsed = try std.json.parseFromSlice(JsonScriptFacts, allocator, json_source, .{
         .ignore_unknown_fields = true,
         .allocate = .alloc_always,

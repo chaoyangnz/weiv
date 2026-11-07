@@ -51,7 +51,6 @@ pub fn bind(
     }
 
     try validateFrameworkBindings(script, &diagnostics, allocator);
-    try validateStateModelDiagnostics(script, &diagnostics, allocator);
 
     try bindNodes(document.nodes, script, &component_refs, &diagnostics, &expressions, &scopes, provider, allocator);
 
@@ -78,64 +77,6 @@ fn validateFrameworkBindings(
                 .{ .start = binding.span_start, .end = binding.span_end },
                 allocator,
             );
-        }
-        if (std.mem.eql(u8, binding.name, "weivUpdate")) {
-            try appendDiagnostic(
-                diagnostics,
-                "framework.reserved_binding",
-                "weivUpdate",
-                "`weivUpdate` is provided by Weiv for external callback updates; do not declare a binding with this name",
-                .{ .start = binding.span_start, .end = binding.span_end },
-                allocator,
-            );
-        }
-    }
-}
-
-fn validateStateModelDiagnostics(
-    script: *const sir.ScriptFacts,
-    diagnostics: *std.ArrayList(Diagnostic),
-    allocator: std.mem.Allocator,
-) !void {
-    for (script.state_facts.mutations) |mutation| {
-        if (findAliasTarget(script, mutation.binding)) |target| {
-            if (isVisibleBinding(target, script)) {
-                try appendDiagnostic(
-                    diagnostics,
-                    "alias.mutation",
-                    target,
-                    "Mutation through a local alias is only shallowly tracked today, so Weiv will treat this site conservatively",
-                    .{ .start = mutation.span_start, .end = mutation.span_end },
-                    allocator,
-                );
-            }
-            continue;
-        }
-
-        if (!isVisibleBinding(mutation.binding, script)) continue;
-
-        if (!mutation.statement_position) {
-            try appendDiagnostic(
-                diagnostics,
-                "mutation.expression_position",
-                mutation.binding,
-                "Mutation is nested inside a larger expression, so Weiv will treat this site conservatively",
-                .{ .start = mutation.span_start, .end = mutation.span_end },
-                allocator,
-            );
-            continue;
-        }
-
-        if (mutation.inside_callback and !mutation.callback_owned_candidate) {
-            try appendDiagnostic(
-                diagnostics,
-                "callback.unowned_mutation",
-                mutation.binding,
-                "Mutation happens inside a callback boundary that Weiv does not own; local state may change without updating the DOM. Wrap the mutation in weivUpdate(() => { ... })",
-                .{ .start = mutation.span_start, .end = mutation.span_end },
-                allocator,
-            );
-            continue;
         }
     }
 }
@@ -460,9 +401,6 @@ fn classifyDiagnosticSeverity(kind: []const u8) []const u8 {
     if (std.mem.startsWith(u8, kind, "slot.")) return "error";
     if (std.mem.eql(u8, kind, "helper.external_state")) return "warning";
     if (std.mem.eql(u8, kind, "helper.side_effects")) return "warning";
-    if (std.mem.eql(u8, kind, "mutation.expression_position")) return "warning";
-    if (std.mem.eql(u8, kind, "callback.unowned_mutation")) return "warning";
-    if (std.mem.eql(u8, kind, "alias.mutation")) return "warning";
     if (std.mem.eql(u8, kind, "directive.deprecated_syntax")) return "warning";
     if (std.mem.eql(u8, kind, "directive.vue_structural_syntax")) return "warning";
     return "info";
@@ -493,20 +431,6 @@ fn findVisibleHelper(script: *const sir.ScriptFacts, name: []const u8) ?sir.Help
         return null;
     }
     return null;
-}
-
-fn findAliasTarget(script: *const sir.ScriptFacts, alias_name: []const u8) ?[]const u8 {
-    for (script.state_facts.aliases) |alias| {
-        if (std.mem.eql(u8, alias.alias, alias_name)) return alias.target;
-    }
-    return null;
-}
-
-fn isVisibleBinding(name: []const u8, script: *const sir.ScriptFacts) bool {
-    for (script.bindings) |binding| {
-        if (binding.template_visible and std.mem.eql(u8, binding.name, name)) return true;
-    }
-    return false;
 }
 
 fn isComponentTag(tag_name: []const u8) bool {

@@ -1,5 +1,5 @@
 import { test } from "bun:test";
-import { emitLegacyBrowserModule as emitDirectBrowserModule, installJsdom, loadModules } from "./support";
+import { emitDirectBrowserModule, installJsdom, loadModules } from "./support";
 
 test("compound expressions resolve loop items and component bindings", async () => {
   const modules = await loadModules({

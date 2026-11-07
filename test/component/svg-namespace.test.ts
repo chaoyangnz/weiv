@@ -1,5 +1,5 @@
 import { test } from "bun:test";
-import { emitLegacyBrowserModule as emitDirectBrowserModule, installJsdom, loadModules } from "./support";
+import { emitDirectBrowserModule, installJsdom, loadModules } from "./support";
 
 test("inline SVG uses SVG namespace and preserves viewBox", async () => {
   const modules = await loadModules({

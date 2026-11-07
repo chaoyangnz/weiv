@@ -129,122 +129,20 @@ raw references. Dispose external subscriptions when their lifetime ends.
 ### Migrating from legacy reactivity
 
 The default managed mode batches DOM updates into microtasks. Code that reads DOM
-or layout immediately after a handler must wait for the batch. Existing
-`weivUpdate(callback)` calls may stay: managed mode executes the callback and
-preserves its value/error/Promise; the call does not force a synchronous DOM flush.
-Update unsupported managed declarations/types using the compiler's diagnostics.
+or layout immediately after a handler must wait for the batch. `weivUpdate` is no
+longer injected or reserved: remove its calls and run the callback body directly.
+Supported writes notify automatically. Update unsupported managed declarations/types
+using the compiler's diagnostics.
 Use a matching compiler/runtime version; incompatible older observable metadata
 requires an explicit transfer rather than mixing graph internals.
 
-A deprecated compatibility mode is available during migration:
+Legacy reactivity has been retired. `js-legacy`/`app-legacy` commands and
+the plugin `reactivity` option are no longer supported. Remove the option, use
+ordinary `emit js`/`emit app` commands, and migrate immediate DOM reads to wait for
+the batch. Alternate `js-cells`/`app-cells` commands have also been removed.
 
-```sh
-weiv emit js-legacy src/App.weiv
-weiv emit app-legacy src/App.weiv dist
-```
-
-```js
-weiv({ reactivity: "legacy" }) // Vite or Bun plugin
-```
-
-Legacy retains owned-handler synchronous checks and manual `weivUpdate` requirements
-for external local mutations. New code should use the default managed mode. Legacy
-will be removed in a future breaking release after application migrations; no
-removal date is imposed by this change. This source change requires a matching
-compiler/runtime release before it is available through a published npm update.
-
-### DOM bindings and input state
-
-Weiv directives always begin with a symbol:
-
-- `:name` binds a DOM property, attribute, or component prop.
-- `@event` handles a DOM or component event.
-- `#if`, `#else`, and `#for` control template structure.
-
-The older `bind:name` and `on:event` spellings are deprecated compatibility
-syntax. They remain accepted for now, but new and migrated code should use the
-symbol forms.
-
-Structural directives use `#` so they cannot be confused with ordinary HTML
-attributes:
-
-```html
-<label for="email">Email</label>
-<article #for="item in items">
-  <p #if="item.visible">{{ item.label }}</p>
-  <p #else>Hidden</p>
-</article>
-```
-
-Bare `if`, `else`, and `for` are ordinary attributes. This keeps native and
-custom-element attributes available without special escaping.
-
-Binding directives write component state to DOM properties and attributes; they
-are one-way. In particular, `:value`/`bind:value` does not write user edits back
-to the component variable. Handle the input event explicitly when component
-state must track the field:
-
-```html
-<input :value="draftName" @input="updateDraftName" />
-
-<script lang="ts">
-  let draftName = "";
-
-  function updateDraftName(event: Event) {
-    draftName = (event.currentTarget as HTMLInputElement).value;
-  }
-</script>
-```
-
-### Global styles
-
-Component styles are scoped by default. Wrap a whole selector in `:global(...)`
-when it must apply outside the component scope:
-
-```css
-:global(:root) {
-  --ink: #193047;
-}
-
-:global(body) {
-  margin: 0;
-}
-```
-
-Shared state example:
-
-```ts
-// state/counter.ts
-// Inside the project managed by the app builder or bundler plugin:
-export const counter = { value: 0 };
-```
-
-```html
-<template>
-  <div>
-    <p>Shared: {{ counter.value }}</p>
-    <button @click="counter.value += 1">Add</button>
-  </div>
-</template>
-
-<script>
-  import { counter } from "./state/counter.ts";
-</script>
-```
-
-Router example:
-
-```ts
-import { createRouter } from "weiv:router";
-
-export const router = createRouter({
-  routes: [
-    { path: "/", component: () => import("./views/Home.mjs") },
-    { path: "/about", component: () => import("./views/About.mjs") }
-  ],
-  target: document.getElementById("app")
-});
-```
+This is a breaking source change. Use matching compiler/runtime packages; the
+source update does not publish a new npm release.
 
 ## Vite Plugin
 
@@ -282,7 +180,6 @@ Both plugins accept the same ownership and migration options:
 
 | Option | Default | Purpose |
 | --- | --- | --- |
-| `reactivity` | `"managed"` | Use `"legacy"` only for deprecated migration compatibility. |
 | `root` | Project root (Vite); project/entry root (Bun) | Set the managed module boundary, for example a monorepo root. |
 | `components` | Discovered component roots | Add component file paths for custom loading paths. Relative paths resolve from the managed root. |
 

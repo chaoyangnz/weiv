@@ -1,14 +1,15 @@
 import { test } from "bun:test";
 import {
-  emitLegacyBrowserModule as emitDirectBrowserModule,
+  emitDirectBrowserModule,
   installJsdom,
   loadModules,
 } from "./support";
 
-function clickButton(target: Element, win: any) {
+async function clickButton(target: Element, win: any) {
   const button = target.querySelector("button");
   if (!button) throw new Error("Missing button");
   button.dispatchEvent(new win.Event("click", { bubbles: true }));
+  await new Promise<void>(resolve => queueMicrotask(resolve));
 }
 
 test("basic counter works with jsdom real DOM", async () => {
@@ -30,7 +31,7 @@ test("basic counter works with jsdom real DOM", async () => {
     throw new Error(`Initial doubled mismatch: ${target.textContent}`);
   }
 
-  clickButton(target, win);
+  await clickButton(target, win);
 
   if (!target.textContent?.includes("Current count: 3")) {
     throw new Error(`After click text mismatch: ${target.textContent}`);
@@ -39,7 +40,7 @@ test("basic counter works with jsdom real DOM", async () => {
     throw new Error(`After click doubled mismatch: ${target.textContent}`);
   }
 
-  for (let i = 0; i < 7; i++) clickButton(target, win);
+  for (let i = 0; i < 7; i++) await clickButton(target, win);
 
   const button = target.querySelector("button") as any;
   if (!button?.disabled) {
@@ -47,7 +48,7 @@ test("basic counter works with jsdom real DOM", async () => {
   }
 });
 
-test("external callbacks update through the explicit Weiv boundary", async () => {
+test("external callbacks use the same queued update", async () => {
   const modules = await loadModules({
     "ExternalCallback.mjs": emitDirectBrowserModule("test/examples/basic/external-callback.weiv"),
   });
@@ -61,9 +62,11 @@ test("external callbacks update through the explicit Weiv boundary", async () =>
   if (count?.textContent?.trim() !== "0") throw new Error("External callback fixture did not render initial state");
 
   win.dispatchEvent(new win.Event("weiv-unowned"));
-  if (count.textContent?.trim() !== "0") throw new Error("Unowned callback unexpectedly flushed local state");
+  await new Promise<void>(resolve => queueMicrotask(resolve));
+  if (count.textContent?.trim() !== "1") throw new Error("External callback did not update local state");
 
   win.dispatchEvent(new win.Event("weiv-owned"));
+  await new Promise<void>(resolve => queueMicrotask(resolve));
   if (count.textContent?.trim() !== "2") throw new Error(`Explicit update boundary did not flush local state: ${count.textContent}`);
 });
 
@@ -83,7 +86,7 @@ test("conditional toggle works with jsdom real DOM", async () => {
     throw new Error(`Initial branch mismatch: ${target.textContent}`);
   }
 
-  clickButton(target, win);
+  await clickButton(target, win);
 
   if (!target.textContent?.includes("Panel is open")) {
     throw new Error(`After toggle mismatch: ${target.textContent}`);
@@ -109,6 +112,7 @@ test("dynamic loops, call handlers, and style bindings work with jsdom real DOM"
   const firstStrategyButton = buttons[2];
   if (!firstStrategyButton) throw new Error("Missing first loop event button");
   firstStrategyButton.dispatchEvent(new win.Event("click", { bubbles: true }));
+  await new Promise<void>(resolve => queueMicrotask(resolve));
 
   if (!target.textContent?.includes("Firstselected")) {
     throw new Error(`Argument-bearing loop event did not flush: ${target.textContent}`);
@@ -122,6 +126,7 @@ test("dynamic loops, call handlers, and style bindings work with jsdom real DOM"
   const appendButton = buttons[1];
   if (!appendButton) throw new Error("Missing append button");
   appendButton.dispatchEvent(new win.Event("click", { bubbles: true }));
+  await new Promise<void>(resolve => queueMicrotask(resolve));
 
   const articles = target.querySelectorAll("article");
   if (articles.length !== 4) {
@@ -156,7 +161,7 @@ test("todo list works with jsdom real DOM", async () => {
     throw new Error("Completed item visible in pending mode");
   }
 
-  clickButton(target, win);
+  await clickButton(target, win);
 
   if (!target.textContent?.includes("Showing completed tasks")) {
     throw new Error(`After toggle filter mismatch: ${target.textContent}`);
@@ -182,7 +187,7 @@ test("timer callback works with jsdom real DOM", async () => {
     throw new Error(`Initial content mismatch: ${target.textContent}`);
   }
 
-  clickButton(target, win);
+  await clickButton(target, win);
   await new Promise((resolve) => setTimeout(resolve, 10));
 
   if (!target.textContent?.includes("1")) {

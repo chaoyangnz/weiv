@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { emitLegacyBrowserModule as emitDirectBrowserModule, installJsdom, loadModules } from "./support";
+import { emitDirectBrowserModule, installJsdom, loadModules } from "./support";
 
 test("nested template callback bodies preserve locals and captured state", async () => {
   const modules = await loadModules({
@@ -13,6 +13,7 @@ test("nested template callback bodies preserve locals and captured state", async
     expect(target.querySelector(".spread")?.textContent).toBe('1');
     expect(target.querySelector(".default")?.textContent).toBe('4');
     target.querySelector("button")!.dispatchEvent(new window.Event("click"));
+  await new Promise<void>(resolve => queueMicrotask(resolve));
     await new Promise<void>(resolve => queueMicrotask(resolve));
     expect(target.querySelector("p")?.textContent).toBe('[{"local":4,"next":5}]');
     expect(target.querySelector(".spread")?.textContent).toBe('2');
@@ -33,6 +34,7 @@ test("template Math and String globals render and update", async () => {
     throw new Error(`Template globals did not render correctly: ${target.innerHTML}`);
   }
   target.querySelector("button")?.dispatchEvent(new window.Event("click"));
+  await new Promise<void>(resolve => queueMicrotask(resolve));
   if (!target.textContent?.includes("125%")) throw new Error("Math global did not update after click");
 });
 

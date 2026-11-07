@@ -1,5 +1,6 @@
 import { observable, subscribe } from "./observable.ts";
 import { reactiveScheduler } from "./reactive-core.ts";
+export { isObservable } from "./observable.ts";
 export { bindingObject, bindingIterator } from "./binding.ts";
 
 // Internal storage for compiler-managed bindings. A box reuses the observable

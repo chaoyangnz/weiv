@@ -107,6 +107,9 @@ pub fn classifyRuntimeImportProblem(source_specifier: []const u8) ?RuntimeImport
         return null;
     }
 
+    // Managed module resolution already supports extensionless project imports.
+    if (std.fs.path.extension(source_specifier).len == 0) return null;
+
     if (!isBrowserLoadableImport(source_specifier) and !isTranspilableTypeScriptModule(source_specifier)) {
         return .{
             .code = "import.unsupported_runtime_import_type",

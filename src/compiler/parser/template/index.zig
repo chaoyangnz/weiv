@@ -1,9 +1,9 @@
 pub const ast = @import("ast.zig");
 pub const directives = @import("directives.zig");
 pub const normalized = @import("normalized.zig");
-pub const normalize_mod = @import("normalize.zig");
-pub const parser = @import("parser.zig");
-pub const debug = @import("debug.zig");
+const normalize_pass = @import("normalize.zig");
+const parse_pass = @import("parse.zig");
+pub const diagnostic_spans = @import("diagnostic_spans.zig");
 
 pub const NodeTag = ast.NodeTag;
 pub const Attribute = ast.Attribute;
@@ -25,8 +25,8 @@ pub const ForDirective = directives.ForDirective;
 pub const EventDirective = directives.EventDirective;
 pub const BindDirective = directives.BindDirective;
 pub const SlotAssignDirective = directives.SlotAssignDirective;
-pub const ParseError = parser.ParseError;
-pub const NormalizeError = normalize_mod.NormalizeError;
+pub const ParseError = parse_pass.ParseError;
+pub const NormalizeError = normalize_pass.NormalizeError;
 
-pub const parse = parser.parse;
-pub const normalize = normalize_mod.normalize;
+pub const parse = parse_pass.parse;
+pub const normalize = normalize_pass.normalize;

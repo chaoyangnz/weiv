@@ -1,5 +1,5 @@
 import { test } from "bun:test";
-import { emitLegacyBrowserModule as emitDirectBrowserModule, installJsdom, loadModules } from "./support";
+import { emitDirectBrowserModule, installJsdom, loadModules } from "./support";
 
 test("boolean ARIA bindings write true and false strings", async () => {
   const modules = await loadModules({
@@ -14,6 +14,7 @@ test("boolean ARIA bindings write true and false strings", async () => {
     throw new Error(`Initial ARIA state is wrong: ${target.innerHTML}`);
   }
   tabs[1].dispatchEvent(new window.Event("click"));
+  await new Promise<void>(resolve => queueMicrotask(resolve));
   if (tabs[0].getAttribute("aria-selected") !== "false" || tabs[1].getAttribute("aria-selected") !== "true") {
     throw new Error(`Updated ARIA state is wrong: ${target.innerHTML}`);
   }

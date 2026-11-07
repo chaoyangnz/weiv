@@ -382,22 +382,14 @@ export function emitDirectBrowserModule(componentPath: string): string {
 
 // Synchronous DOM fixtures remain explicit compatibility coverage while the
 // managed compiler and plugin integration suites exercise the new default.
-export function emitLegacyBrowserModule(componentPath: string): string {
-  return emitCommand(["emit-js-legacy", componentPath]);
-}
-
 export function emitApp(rootPath: string, outDir: string): void {
   emitCommand(["emit-app", rootPath, outDir]);
-}
-
-export function emitLegacyApp(rootPath: string, outDir: string): void {
-  emitCommand(["emit-app-legacy", rootPath, outDir]);
 }
 
 export async function loadModules(files: Record<string, string>) {
   const dir = mkdtempSync(join(tmpdir(), "weiv-component-"));
   for (const [name, source] of Object.entries(files)) {
-    writeFileSync(join(dir, name), source, "utf8");
+    writeFileSync(join(dir, name), source.replaceAll('"weiv:cells"', JSON.stringify(new URL("../../packages/weiv/src/runtime/cell.ts", import.meta.url).href)), "utf8");
   }
 
   try {

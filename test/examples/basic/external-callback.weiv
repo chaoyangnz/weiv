@@ -12,8 +12,6 @@
   });
 
   window.addEventListener("weiv-owned", () => {
-    weivUpdate(() => {
-      count += 1;
-    });
+    count += 1;
   });
 </script>

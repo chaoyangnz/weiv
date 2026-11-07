@@ -20,7 +20,7 @@ try {
   symlinkSync('../library.ts',join(project,'library-alias.ts'));
   const component=join(project,'App.weiv');
   writeFileSync(component,`<template><p class="raw">{{ raw.count }}</p><p class="observed">{{ observed.count }}</p><p class="hidden">{{ read() }}</p><p class="json">{{ JSON.stringify(view) }}</p><p class="helper">{{ localRead() }}</p><p class="forwarded">{{ invoke(value=>value.count,observed) }}</p><p class="captured-forwarded">{{ invoke(localRead) }}</p><p class="method-forwarded">{{ Math.max(...invoke(value=>value.read(),observed)) }}</p></template><script lang="ts">import {raw,observed,read,invoke} from './library-alias.ts'; const view={toJSON:()=>({count:observed.count})}; function localRead(){return observed.count}</script>`);
-  const result=spawnSync(binary,['--json-diagnostics','emit','app-cells',component,output],{cwd:root,encoding:'utf8'});
+  const result=spawnSync(binary,['--json-diagnostics','emit','app',component,output],{cwd:root,encoding:'utf8'});
   assert.equal(result.status,0,result.stderr);
   const report=JSON.parse(result.stderr);
   assert.equal(report.mode,'managed-project');
@@ -53,7 +53,7 @@ try {
     export function replace(){const args=[state,{child}];Reflect.apply(Object.assign,null,args)}`);
   const reflective=join(project,'Reflective.weiv'),reflectiveOutput=join(temp,'reflective-output');
   writeFileSync(reflective,`<template><p>{{ state.child.count }}</p></template><script lang="ts">import {state} from './managed-state.ts';</script>`);
-  const reflectiveBuild=spawnSync(binary,['--json-diagnostics','emit','app-cells',reflective,reflectiveOutput],{cwd:root,encoding:'utf8'});
+  const reflectiveBuild=spawnSync(binary,['--json-diagnostics','emit','app',reflective,reflectiveOutput],{cwd:root,encoding:'utf8'});
   assert.equal(reflectiveBuild.status,0,reflectiveBuild.stderr);
   const reflectiveReport=JSON.parse(reflectiveBuild.stderr);
   assert(reflectiveReport.diagnostics.some(d=>d.code==='reactivity.unverified_dependency'&&d.message.includes('Reflect.apply')&&d.message.includes('managed-state.ts::state')));
@@ -75,12 +75,12 @@ try {
   // Unused and event-only mutable imports do not produce blanket library warnings.
   const quiet=join(project,'Quiet.weiv');
   writeFileSync(quiet,`<template><button @click="mutate">Go</button><p>{{ label }}</p></template><script lang="ts">import {label,raw,mutate} from './library-alias.ts';</script>`);
-  const quietBuild=spawnSync(binary,['compile','emit','app-cells',quiet,join(temp,'quiet')],{cwd:root,encoding:'utf8'});
+  const quietBuild=spawnSync(binary,['compile','emit','app',quiet,join(temp,'quiet')],{cwd:root,encoding:'utf8'});
   assert.equal(quietBuild.status,0,quietBuild.stderr);assert.equal(quietBuild.stderr,'');
   writeFileSync(join(project,'opaque.ts'),`export const label='fixed'; export function load(name){return import(name)}`);
   const opaque=join(project,'Opaque.weiv');
   writeFileSync(opaque,`<template><p>{{ label }}</p></template><script lang="ts">import {label} from './opaque.ts';</script>`);
-  const rejected=spawnSync(binary,['--json-diagnostics','emit','app-cells',opaque,join(temp,'opaque-output')],{cwd:root,encoding:'utf8'});
+  const rejected=spawnSync(binary,['--json-diagnostics','emit','app',opaque,join(temp,'opaque-output')],{cwd:root,encoding:'utf8'});
   assert.notEqual(rejected.status,0);
   const failure=JSON.parse(rejected.stderr);
   assert(JSON.stringify(failure).includes('OpaqueDynamicModuleImportUnsupported'));

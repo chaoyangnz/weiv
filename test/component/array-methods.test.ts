@@ -1,5 +1,5 @@
 import { test } from "bun:test";
-import { FakeDocument, emitLegacyBrowserModule as emitDirectBrowserModule, installDocument, loadModules } from "./support";
+import { FakeDocument, emitDirectBrowserModule, installDocument, loadModules } from "./support";
 
 test("tracked prop arrays support native map and filter", async () => {
   const modules = await loadModules({

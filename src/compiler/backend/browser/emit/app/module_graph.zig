@@ -1,12 +1,13 @@
 const std = @import("std");
-const graph_module = @import("graph.zig");
+const graph_module = @import("component_graph.zig");
 const runtime = @import("runtime_imports.zig");
 const backend = @import("../../../../../ffi/script_backend.zig");
 const state = @import("../../../../project/state_dependencies.zig");
+const ManagedPlan = @import("../../../../project/managed_state_plan.zig").ManagedPlan;
 const diagnostics = @import("../../../../diagnostics.zig");
 const browser_component = @import("../../component.zig");
 const js_module = @import("../js_module.zig");
-const common = @import("../js_module/common.zig");
+const js_output = @import("../js_module/output.zig");
 fn io() std.Io {
     return std.Io.Threaded.global_single_threaded.io();
 }
@@ -22,13 +23,13 @@ const ImportSites = struct {
 // This owns actual emitted modules, not merely inspected source. Only selected
 // declarations are lowered; every import of their canonical source uses one file.
 pub const Build = struct {
-    graph: *graph_module.BundleGraph,
+    graph: *graph_module.ComponentGraph,
     allocator: std.mem.Allocator,
-    plan: state.ManagedPlan = .{},
+    plan: ManagedPlan = .{},
     warnings: diagnostics.DiagnosticBag = diagnostics.DiagnosticBag.init(),
     modules: std.StringHashMap(*Module),
 
-    pub fn init(graph: *graph_module.BundleGraph, allocator: std.mem.Allocator) Build {
+    pub fn init(graph: *graph_module.ComponentGraph, allocator: std.mem.Allocator) Build {
         return .{ .graph = graph, .allocator = allocator, .modules = std.StringHashMap(*Module).init(allocator) };
     }
 
@@ -60,7 +61,7 @@ pub const Build = struct {
         for (self.plan.subscriptions.items) |subscription| _ = try self.module(subscription.module_path);
     }
 
-    fn checkImportBoundary(self: *Build, source: @import("../../../../project/cell_diagnostics.zig").ScriptSource, component: bool) !void {
+    fn checkImportBoundary(self: *Build, source: @import("../cell_diagnostics.zig").ScriptSource, component: bool) !void {
         const raw = try backend.analyzeModuleStateRaw(source.text, source.path, self.allocator);
         defer self.allocator.free(raw);
         const facts = try std.json.parseFromSlice(ImportSites, self.allocator, raw, .{ .ignore_unknown_fields = true });
@@ -88,7 +89,7 @@ pub const Build = struct {
     }
 
     fn rejectTemplateImports(self: *Build, model: *const @import("../../../../component_unit.zig").ComponentUnit) !void {
-        const functions = @import("../../../../project/template_functions.zig");
+        const functions = @import("../../../../lower/template_functions.zig");
         var source = std.ArrayList(u8).empty;
         defer source.deinit(self.allocator);
         try source.appendSlice(self.allocator, "const __weiv_templates=[");
@@ -228,7 +229,7 @@ pub const Build = struct {
             const target = try self.mapped(out_dir, path, output, item.source, original);
             defer self.allocator.free(target);
             try result.appendSlice(self.allocator, source[previous..item.span_start]);
-            try common.emitString(target, &result, self.allocator);
+            try js_output.emitString(target, &result, self.allocator);
             previous = item.span_end;
         }
         try result.appendSlice(self.allocator, source[previous..]);
@@ -274,7 +275,7 @@ pub const Build = struct {
         defer self.allocator.free(companion);
         const lowered = backend.lowerModuleCells(rewritten, "managed.mjs", companion, encoded.written(), self.allocator) catch |err| {
             // Diagnose original TS/JS, never offsets from transpiled/import-rewritten text.
-            _ = try @import("../../../../project/cell_diagnostics.zig").inspectScript(.{ .text = source, .path = item.path, .document = source }, encoded.written(), true, &self.warnings, self.allocator);
+            _ = try @import("../cell_diagnostics.zig").inspectScript(.{ .text = source, .path = item.path, .document = source }, encoded.written(), true, &self.warnings, self.allocator);
             return err;
         };
         defer self.allocator.free(lowered);
@@ -321,7 +322,7 @@ pub const Build = struct {
             for (self.plan.local_subscriptions.items) |item| {
                 if (std.mem.eql(u8, item.component_path, node.abs_path)) try local_subscriptions.append(self.allocator, .{ .name = item.name, .binding = item.binding, .publisher_backed = item.publisher_backed });
             }
-            const generated = js_module.emitModuleWithSelection(&browser, true, subscriptions.items, overrides.items, local_names.items, local_subscriptions.items, self.allocator) catch |err| {
+            const generated = js_module.emitModuleWithSelection(&browser, subscriptions.items, overrides.items, local_names.items, local_subscriptions.items, self.allocator) catch |err| {
                 try js_module.collectCellDiagnostics(&browser, local_names.items, &self.warnings, self.allocator);
                 return err;
             };

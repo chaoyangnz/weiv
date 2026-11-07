@@ -7,26 +7,22 @@
   const state = { count: 0 };
 
   window.addEventListener("contract-async", (event) => {
-    event.detail.result = weivUpdate(async () => {
+    event.detail.result = (async () => {
       count = 1;
       try {
         await event.detail.gate;
       } finally {
         count = 2;
       }
-    });
+    })();
   });
   window.addEventListener("contract-detached", () => {
-    weivUpdate(() => {
-      Promise.resolve().then(() => { count = 3; });
-    });
+    Promise.resolve().then(() => { count = 3; });
   });
   window.addEventListener("contract-throw", (event) => {
     try {
-      weivUpdate(() => {
-        count = 4;
-        throw event.detail.error;
-      });
+      count = 4;
+      throw event.detail.error;
     } catch (error) {
       event.detail.caught = error;
     }

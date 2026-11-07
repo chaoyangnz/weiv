@@ -42,7 +42,7 @@ try {
     const path = join(temp, "Failure.weiv");
     const source = `<template>\n  ${template}\n</template>\n<script lang="ts">\n${script}\n</script>`;
     writeFileSync(path, source);
-    const result = run("--json-diagnostics", "emit", "js-cells", path);
+    const result = run("--json-diagnostics", "emit", "js", path);
     assert.notEqual(result.status, 0, result.stderr);
     assert.equal(result.stdout, "");
     const report = JSON.parse(result.stderr);
@@ -56,24 +56,22 @@ try {
   const path = join(temp, "Repeated.weiv");
   const source = `<template>\n<button @click="count++">valid</button>\n<p>{{ count++ }}</p>\n<p>{{ count++ }}</p>\n</template>\n<script lang="ts">let count=0;</script>`;
   writeFileSync(path, source);
-  const repeated = run("--json-diagnostics", "emit", "js-cells", path);
+  const repeated = run("--json-diagnostics", "emit", "js", path);
   assert.notEqual(repeated.status, 0);
   const repeatedReport = JSON.parse(repeated.stderr);
   assert.equal(repeatedReport.diagnostics.length, 2, repeated.stderr);
   repeatedReport.diagnostics.forEach((entry, index) => verify(entry, source, path, "count++", "reactivity.render_mutation", index + 1));
-  const text = run("emit", "js-cells", path);
+  const text = run("emit", "js", path);
   assert.notEqual(text.status, 0);
   assert(text.stderr.includes("[3:7]"), text.stderr);
   assert(text.stderr.includes("Move this write into an event handler"), text.stderr);
-  const ordinary = run("emit", "js-legacy", path);
-  assert.equal(ordinary.status, 0, ordinary.stderr);
-  assert(!ordinary.stderr.includes("reactivity.render_mutation"));
+
 
   // An invalid script must not be falsely attributed to its valid template read.
   const invalidScript = join(temp, "Script.weiv");
   const scriptSource = '<template><p>{{ count }}</p></template><script lang="ts">const count=0; count++;</script>';
   writeFileSync(invalidScript, scriptSource);
-  const scriptFailure = run("--json-diagnostics", "emit", "js-cells", invalidScript);
+  const scriptFailure = run("--json-diagnostics", "emit", "js", invalidScript);
   assert.notEqual(scriptFailure.status, 0);
   const scriptReport = JSON.parse(scriptFailure.stderr);
   assert.equal(scriptReport.diagnostics.length, 1);
@@ -91,7 +89,7 @@ try {
   ]) {
     const source = `<template><p>{{ ${selected} }}</p></template>\n<script lang="ts">\n// λ makes byte offsets differ from character offsets\n${script}\n</script>`;
     writeFileSync(invalidScript, source);
-    const failure = run('--json-diagnostics', 'emit', 'js-cells', invalidScript);
+    const failure = run('--json-diagnostics', 'emit', 'js', invalidScript);
     assert.notEqual(failure.status, 0, source);
     const report = JSON.parse(failure.stderr);
     assert.equal(report.diagnostics.length, 1, failure.stderr);
@@ -106,7 +104,7 @@ try {
   const parent = join(temp, "Parent.weiv");
   writeFileSync(parent, '<template><Child /></template><script lang="ts">import Child from "./Child.weiv";</script>');
   for (const prefix of [["emit"], ["compile", "emit"]]) {
-    const app = run("--json-diagnostics", ...prefix, "app-cells", parent, join(temp, "out"));
+    const app = run("--json-diagnostics", ...prefix, "app", parent, join(temp, "out"));
     assert.notEqual(app.status, 0);
     const report = JSON.parse(app.stderr); // Exactly one structured report.
     const errors = report.diagnostics.filter(entry => entry.fatal);
@@ -124,12 +122,12 @@ try {
   verify(moduleReport.diagnostics[0], moduleSource, modulePath, 'var count:State={n:0};', 'reactivity.unsupported_declaration');
   const sharedParent = join(temp, 'SharedParent.weiv');
   writeFileSync(sharedParent, '<template><p>{{ count.n }}</p></template><script lang="ts">import {count} from "./Shared.ts";</script>');
-  const unsupportedManaged = run('--json-diagnostics', 'emit', 'app-cells', sharedParent, join(temp, 'var-output'));
+  const unsupportedManaged = run('--json-diagnostics', 'emit', 'app', sharedParent, join(temp, 'var-output'));
   assert.equal(unsupportedManaged.status, 0, unsupportedManaged.stderr);
   assert(JSON.parse(unsupportedManaged.stderr).diagnostics.some(entry => entry.code === 'reactivity.untracked_external_state' && !entry.fatal));
   const managedSource = '// λ and type erasure shift generated offsets\nexport type State={n:number};\nexport const count:State={n:0};\nexport function replace(){count={n:1};}';
   writeFileSync(modulePath, managedSource);
-  const managedFailure = run('--json-diagnostics', 'emit', 'app-cells', sharedParent, join(temp, 'shared-output'));
+  const managedFailure = run('--json-diagnostics', 'emit', 'app', sharedParent, join(temp, 'shared-output'));
   assert.notEqual(managedFailure.status, 0);
   const managedReport = JSON.parse(managedFailure.stderr);
   const managedErrors = managedReport.diagnostics.filter(entry => entry.fatal);
@@ -152,7 +150,7 @@ try {
   const opaqueSource = '// λ\nexport const label="fixed";\nexport function load(name:string){return import(name)}';
   writeFileSync(modulePath, opaqueSource);
   writeFileSync(sharedParent, '<template><p>{{ label }}</p></template><script lang="ts">import {label} from "./Shared.ts";</script>');
-  const opaqueFailure = run('--json-diagnostics', 'emit', 'app-cells', sharedParent, join(temp, 'opaque-output'));
+  const opaqueFailure = run('--json-diagnostics', 'emit', 'app', sharedParent, join(temp, 'opaque-output'));
   assert.notEqual(opaqueFailure.status, 0);
   const opaqueReport = JSON.parse(opaqueFailure.stderr);
   const opaqueErrors = opaqueReport.diagnostics.filter(entry => entry.fatal);
@@ -168,7 +166,7 @@ try {
     '<template><p>{{ import("./Shared.ts") }}</p></template><script lang="ts">let count=0;</script>',
   ]) {
     writeFileSync(sharedParent, source);
-    const failure = run('--json-diagnostics', 'emit', 'app-cells', sharedParent, join(temp, 'opaque-component'));
+    const failure = run('--json-diagnostics', 'emit', 'app', sharedParent, join(temp, 'opaque-component'));
     assert.notEqual(failure.status, 0);
     const report = JSON.parse(failure.stderr);
     const errors = report.diagnostics.filter(entry => entry.fatal);

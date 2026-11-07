@@ -1,7 +1,7 @@
 const std = @import("std");
-const types = @import("types.zig");
+const tree = @import("../backend/browser/render_tree/tree.zig");
 
-pub fn formatDocument(document: *const types.Document, allocator: std.mem.Allocator) ![]u8 {
+pub fn formatDocument(document: *const tree.Document, allocator: std.mem.Allocator) ![]u8 {
     var out = std.ArrayList(u8).empty;
     defer out.deinit(allocator);
 
@@ -11,7 +11,7 @@ pub fn formatDocument(document: *const types.Document, allocator: std.mem.Alloca
 }
 
 fn formatNodes(
-    nodes: []const types.Node,
+    nodes: []const tree.Node,
     indent: usize,
     out: *std.ArrayList(u8),
     allocator: std.mem.Allocator,

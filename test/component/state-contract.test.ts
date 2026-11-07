@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { emitLegacyBrowserModule as emitDirectBrowserModule, installJsdom, loadModules } from "./support";
+import { emitDirectBrowserModule, installJsdom, loadModules } from "./support";
 
 async function mountContract() {
   const modules = await loadModules({
@@ -25,29 +25,32 @@ async function mountContract() {
   };
 }
 
-test("returned async boundary flushes immediate writes and settlement writes", async () => {
+test("async writes notify before and after settlement", async () => {
   const fixture = await mountContract();
   try {
     let release!: () => void;
     const gate = new Promise<void>((resolve) => { release = resolve; });
     const detail = fixture.send("contract-async", { gate });
+    expect(fixture.read(".scalar")).toBe("0");
+    await new Promise<void>(resolve => queueMicrotask(resolve));
     expect(fixture.read(".scalar")).toBe("1");
     release();
     await detail.result;
+    await new Promise<void>(resolve => queueMicrotask(resolve));
     expect(fixture.read(".scalar")).toBe("2");
   } finally { fixture.close(); }
 });
 
-test("current limitation: detached promises do not inherit an update boundary", async () => {
+test("detached promises notify without an update boundary", async () => {
   const fixture = await mountContract();
   try {
     fixture.send("contract-detached");
     await new Promise<void>((resolve) => queueMicrotask(resolve));
-    expect(fixture.read(".scalar")).toBe("0");
+    expect(fixture.read(".scalar")).toBe("3");
   } finally { fixture.close(); }
 });
 
-test("rejected async boundary flushes final writes and preserves rejection", async () => {
+test("rejected async writes notify and preserve rejection", async () => {
   const fixture = await mountContract();
   try {
     let reject!: (error: Error) => void;
@@ -60,12 +63,14 @@ test("rejected async boundary flushes final writes and preserves rejection", asy
   } finally { fixture.close(); }
 });
 
-test("boundary flushes writes before propagating a synchronous exception", async () => {
+test("writes queue updates while synchronous exceptions propagate", async () => {
   const fixture = await mountContract();
   try {
     const error = new Error("contract failure");
     const detail = fixture.send("contract-throw", { error });
     expect(detail.caught).toBe(error);
+    expect(fixture.read(".scalar")).toBe("0");
+    await new Promise<void>(resolve => queueMicrotask(resolve));
     expect(fixture.read(".scalar")).toBe("4");
   } finally { fixture.close(); }
 });

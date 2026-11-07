@@ -1,5 +1,5 @@
 import { test } from "bun:test";
-import { emitLegacyBrowserModule as emitDirectBrowserModule, installJsdom, loadModules } from "./support";
+import { emitDirectBrowserModule, installJsdom, loadModules } from "./support";
 
 test("static template text and attributes decode HTML entities", async () => {
   const modules = await loadModules({

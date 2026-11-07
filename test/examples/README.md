@@ -12,9 +12,9 @@ They are not all equal:
 
 CLI app builds and Vite/Bun plugins use managed reactivity by default. Supported
 local and project shared state notify automatically; later DOM patches are batched
-into microtasks. Some characterization tests explicitly select the deprecated
-legacy emitter to preserve migration coverage. A fixture containing `weivUpdate`
-is not a requirement to wrap supported writes in new applications.
+into microtasks. Regression fixtures all use the managed emitter. Legacy
+reactivity selection and the injected `weivUpdate` helper have been removed;
+fixtures use direct writes.
 
 See the [current state contract](../../packages/weiv/README.md#state-contract-managed-reactivity-by-default)
 and [migration options](../../packages/weiv/README.md#migrating-from-legacy-reactivity).

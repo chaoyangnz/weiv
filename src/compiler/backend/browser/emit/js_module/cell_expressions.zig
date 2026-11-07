@@ -1,7 +1,7 @@
 const std = @import("std");
-const tree = @import("../../render_tree/types.zig");
+const tree = @import("../../render_tree/tree.zig");
 const lir = @import("../../../../lower/lir.zig");
-const functions = @import("../../../../project/template_functions.zig");
+const functions = @import("../../../../lower/template_functions.zig");
 const backend = @import("../../../../../ffi/script_backend.zig");
 
 // Own an emission-only tree in an arena. Dependency regions continue using the

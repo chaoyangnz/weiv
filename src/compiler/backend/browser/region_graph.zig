@@ -39,11 +39,7 @@ pub const Graph = struct {
 };
 
 pub fn build(model: *const component.ComponentUnit, tree: *const render_tree.Document, allocator: std.mem.Allocator) !Graph {
-    return buildWithCells(model, tree, true, allocator);
-}
-
-pub fn buildWithCells(model: *const component.ComponentUnit, tree: *const render_tree.Document, cells: bool, allocator: std.mem.Allocator) !Graph {
-    var graph = Graph{ .allocator = allocator, .table = tracked_paths.Table.init(model, allocator), .retain_imported_calls = cells };
+    var graph = Graph{ .allocator = allocator, .table = tracked_paths.Table.init(model, allocator), .retain_imported_calls = true };
     errdefer graph.deinit();
     try collectNodes(model, tree.nodes, &graph);
     return graph;

@@ -94,7 +94,7 @@ try {
     let [local=0]=[]; let localCaptured=0; const localView=snapshot({read:()=>localCaptured});
     function both(){local++;localCaptured++;increment();advanceCaptured()}
   </script>`);
-  const result=spawnSync(binary,['--json-diagnostics','emit','app-cells',join(project,'App.weiv'),output],{cwd:root,encoding:'utf8'});
+  const result=spawnSync(binary,['--json-diagnostics','emit','app',join(project,'App.weiv'),output],{cwd:root,encoding:'utf8'});
   assert.equal(result.status,0,result.stderr);
   if(result.stderr) assert.equal(JSON.parse(result.stderr).mode,'managed-project');
   assert(JSON.parse(result.stderr).diagnostics.some(item=>item.message.includes('patternState')&&item.message.includes('ownership is unverified')),

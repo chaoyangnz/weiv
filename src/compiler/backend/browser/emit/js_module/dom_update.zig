@@ -2,10 +2,10 @@ const std = @import("std");
 const browser_render_tree = @import("../../render_tree/index.zig");
 const lir = @import("../../../../lower/lir.zig");
 const region_graph = @import("../../region_graph.zig");
-const common = @import("common.zig");
-const expression_codegen = @import("expression_codegen.zig");
-const component_codegen = @import("component_codegen.zig");
-const slot_codegen = @import("slot_codegen.zig");
+const js_output = @import("output.zig");
+const expressions = @import("expressions.zig");
+const components = @import("components.zig");
+const slots = @import("slots.zig");
 
 pub fn emitUpdateFunction(
     render_tree: browser_render_tree.Document,
@@ -181,7 +181,7 @@ fn emitConditionalRegionUpdateFunction(
 ) !void {
     _ = bindings_json; // conditional regions delegate to updateConditional_ which handles its own expressions
     try out.print(allocator, "function updateRegion_conditional_{d}(instance, scope, refs) {{\n", .{conditional.start_ref_id});
-    try common.writeIndent(1, out, allocator);
+    try js_output.writeIndent(1, out, allocator);
     try out.print(allocator, "updateConditional_{d}(instance, scope, refs);\n", .{conditional.start_ref_id});
     try out.appendSlice(allocator, "}\n");
 }
@@ -194,7 +194,7 @@ fn emitLoopRegionUpdateFunction(
 ) !void {
     _ = bindings_json; // loop regions delegate to updateForLoop_ which handles its own expressions
     try out.print(allocator, "function updateRegion_loop_{d}(instance, scope, refs) {{\n", .{for_loop.start_ref_id});
-    try common.writeIndent(1, out, allocator);
+    try js_output.writeIndent(1, out, allocator);
     try out.print(allocator, "updateForLoop_{d}(instance, scope, refs);\n", .{for_loop.start_ref_id});
     try out.appendSlice(allocator, "}\n");
 }
@@ -241,7 +241,7 @@ fn emitSelectiveUpdateNode(
             try emitSelectiveStep(indent, region.dependency_names.items, region.precise_import_name, region_id, out, allocator);
             try out.print(allocator, "updateRegion_text_{d}(instance, {s}, {s});\n", .{ interp.ref_id, scope_expr, refs_expr });
             if (region.dependency_names.items.len > 0 or region_id > 0) {
-                try common.writeIndent(indent, out, allocator);
+                try js_output.writeIndent(indent, out, allocator);
                 try out.appendSlice(allocator, "}\n");
             }
         },
@@ -251,7 +251,7 @@ fn emitSelectiveUpdateNode(
             try emitSelectiveStep(indent, region.dependency_names.items, region.precise_import_name, region_id, out, allocator);
             try out.print(allocator, "updateRegion_slot_{d}(instance, {s}, {s});\n", .{ slot_outlet.handle_ref_id, scope_expr, refs_expr });
             if (region.dependency_names.items.len > 0 or region_id > 0) {
-                try common.writeIndent(indent, out, allocator);
+                try js_output.writeIndent(indent, out, allocator);
                 try out.appendSlice(allocator, "}\n");
             }
         },
@@ -271,7 +271,7 @@ fn emitSelectiveUpdateNode(
                             refs_expr,
                         });
                         if (region.dependency_names.items.len > 0 or region_id > 0) {
-                            try common.writeIndent(indent, out, allocator);
+                            try js_output.writeIndent(indent, out, allocator);
                             try out.appendSlice(allocator, "}\n");
                         }
                     },
@@ -288,7 +288,7 @@ fn emitSelectiveUpdateNode(
             try emitSelectiveStep(indent, region.dependency_names.items, region.precise_import_name, region_id, out, allocator);
             try out.print(allocator, "updateRegion_conditional_{d}(instance, {s}, {s});\n", .{ conditional.start_ref_id, scope_expr, refs_expr });
             if (region.dependency_names.items.len > 0 or region_id > 0) {
-                try common.writeIndent(indent, out, allocator);
+                try js_output.writeIndent(indent, out, allocator);
                 try out.appendSlice(allocator, "}\n");
             }
         },
@@ -298,7 +298,7 @@ fn emitSelectiveUpdateNode(
             try emitSelectiveStep(indent, region.dependency_names.items, region.precise_import_name, region_id, out, allocator);
             try out.print(allocator, "updateRegion_child_{d}(instance, {s}, {s});\n", .{ component_node.handle_ref_id, scope_expr, refs_expr });
             if (region.dependency_names.items.len > 0 or region_id > 0) {
-                try common.writeIndent(indent, out, allocator);
+                try js_output.writeIndent(indent, out, allocator);
                 try out.appendSlice(allocator, "}\n");
             }
         },
@@ -308,7 +308,7 @@ fn emitSelectiveUpdateNode(
             try emitSelectiveStep(indent, region.dependency_names.items, region.precise_import_name, region_id, out, allocator);
             try out.print(allocator, "updateRegion_loop_{d}(instance, {s}, {s});\n", .{ for_loop.start_ref_id, scope_expr, refs_expr });
             if (region.dependency_names.items.len > 0 or region_id > 0) {
-                try common.writeIndent(indent, out, allocator);
+                try js_output.writeIndent(indent, out, allocator);
                 try out.appendSlice(allocator, "}\n");
             }
         },
@@ -325,19 +325,19 @@ fn consumeRegion(graph: *const region_graph.Graph, next_region_id: *usize, kind:
 
 fn emitSelectiveStep(indent: usize, deps: []const []const u8, precise_import_name: ?[]const u8, region_id: usize, out: *std.ArrayList(u8), allocator: std.mem.Allocator) !void {
     if (deps.len == 0 and region_id == 0) return;
-    try common.writeIndent(indent, out, allocator);
+    try js_output.writeIndent(indent, out, allocator);
     try out.appendSlice(allocator, "if (");
     var wrote_clause = false;
     for (deps, 0..) |dep, idx| {
         _ = idx;
         if (wrote_clause) try out.appendSlice(allocator, " || ");
         try out.appendSlice(allocator, "dirtySet.has(");
-        try common.emitString(dep, out, allocator);
+        try js_output.emitString(dep, out, allocator);
         try out.appendSlice(allocator, ")");
         if (precise_import_name) |name| {
             if (std.mem.eql(u8, name, dep)) {
                 try out.appendSlice(allocator, " && !preciseBindingSet.has(");
-                try common.emitString(dep, out, allocator);
+                try js_output.emitString(dep, out, allocator);
                 try out.appendSlice(allocator, ")");
             }
         }
@@ -348,7 +348,7 @@ fn emitSelectiveStep(indent: usize, deps: []const []const u8, precise_import_nam
         try out.print(allocator, "dirtyRegionSet.has({d})", .{region_id});
     }
     try out.appendSlice(allocator, ") {\n");
-    try common.writeIndent(indent + 1, out, allocator);
+    try js_output.writeIndent(indent + 1, out, allocator);
 }
 
 pub fn emitUpdateNode(
@@ -362,11 +362,11 @@ pub fn emitUpdateNode(
     switch (node) {
         .text => {},
         .interpolation => |interp| {
-            try common.writeIndent(indent, out, allocator);
+            try js_output.writeIndent(indent, out, allocator);
             try out.print(allocator, "updateRegion_text_{d}(instance, {s}, {s});\n", .{ interp.ref_id, scope_expr, refs_expr });
         },
         .slot_outlet => |slot_outlet| {
-            try common.writeIndent(indent, out, allocator);
+            try js_output.writeIndent(indent, out, allocator);
             try out.print(allocator, "updateRegion_slot_{d}(instance, {s}, {s});\n", .{ slot_outlet.handle_ref_id, scope_expr, refs_expr });
         },
         .element => |element| {
@@ -375,7 +375,7 @@ pub fn emitUpdateNode(
                     .bind => |bind_dir| {
                         const suffix = try sanitizedIdentifierFragment(bind_dir.target_name, allocator);
                         defer allocator.free(suffix);
-                        try common.writeIndent(indent, out, allocator);
+                        try js_output.writeIndent(indent, out, allocator);
                         try out.print(allocator, "updateRegion_attribute_{d}_{s}(instance, {s}, {s});\n", .{
                             element.ref_id,
                             suffix,
@@ -391,15 +391,15 @@ pub fn emitUpdateNode(
             }
         },
         .conditional => |conditional| {
-            try common.writeIndent(indent, out, allocator);
+            try js_output.writeIndent(indent, out, allocator);
             try out.print(allocator, "updateRegion_conditional_{d}(instance, {s}, {s});\n", .{ conditional.start_ref_id, scope_expr, refs_expr });
         },
         .component => |component_node| {
-            try common.writeIndent(indent, out, allocator);
+            try js_output.writeIndent(indent, out, allocator);
             try out.print(allocator, "updateRegion_child_{d}(instance, {s}, {s});\n", .{ component_node.handle_ref_id, scope_expr, refs_expr });
         },
         .for_loop => |for_loop| {
-            try common.writeIndent(indent, out, allocator);
+            try js_output.writeIndent(indent, out, allocator);
             try out.print(allocator, "updateRegion_loop_{d}(instance, {s}, {s});\n", .{ for_loop.start_ref_id, scope_expr, refs_expr });
         },
     }
@@ -414,29 +414,29 @@ fn emitChildComponentUpdateBody(
     scope_expr: []const u8,
     refs_expr: []const u8,
 ) !void {
-    if (component_codegen.componentHasProps(component_node)) {
-        try common.writeIndent(indent, out, allocator);
+    if (components.componentHasProps(component_node)) {
+        try js_output.writeIndent(indent, out, allocator);
         try out.print(allocator, "{s}[{d}].setProps(", .{ refs_expr, component_node.handle_ref_id });
-        try component_codegen.emitPropsObject(component_node.bind_effects, out, allocator, scope_expr, bindings_json);
+        try components.emitPropsObject(component_node.bind_effects, out, allocator, scope_expr, bindings_json);
         try out.appendSlice(allocator, ");\n");
     }
-    if (component_codegen.componentHasEventHandlers(component_node)) {
-        try common.writeIndent(indent, out, allocator);
+    if (components.componentHasEventHandlers(component_node)) {
+        try js_output.writeIndent(indent, out, allocator);
         try out.print(allocator, "{s}[{d}].setEventHandlers(", .{ refs_expr, component_node.handle_ref_id });
-        try component_codegen.emitChildHandlersObject(component_node.event_effects, out, allocator, scope_expr, bindings_json);
+        try components.emitChildHandlersObject(component_node.event_effects, out, allocator, scope_expr, bindings_json);
         try out.appendSlice(allocator, ");\n");
     }
-    if (component_codegen.componentHasSlots(component_node)) {
-        try common.writeIndent(indent, out, allocator);
+    if (components.componentHasSlots(component_node)) {
+        try js_output.writeIndent(indent, out, allocator);
         try out.print(allocator, "{s}[{d}].setSlots(", .{
             refs_expr,
             component_node.handle_ref_id,
         });
-        try common.emitProjectedSlotObject(component_node, "instance", out, allocator);
+        try slots.emitProjectedSlotObject(component_node, "instance", out, allocator);
         try out.appendSlice(allocator, ");\n");
     }
-    if (component_codegen.componentNeedsParentUpdate(component_node)) {
-        try common.writeIndent(indent, out, allocator);
+    if (components.componentNeedsParentUpdate(component_node)) {
+        try js_output.writeIndent(indent, out, allocator);
         try out.print(allocator, "{s}[{d}].update();\n", .{ refs_expr, component_node.handle_ref_id });
     }
 }
@@ -453,25 +453,25 @@ fn emitSlotOutletUpdateBody(
     defer allocator.free(next_slot_var_name);
     const current_slot_var_name = try std.fmt.allocPrint(allocator, "__current_slot_{d}", .{slot_outlet.handle_ref_id});
     defer allocator.free(current_slot_var_name);
-    try slot_codegen.emitSlotLookupLine(slot_outlet, next_slot_var_name, indent, out, allocator);
-    try common.writeIndent(indent, out, allocator);
+    try slots.emitSlotLookupLine(slot_outlet, next_slot_var_name, indent, out, allocator);
+    try js_output.writeIndent(indent, out, allocator);
     try out.print(allocator, "const {s} = {s}[{d}];\n", .{
         current_slot_var_name,
         refs_expr,
         slot_outlet.handle_ref_id,
     });
-    try common.writeIndent(indent, out, allocator);
+    try js_output.writeIndent(indent, out, allocator);
     try out.print(allocator, "if ({s}) {{\n", .{next_slot_var_name});
-    try common.writeIndent(indent + 1, out, allocator);
+    try js_output.writeIndent(indent + 1, out, allocator);
     try out.print(allocator, "if ({s} && {s} !== false) {{\n", .{
         current_slot_var_name,
         current_slot_var_name,
     });
-    try common.writeIndent(indent + 2, out, allocator);
+    try js_output.writeIndent(indent + 2, out, allocator);
     try out.print(allocator, "{s}.update();\n", .{current_slot_var_name});
-    try common.writeIndent(indent + 1, out, allocator);
+    try js_output.writeIndent(indent + 1, out, allocator);
     try out.appendSlice(allocator, "} else {\n");
-    try common.writeIndent(indent + 2, out, allocator);
+    try js_output.writeIndent(indent + 2, out, allocator);
     try out.print(allocator, "{s}[{d}] = {s}.mountIntoBoundary({s}[{d}], {s}[{d}]);\n", .{
         refs_expr,
         slot_outlet.handle_ref_id,
@@ -481,31 +481,31 @@ fn emitSlotOutletUpdateBody(
         refs_expr,
         slot_outlet.end_ref_id,
     });
-    try common.writeIndent(indent + 1, out, allocator);
+    try js_output.writeIndent(indent + 1, out, allocator);
     try out.appendSlice(allocator, "}\n");
-    try common.writeIndent(indent, out, allocator);
+    try js_output.writeIndent(indent, out, allocator);
     try out.appendSlice(allocator, "} else {\n");
-    try common.writeIndent(indent + 1, out, allocator);
+    try js_output.writeIndent(indent + 1, out, allocator);
     try out.print(allocator, "if ({s} !== false) {{\n", .{current_slot_var_name});
-    try common.writeIndent(indent + 2, out, allocator);
+    try js_output.writeIndent(indent + 2, out, allocator);
     try out.print(allocator, "if ({s} && typeof {s}.destroy === \"function\") {{ {s}.destroy(); }}\n", .{
         current_slot_var_name,
         current_slot_var_name,
         current_slot_var_name,
     });
-    try common.writeIndent(indent + 2, out, allocator);
+    try js_output.writeIndent(indent + 2, out, allocator);
     try out.print(allocator, "{s}[{d}] = false;\n", .{ refs_expr, slot_outlet.handle_ref_id });
     const start_ref_expr = try std.fmt.allocPrint(allocator, "{s}[{d}]", .{ refs_expr, slot_outlet.start_ref_id });
     defer allocator.free(start_ref_expr);
     const end_ref_expr = try std.fmt.allocPrint(allocator, "{s}[{d}]", .{ refs_expr, slot_outlet.end_ref_id });
     defer allocator.free(end_ref_expr);
-    try slot_codegen.emitSlotFallbackReplaceLine(slot_outlet, start_ref_expr, end_ref_expr, scope_expr, indent + 2, out, allocator);
-    try common.writeIndent(indent + 1, out, allocator);
+    try slots.emitSlotFallbackReplaceLine(slot_outlet, start_ref_expr, end_ref_expr, scope_expr, indent + 2, out, allocator);
+    try js_output.writeIndent(indent + 1, out, allocator);
     try out.appendSlice(allocator, "}\n");
     for (slot_outlet.fallback_children) |child| {
         try emitUpdateNode(child, out, allocator, indent + 1, scope_expr, refs_expr);
     }
-    try common.writeIndent(indent, out, allocator);
+    try js_output.writeIndent(indent, out, allocator);
     try out.appendSlice(allocator, "}\n");
 }
 
@@ -518,23 +518,23 @@ fn emitInterpolationUpdate(
     scope_expr: []const u8,
     refs_expr: []const u8,
 ) !void {
-    try common.writeIndent(indent, out, allocator);
+    try js_output.writeIndent(indent, out, allocator);
     try out.print(allocator, "const __next_text_{d} = String((", .{interp.ref_id});
-    try expression_codegen.emitResolvedExpression(interp.expression, scope_expr, bindings_json, out, allocator);
+    try expressions.emitResolvedExpression(interp.expression, scope_expr, bindings_json, out, allocator);
     try out.appendSlice(allocator, ") ?? \"\");\n");
-    try common.writeIndent(indent, out, allocator);
+    try js_output.writeIndent(indent, out, allocator);
     try out.print(allocator, "if ({s}[{d}].data !== __next_text_{d}) {{\n", .{
         refs_expr,
         interp.ref_id,
         interp.ref_id,
     });
-    try common.writeIndent(indent + 1, out, allocator);
+    try js_output.writeIndent(indent + 1, out, allocator);
     try out.print(allocator, "{s}[{d}].data = __next_text_{d};\n", .{
         refs_expr,
         interp.ref_id,
         interp.ref_id,
     });
-    try common.writeIndent(indent, out, allocator);
+    try js_output.writeIndent(indent, out, allocator);
     try out.appendSlice(allocator, "}\n");
 }
 
@@ -554,15 +554,15 @@ fn emitBoundAttributeUpdate(
     defer allocator.free(suffix);
 
     if (std.mem.eql(u8, target_name, "class") and static_value != null) {
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.print(allocator, "const __value_{d}_{s} = ", .{ ref_id, suffix });
-        try expression_codegen.emitResolvedExpression(expression, scope_expr, bindings_json, out, allocator);
+        try expressions.emitResolvedExpression(expression, scope_expr, bindings_json, out, allocator);
         try out.appendSlice(allocator, ";\n");
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.print(allocator, "const __static_{d}_{s} = ", .{ ref_id, suffix });
-        try common.emitHtmlString(static_value.?, out, allocator);
+        try js_output.emitHtmlString(static_value.?, out, allocator);
         try out.appendSlice(allocator, ".trim();\n");
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.print(allocator, "const __dynamic_{d}_{s} = __value_{d}_{s} === false || __value_{d}_{s} === true || __value_{d}_{s} === null || __value_{d}_{s} === undefined ? \"\" : String(__value_{d}_{s}).trim();\n", .{
             ref_id,
             suffix,
@@ -577,7 +577,7 @@ fn emitBoundAttributeUpdate(
             ref_id,
             suffix,
         });
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.print(allocator, "const __next_{d}_{s} = [__static_{d}_{s}, __dynamic_{d}_{s}].filter(Boolean).join(\" \");\n", .{
             ref_id,
             suffix,
@@ -586,16 +586,16 @@ fn emitBoundAttributeUpdate(
             ref_id,
             suffix,
         });
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.print(allocator, "if (__next_{d}_{s}) {{\n", .{ ref_id, suffix });
-        try common.writeIndent(indent + 1, out, allocator);
+        try js_output.writeIndent(indent + 1, out, allocator);
         try out.print(allocator, "{s}[{d}].setAttribute(\"class\", __next_{d}_{s});\n", .{ refs_expr, ref_id, ref_id, suffix });
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.appendSlice(allocator, "} else if (");
         try out.print(allocator, "{s}[{d}].hasAttribute(\"class\")) {{\n", .{ refs_expr, ref_id });
-        try common.writeIndent(indent + 1, out, allocator);
+        try js_output.writeIndent(indent + 1, out, allocator);
         try out.print(allocator, "{s}[{d}].removeAttribute(\"class\");\n", .{ refs_expr, ref_id });
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.appendSlice(allocator, "}\n");
         return;
     }
@@ -604,18 +604,18 @@ fn emitBoundAttributeUpdate(
         std.mem.eql(u8, target_name, "disabled") or
         std.mem.eql(u8, target_name, "selected"))
     {
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.print(allocator, "const __value_{d}_{s} = ", .{ ref_id, suffix });
-        try expression_codegen.emitResolvedExpression(expression, scope_expr, bindings_json, out, allocator);
+        try expressions.emitResolvedExpression(expression, scope_expr, bindings_json, out, allocator);
         try out.appendSlice(allocator, ";\n");
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.print(allocator, "const __next_{d}_{s} = Boolean(__value_{d}_{s});\n", .{
             ref_id,
             suffix,
             ref_id,
             suffix,
         });
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.print(allocator, "if ({s}[{d}].{s} !== __next_{d}_{s}) {{\n", .{
             refs_expr,
             ref_id,
@@ -623,7 +623,7 @@ fn emitBoundAttributeUpdate(
             ref_id,
             suffix,
         });
-        try common.writeIndent(indent + 1, out, allocator);
+        try js_output.writeIndent(indent + 1, out, allocator);
         try out.print(allocator, "{s}[{d}].{s} = __next_{d}_{s};\n", .{
             refs_expr,
             ref_id,
@@ -631,9 +631,9 @@ fn emitBoundAttributeUpdate(
             ref_id,
             suffix,
         });
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.appendSlice(allocator, "}\n");
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.print(allocator, "const __has_attr_{d}_{s} = {s}[{d}].hasAttribute(\"{s}\");\n", .{
             ref_id,
             suffix,
@@ -641,9 +641,9 @@ fn emitBoundAttributeUpdate(
             ref_id,
             target_name,
         });
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.print(allocator, "if (__next_{d}_{s}) {{\n", .{ ref_id, suffix });
-        try common.writeIndent(indent + 1, out, allocator);
+        try js_output.writeIndent(indent + 1, out, allocator);
         try out.print(allocator, "if (!__has_attr_{d}_{s}) {{ {s}[{d}].setAttribute(\"{s}\", \"\"); }}\n", .{
             ref_id,
             suffix,
@@ -651,9 +651,9 @@ fn emitBoundAttributeUpdate(
             ref_id,
             target_name,
         });
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.appendSlice(allocator, "} else {\n");
-        try common.writeIndent(indent + 1, out, allocator);
+        try js_output.writeIndent(indent + 1, out, allocator);
         try out.print(allocator, "if (__has_attr_{d}_{s}) {{ {s}[{d}].removeAttribute(\"{s}\"); }}\n", .{
             ref_id,
             suffix,
@@ -661,42 +661,42 @@ fn emitBoundAttributeUpdate(
             ref_id,
             target_name,
         });
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.appendSlice(allocator, "}\n");
         return;
     }
 
     if (std.mem.eql(u8, target_name, "value")) {
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.print(allocator, "const __value_{d}_{s} = ", .{ ref_id, suffix });
-        try expression_codegen.emitResolvedExpression(expression, scope_expr, bindings_json, out, allocator);
+        try expressions.emitResolvedExpression(expression, scope_expr, bindings_json, out, allocator);
         try out.appendSlice(allocator, ";\n");
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.print(allocator, "const __next_{d}_{s} = __value_{d}_{s} ?? \"\";\n", .{ ref_id, suffix, ref_id, suffix });
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.print(allocator, "const __next_string_{d}_{s} = String(__next_{d}_{s});\n", .{
             ref_id,
             suffix,
             ref_id,
             suffix,
         });
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.print(allocator, "if ({s}[{d}].value !== __next_string_{d}_{s}) {{\n", .{
             refs_expr,
             ref_id,
             ref_id,
             suffix,
         });
-        try common.writeIndent(indent + 1, out, allocator);
+        try js_output.writeIndent(indent + 1, out, allocator);
         try out.print(allocator, "{s}[{d}].value = __next_string_{d}_{s};\n", .{
             refs_expr,
             ref_id,
             ref_id,
             suffix,
         });
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.appendSlice(allocator, "}\n");
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.print(allocator, "{s}[{d}].setAttribute(\"value\", __next_string_{d}_{s});\n", .{
             refs_expr,
             ref_id,
@@ -707,11 +707,11 @@ fn emitBoundAttributeUpdate(
     }
 
     if (std.mem.eql(u8, target_name, "style")) {
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.print(allocator, "const __value_{d}_{s} = ", .{ ref_id, suffix });
-        try expression_codegen.emitResolvedExpression(expression, scope_expr, bindings_json, out, allocator);
+        try expressions.emitResolvedExpression(expression, scope_expr, bindings_json, out, allocator);
         try out.appendSlice(allocator, ";\n");
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.print(allocator, "if (__value_{d}_{s} === false || __value_{d}_{s} === null || __value_{d}_{s} === undefined) {{\n", .{
             ref_id,
             suffix,
@@ -720,16 +720,16 @@ fn emitBoundAttributeUpdate(
             ref_id,
             suffix,
         });
-        try common.writeIndent(indent + 1, out, allocator);
+        try js_output.writeIndent(indent + 1, out, allocator);
         try out.print(allocator, "if ({s}[{d}].hasAttribute(\"style\")) {{ {s}[{d}].removeAttribute(\"style\"); }}\n", .{
             refs_expr,
             ref_id,
             refs_expr,
             ref_id,
         });
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.appendSlice(allocator, "} else {\n");
-        try common.writeIndent(indent + 1, out, allocator);
+        try js_output.writeIndent(indent + 1, out, allocator);
         try out.print(allocator, "{s}[{d}].style.cssText = __value_{d}_{s} === true ? \"\" : String(__value_{d}_{s});\n", .{
             refs_expr,
             ref_id,
@@ -738,34 +738,34 @@ fn emitBoundAttributeUpdate(
             ref_id,
             suffix,
         });
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.appendSlice(allocator, "}\n");
         return;
     }
 
     if (std.mem.startsWith(u8, target_name, "aria-")) {
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.print(allocator, "const __value_{d}_{s} = ", .{ ref_id, suffix });
-        try expression_codegen.emitResolvedExpression(expression, scope_expr, bindings_json, out, allocator);
+        try expressions.emitResolvedExpression(expression, scope_expr, bindings_json, out, allocator);
         try out.appendSlice(allocator, ";\n");
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.print(allocator, "if (__value_{d}_{s} === null || __value_{d}_{s} === undefined) {{\n", .{ ref_id, suffix, ref_id, suffix });
-        try common.writeIndent(indent + 1, out, allocator);
+        try js_output.writeIndent(indent + 1, out, allocator);
         try out.print(allocator, "{s}[{d}].removeAttribute(\"{s}\");\n", .{ refs_expr, ref_id, target_name });
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.appendSlice(allocator, "} else {\n");
-        try common.writeIndent(indent + 1, out, allocator);
+        try js_output.writeIndent(indent + 1, out, allocator);
         try out.print(allocator, "{s}[{d}].setAttribute(\"{s}\", String(__value_{d}_{s}));\n", .{ refs_expr, ref_id, target_name, ref_id, suffix });
-        try common.writeIndent(indent, out, allocator);
+        try js_output.writeIndent(indent, out, allocator);
         try out.appendSlice(allocator, "}\n");
         return;
     }
 
-    try common.writeIndent(indent, out, allocator);
+    try js_output.writeIndent(indent, out, allocator);
     try out.print(allocator, "const __value_{d}_{s} = ", .{ ref_id, suffix });
-    try expression_codegen.emitResolvedExpression(expression, scope_expr, bindings_json, out, allocator);
+    try expressions.emitResolvedExpression(expression, scope_expr, bindings_json, out, allocator);
     try out.appendSlice(allocator, ";\n");
-    try common.writeIndent(indent, out, allocator);
+    try js_output.writeIndent(indent, out, allocator);
     try out.print(allocator, "if (__value_{d}_{s} === false || __value_{d}_{s} === null || __value_{d}_{s} === undefined) {{\n", .{
         ref_id,
         suffix,
@@ -774,7 +774,7 @@ fn emitBoundAttributeUpdate(
         ref_id,
         suffix,
     });
-    try common.writeIndent(indent + 1, out, allocator);
+    try js_output.writeIndent(indent + 1, out, allocator);
     try out.print(allocator, "if ({s}[{d}].hasAttribute(\"{s}\")) {{ {s}[{d}].removeAttribute(\"{s}\"); }}\n", .{
         refs_expr,
         ref_id,
@@ -783,9 +783,9 @@ fn emitBoundAttributeUpdate(
         ref_id,
         target_name,
     });
-    try common.writeIndent(indent, out, allocator);
+    try js_output.writeIndent(indent, out, allocator);
     try out.print(allocator, "}} else if (__value_{d}_{s} === true) {{\n", .{ ref_id, suffix });
-    try common.writeIndent(indent + 1, out, allocator);
+    try js_output.writeIndent(indent + 1, out, allocator);
     try out.print(allocator, "if (!{s}[{d}].hasAttribute(\"{s}\")) {{ {s}[{d}].setAttribute(\"{s}\", \"\"); }}\n", .{
         refs_expr,
         ref_id,
@@ -794,9 +794,9 @@ fn emitBoundAttributeUpdate(
         ref_id,
         target_name,
     });
-    try common.writeIndent(indent, out, allocator);
+    try js_output.writeIndent(indent, out, allocator);
     try out.appendSlice(allocator, "} else {\n");
-    try common.writeIndent(indent + 1, out, allocator);
+    try js_output.writeIndent(indent + 1, out, allocator);
     try out.print(allocator, "{s}[{d}].setAttribute(\"{s}\", String(__value_{d}_{s}));\n", .{
         refs_expr,
         ref_id,
@@ -804,7 +804,7 @@ fn emitBoundAttributeUpdate(
         ref_id,
         suffix,
     });
-    try common.writeIndent(indent, out, allocator);
+    try js_output.writeIndent(indent, out, allocator);
     try out.appendSlice(allocator, "}\n");
 }
 

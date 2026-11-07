@@ -1,5 +1,5 @@
 const std = @import("std");
-const binding = @import("../sema/binder.zig");
+const binding = @import("../sema/bind.zig");
 const lir = @import("lir.zig");
 const template = @import("../parser/template/index.zig");
 

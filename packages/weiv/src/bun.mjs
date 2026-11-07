@@ -1,54 +1,10 @@
-import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { existsSync } from "node:fs";
-import { resolveWeivBinaryPath } from "./platform.mjs";
-import { canonical, createManagedProject, inside, reactivityMode } from "./managed.mjs";
-
-function compileWeiv(filePath) {
-  const bin = resolveWeivBinaryPath();
-  const compiled = execFileSync(bin, ["compile", "emit", "js-legacy", filePath], {
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"]
-  });
-  return rewriteRuntimeImports(compiled);
-}
-
-function rewriteRuntimeImports(code) {
-  return code.replace(
-    /import\s*\{([^}]+)\}\s*from\s*["']@weiv\/runtime["'];?/g,
-    (_match, importsChunk) => {
-      const rawImports = importsChunk
-        .split(",")
-        .map((entry) => entry.trim())
-        .filter(Boolean);
-
-      const routerImports = [];
-      const observableImports = [];
-
-      for (const spec of rawImports) {
-        const importedName = spec.split(/\s+as\s+/)[0].trim();
-        if (importedName === "createRouter") {
-          routerImports.push(spec);
-        } else {
-          observableImports.push(spec);
-        }
-      }
-
-      const lines = [];
-      if (observableImports.length > 0) {
-        lines.push(`import { ${observableImports.join(", ")} } from "weiv:observable";`);
-      }
-      if (routerImports.length > 0) {
-        lines.push(`import { ${routerImports.join(", ")} } from "weiv:router";`);
-      }
-      return lines.join("\n");
-    }
-  );
-}
+import { canonical, createManagedProject, inside, validateOptions } from "./managed.mjs";
 
 export function weiv(options = {}) {
-  const mode = reactivityMode(options);
+  validateOptions(options);
   const project = createManagedProject(options);
   const cellRuntimePath = fileURLToPath(new URL("./runtime/cell.js", import.meta.url));
   const observableRuntimePath = fileURLToPath(new URL("./runtime/observable.js", import.meta.url));
@@ -71,7 +27,7 @@ export function weiv(options = {}) {
         try { const resolved = Bun.resolveSync(specifier, directory); return existsSync(resolved) ? canonical(resolved) : null; } catch { return null; }
       };
       build.onStart(async () => {
-        if (mode === "managed") await project.prepare({ root, entries, resolveSpecifier: resolveSource,
+        await project.prepare({ root, entries, resolveSpecifier: resolveSource,
           onDiagnostics: entries => { for (const entry of entries) console.warn(`[${entry.code}] ${entry.sourcePath}${entry.location ? `:${entry.location.line}:${entry.location.column}` : ""}: ${entry.message}`); },
         }, true);
       });
@@ -99,7 +55,7 @@ export function weiv(options = {}) {
         loader: "js",
       }));
 
-      if (mode === "managed") build.onResolve({ filter: /.*/ }, args => {
+      build.onResolve({ filter: /.*/ }, args => {
         const origin = args.importer && project.generated.get(canonical(args.importer))?.source;
         const importer = origin ?? args.importer ?? path.join(root, "entry.js");
         if (args.path.startsWith("/__weiv_packages/")) {
@@ -113,21 +69,8 @@ export function weiv(options = {}) {
         if (record) return { path: record.output, namespace: "file" };
         if (source.endsWith(".weiv")) project.component(source);
       });
-      else build.onResolve({ filter: /\.[mc]?js$/ }, args => {
-        if (!args.importer?.endsWith(".weiv") || !args.path.startsWith(".")) return;
-        const emitted = path.resolve(path.dirname(args.importer), args.path);
-        if (existsSync(emitted)) return;
-        const candidates = emitted.endsWith(".mjs") ? [`${emitted.slice(0, -4)}.weiv`, `${emitted.slice(0, -4)}.mts`] : [`${emitted.slice(0, -3)}.ts`, `${emitted.slice(0, -3)}.tsx`];
-        for (const source of candidates) if (existsSync(source)) return { path: canonical(source), namespace: "file" };
-      });
-
       build.onLoad({ filter: /\.weiv$/ }, (args) => {
-        if (mode === "managed") return { contents: `export * from ${JSON.stringify(project.component(args.path).output)};`, loader: "js" };
-        const code = compileWeiv(path.resolve(args.path));
-        return {
-          contents: code,
-          loader: "js"
-        };
+        return { contents: `export * from ${JSON.stringify(project.component(args.path).output)};`, loader: "js" };
       });
     }
   };

@@ -8,6 +8,7 @@ Status key: 🔴 open · 🟠 needs investigation or retest · 🟡 fixed in sou
 
 | Defect | Reported | Status | Current status | Details |
 | --- | --- | :---: | --- | --- |
+| SVG elements use HTML namespace | 2026-11-07 | 🔴 | Open: graph paths do not paint | [Report](#svg-elements-compile-into-the-html-namespace-2026-11-07) |
 | State updates after detached async work | 2026-11-06 | 🔴 | Open: scalar async notifications | [Report](#predictable-state-contract-audit-2026-11-06) |
 | Template literal in child prop | 2026-11-06 | 🟡 | Fixed in source; app retest pending | [Report](#custom-component-prop-template-expression-in-ceiv-2026-11-06) |
 | Boolean ARIA attribute values | 2026-11-05 | 🟡 | Fixed in source; native retest pending | [Report](#boolean-aria-selected-binding-reports-the-active-tab-as-off-2026-11-05) |
@@ -2850,3 +2851,45 @@ weiv run failed for <process>
   checks; JavaScript syntax and diff checks pass. The first regression invocation
   picked the system Zig 0.17 and failed on the existing build API; rerunning with
   the required Zig 0.16.0 resolved that environment mismatch.
+
+
+## Legacy reactivity retirement (2026-11-07)
+
+- **Scope:** user authorized immediate retirement without compatibility shims.
+  Removed separate emitter paths, synchronous scope snapshots, timer/async
+  wrappers, late tracked-root proxies, private observable listeners, `weivUpdate`
+  injection/reservation, alternate cells command aliases and plugin mode selection.
+  The bounded managed-state contract is unchanged; other repositories migrate
+  separately. Props now use the common cell core rather than the old proxy path.
+- **Confirmed validation mismatch, fixed:** moving `app-cells` fixtures to ordinary
+  `emit app` exposed the old preflight rejecting `./barrel` imports with
+  `import.unsupported_runtime_import_type`, although the managed graph already
+  supports extensionless project modules. Preflight now defers extensionless
+  resolution to that graph; explicit unsupported file types retain diagnostics.
+  Reproduce with `node test/package/app-cells.test.mjs` after a Zig 0.16.0 build.
+- **Test migration:** former synchronous DOM fixtures now wait for queued batches,
+  canonical module checks follow managed outputs, detached promises notify directly,
+  and obsolete wrapper characterization is removed. Imported observable sibling
+  reads use the existing managed binding granularity; unrelated bindings remain
+  isolated. No new JavaScript inference or loading forms were added.
+- **Environment:** macOS arm64, Zig 0.16.0, Node 22.22.1, Bun 1.2.16,
+  Vite 5.4.21, Rust/Oxc versions unchanged from default adoption.
+- **Diagnostic cleanup:** removed obsolete inspector warnings claiming supported
+  expression writes, aliases or external callbacks require an owned boundary.
+  Mutation and callback facts remain inspectable; uncertain/external ownership
+  continues to use the bounded state-boundary diagnostics.
+- **Verification:** 170 component/runtime/inspection/UI-core cases (1,376
+  assertions), the 204-operation/context matrix, 49 Rust tests, all 14 package
+  checks, and the documentation site build pass. Inspector and related package
+  checks were rerun after diagnostic cleanup. Zig build and all 119 Zig tests pass;
+  retired commands return structured `cli.reactivity_mode_removed` diagnostics
+  with migration guidance. Public retirement docs are deployed and verified.
+## SVG elements compile into the HTML namespace (2026-11-07)
+
+- **Classification:** confirmed compiler/runtime defect in SVG element creation.
+- **Task/context:** Lightcept's Ceiv WebView needed a 200 × 200 RGB curve graph with a grid, polyline, and draggable points in `App.weiv`.
+- **Version/environment:** Weiv package 0.1.2, local checkout `eafb27d`; Node 22.22.1; macOS arm64 with Ceiv's WebKit view. The generated source was inspected in `CeivApp.app/Contents/Resources/web/App.mjs`.
+- **Minimal reproduction:** compile a component containing `<svg width="200" height="200" viewBox="0 0 200 200"><path d="M0 200L200 0" stroke="red"/><circle cx="100" cy="100" r="5" fill="red"/></svg>` using `npx weiv compile path/to/App.weiv`, then mount it in a browser/WebView. Inspect the generated module's element creation calls and the rendered graph.
+- **Expected:** SVG, path, and circle are created in `http://www.w3.org/2000/svg`; the red line and point render inside the 200 × 200 viewport.
+- **Actual:** generated code calls `document.createElement("path")`, `document.createElement("circle")`, and likewise for the parent SVG. The graph frame appears but its path and point do not paint. No compiler error was emitted; complete error output: none.
+- **Workaround:** use a Weiv managed `<canvas>` and draw the curve with the Canvas 2D API; keep the surrounding controls and state in Weiv. Explicit canvas dimensions and pointer handlers provide the required graph interaction.

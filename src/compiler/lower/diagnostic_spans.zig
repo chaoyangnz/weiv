@@ -1,21 +1,14 @@
 const std = @import("std");
-const ast = @import("ast.zig");
-const directives = @import("directives.zig");
-const normalized = @import("normalized.zig");
-const sfc = @import("../sfc.zig");
+const directives = @import("../parser/template/directives.zig");
+const normalized = @import("../parser/template/normalized.zig");
+const sfc = @import("../parser/sfc.zig");
 
+// Locate LIR lowering failures; parser normalization owns its own span lookup.
 pub fn findFirstInvalidLoweringSpan(
     nodes: []const normalized.Node,
     err: anyerror,
 ) ?sfc.Span {
     return findInvalidSpan(nodes, err, false);
-}
-
-pub fn findFirstInvalidNormalizeSpan(
-    nodes: []const ast.Node,
-    err: anyerror,
-) ?sfc.Span {
-    return findInvalidNormalizeSpanInNodes(nodes, err);
 }
 
 fn findInvalidSpan(
@@ -58,28 +51,6 @@ fn findInvalidSpan(
     return null;
 }
 
-fn findInvalidNormalizeSpanInNodes(nodes: []const ast.Node, err: anyerror) ?sfc.Span {
-    if (err != error.UnexpectedElse) return null;
-
-    var i: usize = 0;
-    while (i < nodes.len) : (i += 1) {
-        switch (nodes[i]) {
-            .element => |element| {
-                if (hasElseDirective(element.directives) and !previousSiblingHasIf(nodes, i)) {
-                    return element.span;
-                }
-                if (findInvalidNormalizeSpanInNodes(element.children, err)) |span| return span;
-            },
-            .slot_outlet => |slot_outlet| {
-                if (findInvalidNormalizeSpanInNodes(slot_outlet.fallback_children, err)) |span| return span;
-            },
-            .text, .interpolation => {},
-        }
-    }
-
-    return null;
-}
-
 fn findSlotAssign(input: []const directives.Directive) ?[]const u8 {
     for (input) |directive| {
         switch (directive) {
@@ -93,30 +64,4 @@ fn findSlotAssign(input: []const directives.Directive) ?[]const u8 {
 fn isComponentTag(tag_name: []const u8) bool {
     if (tag_name.len == 0) return false;
     return std.ascii.isUpper(tag_name[0]);
-}
-
-fn hasElseDirective(input: []const directives.Directive) bool {
-    for (input) |directive| {
-        switch (directive) {
-            .else_branch => return true,
-            else => {},
-        }
-    }
-    return false;
-}
-
-fn previousSiblingHasIf(nodes: []const ast.Node, index: usize) bool {
-    if (index == 0) return false;
-    switch (nodes[index - 1]) {
-        .element => |element| {
-            for (element.directives) |directive| {
-                switch (directive) {
-                    .if_expr => return true,
-                    else => {},
-                }
-            }
-            return false;
-        },
-        else => return false,
-    }
 }

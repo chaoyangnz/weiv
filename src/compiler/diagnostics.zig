@@ -1,4 +1,5 @@
 const std = @import("std");
+const lowering_spans = @import("lower/diagnostic_spans.zig");
 const parser = @import("parser/index.zig");
 const sir = @import("sema/sir.zig");
 
@@ -224,7 +225,7 @@ pub fn appendTemplateNormalizeDiagnostic(
         else => return err,
     };
 
-    const relative_span = template.debug.findFirstInvalidNormalizeSpan(template_document.nodes, err) orelse sfc.Span{ .start = 0, .end = 1 };
+    const relative_span = template.diagnostic_spans.findFirstInvalidNormalizeSpan(template_document.nodes, err) orelse sfc.Span{ .start = 0, .end = 1 };
 
     const absolute_span = Span{
         .start = sfc_document.template.content_span.start + relative_span.start,
@@ -259,7 +260,7 @@ pub fn appendLoweringDiagnostic(
         else => return err,
     };
 
-    const relative_span = template.debug.findFirstInvalidLoweringSpan(normalized_template.nodes, err) orelse sfc.Span{ .start = 0, .end = 1 };
+    const relative_span = lowering_spans.findFirstInvalidLoweringSpan(normalized_template.nodes, err) orelse sfc.Span{ .start = 0, .end = 1 };
     const absolute_span = Span{
         .start = sfc_document.template.content_span.start + relative_span.start,
         .end = sfc_document.template.content_span.start + relative_span.end,

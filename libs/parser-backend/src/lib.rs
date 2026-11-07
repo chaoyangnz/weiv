@@ -1929,8 +1929,7 @@ fn is_owned_callback_callee(callee: &Expression<'_>, source: &str) -> bool {
         Some("setTimeout")
         | Some("setInterval")
         | Some("queueMicrotask")
-        | Some("requestAnimationFrame")
-        | Some("weivUpdate") => true,
+        | Some("requestAnimationFrame") => true,
         _ => false,
     }
 }

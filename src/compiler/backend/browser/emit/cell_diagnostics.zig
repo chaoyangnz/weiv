@@ -1,9 +1,9 @@
 const std = @import("std");
-const component = @import("../component_unit.zig");
-const diagnostics = @import("../diagnostics.zig");
-const normalized = @import("../parser/template/normalized.zig");
-const functions = @import("template_functions.zig");
-const backend = @import("../../ffi/script_backend.zig");
+const component = @import("../../../component_unit.zig");
+const diagnostics = @import("../../../diagnostics.zig");
+const normalized = @import("../../../parser/template/normalized.zig");
+const functions = @import("../../../lower/template_functions.zig");
+const backend = @import("../../../../ffi/script_backend.zig");
 
 // Only used after emission fails. Probe each expression against the real script
 // and selected roots, so errors retain lexical scope without adding success-path

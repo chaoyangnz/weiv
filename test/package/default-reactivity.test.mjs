@@ -33,7 +33,7 @@ try {
     writeFileSync(check, `import assert from 'node:assert/strict';import {JSDOM} from ${JSON.stringify(import.meta.resolve("jsdom"))};import {source,observable,mountLeft,mountRight} from ${JSON.stringify(pathToFileURL(output).href)};
       const dom=new JSDOM('<main><section id="left"></section><section id="right"></section></main>');globalThis.window=dom.window;globalThis.document=dom.window.document;
       const a=document.querySelector('#left'),b=document.querySelector('#right');const left=mountLeft(a,{}),right=mountRight(b,{});const tick=()=>new Promise(resolve=>queueMicrotask(resolve));
-      assert.equal(left.instance.cellManaged,true);assert.equal(right.instance.cellManaged,true);assert.deepEqual(Object.keys(source).sort(),['advance','left','replace','right','state']);assert.equal(typeof source.left,'number');assert.equal(observable(source.state),source.state);
+      assert.deepEqual(Object.keys(source).sort(),['advance','left','replace','right','state']);assert.equal(typeof source.left,'number');assert.equal(observable(source.state),source.state);
       for(const name of ['Left','Right']){const detail={};window.dispatchEvent(new window.CustomEvent('read-'+name,{detail}));assert.equal(detail.state,source.state)}
       source.advance();assert.equal(a.querySelector('p').textContent,'Left:0/0/0');await tick();assert.equal(a.querySelector('p').textContent,'Left:1/1/0');assert.equal(b.querySelector('p').textContent,'Right:1/1/0');
       window.dispatchEvent(new window.Event('local-tick'));await tick();assert.equal(a.querySelector('p').textContent,'Left:1/1/1');assert.equal(b.querySelector('p').textContent,'Right:1/1/1');
@@ -43,10 +43,23 @@ try {
   }
 
   const managed = execFileSync(binary, ["emit", "js", join(project, "Left.weiv")], { cwd: repo, encoding: "utf8", stdio: "pipe" });
-  const legacy = execFileSync(binary, ["emit", "js-legacy", join(project, "Left.weiv")], { cwd: repo, encoding: "utf8", stdio: "pipe" });
-  assert(managed.includes("const __weiv_cellManaged = true"));assert(legacy.includes("const __weiv_cellManaged = false"));
+  assert(managed.includes("__weiv_createCellScope"));
+  for (const removed of ["weivUpdate", "runOwnedBoundary", "flushOwnedBoundary", "cloneScope", "__weiv_wrapCallback", "__weiv_getTrackedRoot", "__weiv_getObservableNode"]) {
+    assert(!managed.includes(removed), `Retired machinery still emitted: ${removed}`);
+  }
+  for (const args of [["emit-js-legacy"], ["emit-app-legacy"], ["compile", "emit", "js-legacy"], ["compile", "emit", "app-legacy"]]) {
+    assert.throws(() => execFileSync(binary, [...args, join(project, "Left.weiv")], { cwd: repo, stdio: "pipe" }));
+  }
+  for (const retired of ["js-legacy", "app-legacy", "js-cells", "app-cells"]) {
+    assert.throws(() => execFileSync(binary, ["emit", retired, join(project, "Left.weiv")], { cwd: repo, stdio: "pipe" }));
+  }
+  assert.throws(() => execFileSync(binary, ["--json-diagnostics", "emit", "js-legacy", join(project, "Left.weiv")], { cwd: repo, stdio: "pipe" }), error => {
+    const report = JSON.parse(String(error.stderr));
+    return report.diagnostics.some(entry => entry.code === "cli.reactivity_mode_removed" && entry.message.includes("emit js or emit app"));
+  });
+  assert.throws(() => weiv({ reactivity: "legacy" }), /removed/);
   execFileSync(process.execPath, [join(repo, "packages/weiv/bin/weiv.mjs"), "emit", "app", join(project, "Left.weiv"), join(temp, "cli")], { cwd: project, env: { ...process.env, WEIV_BINARY_PATH: binary }, stdio: "pipe" });
-  assert(readFileSync(join(temp, "cli/Left.mjs"), "utf8").includes("const __weiv_cellManaged = true"));
+  assert(readFileSync(join(temp, "cli/Left.mjs"), "utf8").includes("__weiv_createCellScope"));
 
   // Existing application smoke: keep its source unchanged under the new default.
   const todoOutput = join(temp, 'todomvc');
@@ -61,23 +74,14 @@ try {
     handle.destroy();dom.window.close();`);
   execFileSync(process.execPath, [todoCheck], { cwd: project, stdio: 'pipe' });
 
-  const legacyOutput = join(temp, 'legacy');
-  await build({ configFile: false, root: project, logLevel: 'silent', plugins: [weiv({ reactivity: 'legacy' })], build: { target: 'esnext', minify: false, outDir: legacyOutput, lib: { entry, formats: ['es'], fileName: () => 'legacy.mjs' } } });
-  assert(readFileSync(join(legacyOutput, 'legacy.mjs'), 'utf8').includes('const __weiv_cellManaged = false'));
-  writeFileSync(builder, `import {weiv} from ${JSON.stringify(pathToFileURL(join(repo, 'packages/weiv/dist/bun.mjs')).href)};const result=await Bun.build({entrypoints:[${JSON.stringify(entry)}],outdir:${JSON.stringify(temp)},naming:'bun-legacy.mjs',target:'browser',plugins:[weiv({reactivity:'legacy'})]});if(!result.success)throw new AggregateError(result.logs,'Legacy Bun build failed');`);
-  execFileSync('bun', [builder], { cwd: project, env: { ...process.env, WEIV_BINARY_PATH: binary }, stdio: 'pipe' });
-  const legacyCheck = join(temp, 'check-legacy.mjs');
-  writeFileSync(legacyCheck, `import assert from 'node:assert/strict';import {JSDOM} from ${JSON.stringify(import.meta.resolve('jsdom'))};import {mountLeft} from ${JSON.stringify(pathToFileURL(join(temp, 'bun-legacy.mjs')).href)};
-    const dom=new JSDOM('<main></main>');globalThis.window=dom.window;globalThis.document=dom.window.document;const target=document.querySelector('main');const handle=mountLeft(target,{});
-    assert.equal(handle.instance.cellManaged,false);target.querySelector('button').click();assert.equal(target.querySelector('p').textContent,'Left:0/0/1');handle.destroy();dom.window.close();`);
-  execFileSync('bun', [legacyCheck], { cwd: project, stdio: 'pipe' });
+  const { weiv: bunPlugin } = await import("../../packages/weiv/dist/bun.mjs");
+  assert.throws(() => bunPlugin({ reactivity: "legacy" }), /removed/);
 
-  // Development serves the same graph and rebuilds it when shared source changes.
   writeFileSync(join(project, "index.html"), '<script type="module" src="/entry.ts"></script>');
   server = await createServer({ configFile: false, root: project, logLevel: "silent", plugins: [weiv()], server: { middlewareMode: true } });
   const first = await server.transformRequest('/Left.weiv');assert(first.code.includes('export * from'));
   const cached = /export \* from "([^"]+)"/.exec(first.code)[1];
-  const native = await server.transformRequest(cached.startsWith('/@fs/') ? cached : `/@fs${cached}`);assert(native.code.includes('__weiv_cellManaged = true'));
+  const native = await server.transformRequest(cached.startsWith('/@fs/') ? cached : `/@fs${cached}`);assert(native.code.includes('__weiv_createCellScope'));
   const reloaded = new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error('Shared-state edit did not rebuild/reload the managed dev graph')), 5000);
     const send = server.ws.send.bind(server.ws);
@@ -86,7 +90,7 @@ try {
   writeFileSync(join(project, 'state.ts'), readFileSync(join(project, 'state.ts'), 'utf8').replace('left++', 'left+=2'));
   await reloaded;
 
-  console.log("Default CLI/Vite/Bun preserve shared state, async DOM, existing TodoMVC, legacy opt-out and development graph reloads");
+  console.log("Default CLI/Vite/Bun preserve shared state, async DOM, existing TodoMVC, retired-mode rejection and development graph reloads");
 } finally {
   await server?.close();rmSync(temp, { recursive: true, force: true });
 }

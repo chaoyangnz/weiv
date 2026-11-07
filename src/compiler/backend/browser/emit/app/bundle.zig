@@ -1,8 +1,8 @@
 const std = @import("std");
 const compiler_diagnostics = @import("../../../../diagnostics.zig");
-const bundle_graph = @import("graph.zig");
+const component_graph = @import("component_graph.zig");
 const bundle_outputs = @import("bundle_outputs.zig");
-const managed = @import("managed.zig");
+const module_graph = @import("module_graph.zig");
 
 pub const AppValidationReport = struct {
     diagnostics: []compiler_diagnostics.Diagnostic,
@@ -15,11 +15,7 @@ pub const AppValidationReport = struct {
 };
 
 pub fn emitApp(root_component_path: []const u8, out_dir_path: []const u8, allocator: std.mem.Allocator) !void {
-    return emitAppMode(root_component_path, out_dir_path, true, false, allocator);
-}
-
-pub fn emitAppLegacy(root_component_path: []const u8, out_dir_path: []const u8, allocator: std.mem.Allocator) !void {
-    return emitAppMode(root_component_path, out_dir_path, false, false, allocator);
+    return emitAppWithDiagnostics(root_component_path, out_dir_path, false, allocator);
 }
 
 // Bundlers supply their reachable component roots and own one shared output graph.
@@ -30,7 +26,7 @@ pub fn emitManagedProject(manifest_path: []const u8, output_path: []const u8, js
     defer allocator.free(input);
     const config = try std.json.parseFromSlice(struct { root: []const u8, components: []const []const u8 }, allocator, input, .{});
     defer config.deinit();
-    var graph = bundle_graph.BundleGraph.init(config.value.root, allocator);
+    var graph = component_graph.ComponentGraph.init(config.value.root, allocator);
     defer graph.deinit();
     for (config.value.components) |source| {
         const canonical = try std.Io.Dir.cwd().realPathFileAlloc(io, source, allocator);
@@ -43,7 +39,7 @@ pub fn emitManagedProject(manifest_path: []const u8, output_path: []const u8, js
         allocator.free(node.module_rel_path);
         node.module_rel_path = safe;
     }
-    var build = managed.Build.init(&graph, allocator);
+    var build = module_graph.Build.init(&graph, allocator);
     defer build.deinit();
     var out_dir = try std.Io.Dir.cwd().createDirPathOpen(io, output_path, .{});
     defer out_dir.close(io);
@@ -72,23 +68,18 @@ pub fn emitManagedProject(manifest_path: []const u8, output_path: []const u8, js
     try build.reportWarnings(json_diagnostics);
 }
 
-pub fn emitAppCells(root_component_path: []const u8, out_dir_path: []const u8, json_diagnostics: bool, allocator: std.mem.Allocator) !void {
-    return emitAppMode(root_component_path, out_dir_path, true, json_diagnostics, allocator);
-}
-
-fn emitAppMode(root_component_path: []const u8, out_dir_path: []const u8, cells: bool, json_diagnostics: bool, allocator: std.mem.Allocator) !void {
+pub fn emitAppWithDiagnostics(root_component_path: []const u8, out_dir_path: []const u8, json_diagnostics: bool, allocator: std.mem.Allocator) !void {
     const root_abs_path = try std.Io.Dir.cwd().realPathFileAlloc(std.Io.Threaded.global_single_threaded.io(), root_component_path, allocator);
     defer allocator.free(root_abs_path);
 
     const root_dir = std.fs.path.dirname(root_abs_path) orelse return error.InvalidRootPath;
-    var graph = bundle_graph.BundleGraph.init(root_dir, allocator);
+    var graph = component_graph.ComponentGraph.init(root_dir, allocator);
     defer graph.deinit();
 
     const root_index = try graph.collect(root_abs_path);
-    if (!cells) try graph.validateRuntimeImports();
-    var managed_build = managed.Build.init(&graph, allocator);
+    var managed_build = module_graph.Build.init(&graph, allocator);
     defer managed_build.deinit();
-    if (cells) managed_build.prepare() catch |err| {
+    managed_build.prepare() catch |err| {
         if (managed_build.warnings.hasFatal()) {
             try managed_build.reportWarnings(json_diagnostics);
             return error.Reported;
@@ -103,13 +94,13 @@ fn emitAppMode(root_component_path: []const u8, out_dir_path: []const u8, cells:
     defer allocator.free(styles_css);
     try out_dir.writeFile(std.Io.Threaded.global_single_threaded.io(), .{ .sub_path = "styles.css", .data = styles_css });
 
-    if (cells) managed_build.writeComponents(out_dir) catch |err| {
+    managed_build.writeComponents(out_dir) catch |err| {
         if (managed_build.warnings.hasFatal()) {
             try managed_build.reportWarnings(json_diagnostics);
             return error.Reported;
         }
         return err;
-    } else try graph.writeComponentModulesDirect(out_dir, allocator);
+    };
 
     const entry_source = try bundle_outputs.emitDirectEntry(&graph, root_index, allocator);
     defer allocator.free(entry_source);
@@ -127,8 +118,6 @@ fn emitAppMode(root_component_path: []const u8, out_dir_path: []const u8, cells:
     defer allocator.free(html_source);
     try out_dir.writeFile(std.Io.Threaded.global_single_threaded.io(), .{ .sub_path = "index.html", .data = html_source });
 
-    if (!cells) try graph.writeRuntimeImports(out_dir, allocator);
-
     const package_json = try bundle_outputs.emitPackageJson(allocator);
     defer allocator.free(package_json);
     try out_dir.writeFile(std.Io.Threaded.global_single_threaded.io(), .{ .sub_path = "package.json", .data = package_json });
@@ -136,7 +125,7 @@ fn emitAppMode(root_component_path: []const u8, out_dir_path: []const u8, cells:
     const dev_server = try bundle_outputs.emitDevServer(allocator);
     defer allocator.free(dev_server);
     try out_dir.writeFile(std.Io.Threaded.global_single_threaded.io(), .{ .sub_path = "server.ts", .data = dev_server });
-    if (cells) try managed_build.reportWarnings(json_diagnostics);
+    try managed_build.reportWarnings(json_diagnostics);
 }
 
 pub fn validateApp(root_component_path: []const u8, allocator: std.mem.Allocator) !AppValidationReport {
@@ -144,7 +133,7 @@ pub fn validateApp(root_component_path: []const u8, allocator: std.mem.Allocator
     defer allocator.free(root_abs_path);
 
     const root_dir = std.fs.path.dirname(root_abs_path) orelse return error.InvalidRootPath;
-    var graph = bundle_graph.BundleGraph.init(root_dir, allocator);
+    var graph = component_graph.ComponentGraph.init(root_dir, allocator);
     defer graph.deinit();
 
     var bag = compiler_diagnostics.DiagnosticBag.init();

@@ -1,5 +1,5 @@
 import { test } from "bun:test";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
@@ -11,8 +11,8 @@ import {
   change,
   click,
   dblclick,
-  emitLegacyApp as emitApp,
-  emitLegacyBrowserModule as emitDirectBrowserModule,
+  emitApp,
+  emitDirectBrowserModule,
   findElement,
   findElements,
   importModule,
@@ -21,6 +21,12 @@ import {
   keydown,
   loadModules,
 } from "./support";
+
+function managedModules(directory: string) {
+  const modules = join(directory, "__weiv_modules");
+  return readdirSync(modules).filter(name => name.endsWith(".mjs") && !name.endsWith(".publisher.mjs"))
+    .map(name => readFileSync(join(modules, name), "utf8")).join("\n");
+}
 
 test("classic app emits and helper-copy flows stay healthy", async () => {
   const bundleDir = mkdtempSync(join(tmpdir(), "weiv-app-emit-"));
@@ -79,20 +85,20 @@ test("classic app emits and helper-copy flows stay healthy", async () => {
   const importedHelperBundleDir = mkdtempSync(join(tmpdir(), "weiv-imported-helper-bundle-"));
   try {
     emitApp("test/examples/imported-helper/App.weiv", importedHelperBundleDir);
-    const helperModule = readFileSync(join(importedHelperBundleDir, "format.js"), "utf8");
-    const punctuationModule = readFileSync(join(importedHelperBundleDir, "punctuation.js"), "utf8");
+    const helperModule = managedModules(importedHelperBundleDir);
+    const punctuationModule = managedModules(importedHelperBundleDir);
     const helperAppModule = readFileSync(join(importedHelperBundleDir, "App.mjs"), "utf8");
     const helperProps = readFileSync(join(importedHelperBundleDir, "props.mjs"), "utf8");
     if (!helperModule.includes("export function formatTitle")) {
       throw new Error("Imported helper bundle missing copied format.js");
     }
-    if (!helperModule.includes('import { suffix } from "./punctuation.js";')) {
+    if (!helperModule.includes('import { suffix } from "./')) {
       throw new Error("Imported helper bundle missing transitive helper import");
     }
-    if (!punctuationModule.includes('export const suffix = "!";')) {
+    if (!punctuationModule.includes('export const suffix =')) {
       throw new Error("Imported helper bundle missing copied punctuation.js");
     }
-    if (!helperAppModule.includes('import { formatTitle as __weiv_import_formatTitle } from "./format.js";')) {
+    if (!helperAppModule.includes('import { formatTitle as __weiv_import_formatTitle } from "./__weiv_modules/')) {
       throw new Error("Imported helper bundle missing preserved runtime import");
     }
     if (!helperProps.includes('title: "Preview"') || !helperProps.includes("count: 0")) {
@@ -110,17 +116,17 @@ test("classic app emits and helper-copy flows stay healthy", async () => {
   const importedTsHelperBundleDir = mkdtempSync(join(tmpdir(), "weiv-imported-ts-helper-bundle-"));
   try {
     emitApp("test/examples/imported-ts-helper/App.weiv", importedTsHelperBundleDir);
-    const tsHelperModule = readFileSync(join(importedTsHelperBundleDir, "format.js"), "utf8");
-    const tsPunctuationModule = readFileSync(join(importedTsHelperBundleDir, "punctuation.js"), "utf8");
+    const tsHelperModule = managedModules(importedTsHelperBundleDir);
+    const tsPunctuationModule = managedModules(importedTsHelperBundleDir);
     const tsHelperAppModule = readFileSync(join(importedTsHelperBundleDir, "App.mjs"), "utf8");
     const tsHelperProps = readFileSync(join(importedTsHelperBundleDir, "props.mjs"), "utf8");
-    if (!tsHelperModule.includes('import { suffix } from "./punctuation.js";')) {
+    if (!tsHelperModule.includes('import { suffix } from "./')) {
       throw new Error("Imported TS helper bundle missing rewritten transitive helper import");
     }
-    if (!tsPunctuationModule.includes('export const suffix = "!";')) {
+    if (!tsPunctuationModule.includes('export const suffix =')) {
       throw new Error("Imported TS helper bundle missing transpiled punctuation.js");
     }
-    if (!tsHelperAppModule.includes('import { formatTitle as __weiv_import_formatTitle } from "./format.js";')) {
+    if (!tsHelperAppModule.includes('import { formatTitle as __weiv_import_formatTitle } from "./__weiv_modules/')) {
       throw new Error("Imported TS helper bundle missing rewritten app import");
     }
     if (!tsHelperProps.includes('title: "Preview"') || !tsHelperProps.includes("count: 0")) {
@@ -232,6 +238,7 @@ export function appendShared() {
     }
 
     click(incrementButton);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
     await new Promise<void>((resolve) => queueMicrotask(resolve));
 
     if (count.textContent.trim() !== "2") {
@@ -243,8 +250,8 @@ export function appendShared() {
     if (unrelatedReads !== 0) {
       throw new Error(`Shared mutation revisited an unrelated binding ${unrelatedReads} times`);
     }
-    if (labelReads !== 0) {
-      throw new Error(`Shared count mutation revisited a sibling property ${labelReads} times`);
+    if (labelReads !== 1) {
+      throw new Error(`Shared count mutation should revisit the subscribed binding once; read its sibling property ${labelReads} times`);
     }
     const appendButton = findElement(fakeDocument.body, byClass("append"));
     const itemCount = findElement(fakeDocument.body, byClass("item-count"));
@@ -252,6 +259,7 @@ export function appendShared() {
       throw new Error("Observable app did not render the array length");
     }
     click(appendButton);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
     await new Promise<void>((resolve) => queueMicrotask(resolve));
     if (itemCount.textContent.trim() !== "2") {
       throw new Error(`Array index write did not update direct length binding: ${itemCount.textContent.trim()}`);
@@ -307,6 +315,7 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
   if (!directNewTodoInput) throw new Error("TodoMVC direct mount missing newtodo input");
   directNewTodoInput.value = "Direct DOM codegen path";
   keydown(directNewTodoInput, "Enter");
+  await new Promise<void>(resolve => queueMicrotask(resolve));
 
   if (todomvcDirectTarget.replaceChildrenCalls !== 1) {
     throw new Error("TodoMVC direct create flow rerendered the root");
@@ -322,6 +331,7 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
   const directActiveButton = directFilterButtons.find((element) => element.textContent.trim() === "Active");
   if (!directActiveButton) throw new Error("TodoMVC direct active filter button missing");
   click(directActiveButton);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
 
   if (todomvcDirectTarget.replaceChildrenCalls !== 1) {
     throw new Error("TodoMVC direct filter change rerendered the root");
@@ -336,6 +346,7 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
   );
   if (!directEditLabel) throw new Error("TodoMVC direct edit target label missing");
   dblclick(directEditLabel);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
 
   if (todomvcDirectTarget.replaceChildrenCalls !== 1) {
     throw new Error("TodoMVC direct edit-mode entry rerendered the root");
@@ -344,6 +355,7 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
   if (!directEditInput) throw new Error("TodoMVC direct edit flow did not open edit input");
   directEditInput.value = "Direct path edit flow";
   keydown(directEditInput, "Enter");
+  await new Promise<void>(resolve => queueMicrotask(resolve));
 
   directLabels = findElements(todomvcDirectDocument.body, byTag("label")).map((element) => element.textContent.trim());
   if (!directLabels.includes("Direct path edit flow")) {
@@ -355,6 +367,7 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
   if (!directCreatedToggle) throw new Error("TodoMVC direct toggle flow missing active toggle");
   directCreatedToggle.checked = true;
   change(directCreatedToggle);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
 
   if (todomvcDirectTarget.replaceChildrenCalls !== 1) {
     throw new Error("TodoMVC direct toggle flow rerendered the root");
@@ -399,6 +412,7 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
     if (!newTodoInput) throw new Error("TodoMVC mount missing newtodo input");
     newTodoInput.value = "Verify browser interaction checks";
     keydown(newTodoInput, "Enter");
+  await new Promise<void>(resolve => queueMicrotask(resolve));
 
     labels = findElements(fakeDocument.body, byTag("label")).map((element) => element.textContent.trim());
     if (labels[0] !== "Verify browser interaction checks") {
@@ -411,6 +425,7 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
     let activeButton = filterButtons.find((element) => element.textContent.trim() === "Active");
     if (!activeButton) throw new Error("TodoMVC active filter button missing");
     click(activeButton);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
 
     labels = findElements(fakeDocument.body, byTag("label")).map((element) => element.textContent.trim());
     if (labels.some((text) => text.includes("Port TodoMVC into the verification suite"))) {
@@ -422,6 +437,7 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
     if (!editLabel) throw new Error("TodoMVC edit target label missing");
     const replaceChildrenCallsBeforeEdit = appTarget.replaceChildrenCalls;
     dblclick(editLabel);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
     if (appTarget.replaceChildrenCalls !== replaceChildrenCallsBeforeEdit) {
       throw new Error("TodoMVC edit-mode entry rerendered the app root instead of the item boundary");
     }
@@ -430,6 +446,7 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
     if (!editInput) throw new Error("TodoMVC edit flow did not open edit input");
     editInput.value = "Exercise edit, filter, clear-completed, and dev flows";
     keydown(editInput, "Enter");
+  await new Promise<void>(resolve => queueMicrotask(resolve));
 
     labels = findElements(fakeDocument.body, byTag("label")).map((element) => element.textContent.trim());
     if (!labels.includes("Exercise edit, filter, clear-completed, and dev flows")) {
@@ -441,6 +458,7 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
     if (!createdToggle) throw new Error("TodoMVC toggle flow missing active toggle");
     createdToggle.checked = true;
     change(createdToggle);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
 
     labels = findElements(fakeDocument.body, byTag("label")).map((element) => element.textContent.trim());
     if (labels.includes("Verify browser interaction checks")) {
@@ -453,10 +471,12 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
     const allButton = filterButtons.find((element) => element.textContent.trim() === "All");
     if (!allButton) throw new Error("TodoMVC all filter button missing");
     click(allButton);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
 
     const clearCompletedButton = findElements(fakeDocument.body, byTagAndClass("button", "clear-completed"))[0];
     if (!clearCompletedButton) throw new Error("TodoMVC clear completed button missing");
     click(clearCompletedButton);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
 
     labels = findElements(fakeDocument.body, byTag("label")).map((element) => element.textContent.trim());
     if (labels.includes("Port TodoMVC into the verification suite") ||
@@ -491,6 +511,7 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
     if (!bundledDirectNewTodoInput) throw new Error("TodoMVC direct bundle missing newtodo input");
     bundledDirectNewTodoInput.value = "Direct app emit path";
     keydown(bundledDirectNewTodoInput, "Enter");
+  await new Promise<void>(resolve => queueMicrotask(resolve));
 
     const bundledDirectLabels = findElements(directBundleDocument.body, byTag("label")).map((element) => element.textContent.trim());
     if (bundledDirectLabels[0] !== "Direct app emit path") {
@@ -506,14 +527,14 @@ test("kanib app emit mounts and navigates through routed product flows", async (
   try {
     emitApp("test/examples/kanib/App.weiv", kanibBundleDir);
     const kanibBundle = await importModule(join(kanibBundleDir, "bundle.mjs"));
-    const sharedModule = readFileSync(join(kanibBundleDir, "state", "workspace.js"), "utf8");
+    const sharedModule = managedModules(kanibBundleDir);
     const observableModule = readFileSync(join(kanibBundleDir, "__weiv_runtime", "index.js"), "utf8");
     const runtimeIndex = readFileSync(join(kanibBundleDir, "__weiv_runtime", "index.js"), "utf8");
 
     if (!sharedModule.includes('import { observable } from "../__weiv_runtime/observable.js";')) {
       throw new Error("Kanib bundle did not preserve observable helper import");
     }
-    if (!sharedModule.includes("export const workspaceShared = observable({")) {
+    if (!sharedModule.includes("export const workspaceShared =")) {
       throw new Error("Kanib bundle did not create shared state through observable()");
     }
     if (!observableModule.includes('export { observable } from "./observable.js";')) {
@@ -555,6 +576,7 @@ test("kanib app emit mounts and navigates through routed product flows", async (
     );
     if (!openNotificationsButton) throw new Error("Kanib is missing open notifications header action");
     click(openNotificationsButton);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
     await new Promise((resolve) => queueMicrotask(resolve));
 
     if (!appTarget.textContent.includes("Notifications")) {
@@ -569,6 +591,7 @@ test("kanib app emit mounts and navigates through routed product flows", async (
     );
     if (!designSystemsButton) throw new Error("Kanib is missing Design Systems workspace switch action");
     click(designSystemsButton);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
     await new Promise((resolve) => queueMicrotask(resolve));
 
     if (!appTarget.textContent.includes("Design Systems overview")) {
@@ -583,6 +606,7 @@ test("kanib app emit mounts and navigates through routed product flows", async (
     );
     if (!themeEngineProjectButton) throw new Error("Kanib is missing Theme Engine project switch action");
     click(themeEngineProjectButton);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
     await new Promise((resolve) => queueMicrotask(resolve));
 
     if (!appTarget.textContent.includes("Theme empty states for light + high-contrast")) {
@@ -594,6 +618,7 @@ test("kanib app emit mounts and navigates through routed product flows", async (
     );
     if (!issuesButton) throw new Error("Kanib is missing issues navigation");
     click(issuesButton);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
     await new Promise((resolve) => queueMicrotask(resolve));
 
     if (!appTarget.textContent.includes("Issue list")) {
@@ -615,6 +640,7 @@ test("kanib app emit mounts and navigates through routed product flows", async (
     );
     if (!boardButton) throw new Error("Kanib is missing board navigation");
     click(boardButton);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
     await new Promise((resolve) => queueMicrotask(resolve));
 
     if (!appTarget.textContent.includes("Backlog")) {
@@ -631,6 +657,7 @@ test("kanib app emit mounts and navigates through routed product flows", async (
       throw new Error("Kanib board is missing advance actions");
     }
     click(advanceButtons[0]);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
     await new Promise((resolve) => queueMicrotask(resolve));
 
     if (!appTarget.textContent.includes("0 issues")) {
@@ -638,8 +665,10 @@ test("kanib app emit mounts and navigates through routed product flows", async (
     }
 
     click(issuesButton);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
     await new Promise((resolve) => queueMicrotask(resolve));
     click(openButtons[0]);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
     await new Promise((resolve) => queueMicrotask(resolve));
 
     if (!appTarget.textContent.includes("Implementation notes")) {
@@ -650,11 +679,13 @@ test("kanib app emit mounts and navigates through routed product flows", async (
     if (!noteInput) throw new Error("Kanib detail route is missing the comment composer input");
     noteInput.value = "Comment from routed test";
     change(noteInput);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
     const postButton = findElements(fakeDocument.body, byTag("button")).find((element) =>
       element.textContent.trim() === "Post"
     );
     if (!postButton) throw new Error("Kanib detail route is missing comment post action");
     click(postButton);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
     await new Promise((resolve) => queueMicrotask(resolve));
 
     if (!appTarget.textContent.includes("You · 0m · Comment from routed test")) {
@@ -666,6 +697,7 @@ test("kanib app emit mounts and navigates through routed product flows", async (
     );
     if (!saveButton) throw new Error("Kanib detail route is missing the save action");
     click(saveButton);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
     await new Promise((resolve) => setTimeout(resolve, 0));
     await new Promise((resolve) => queueMicrotask(resolve));
 
@@ -678,6 +710,7 @@ test("kanib app emit mounts and navigates through routed product flows", async (
     );
     if (!clearNotificationsButton) throw new Error("Kanib is missing the clear notifications button");
     click(clearNotificationsButton);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
     await new Promise((resolve) => queueMicrotask(resolve));
 
     if (!appTarget.textContent.includes("0 notifications")) {

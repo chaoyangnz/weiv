@@ -40,10 +40,9 @@ try {
   assert(warning.message.includes("barrel.ts"));
   assert(warning.message.includes("raw.ts"));
   assert(warning.message.includes("observable or subscription adapter"));
-  const emitted = command("emit", "js-cells", raw.path);
+  const emitted = command("emit", "js", raw.path);
   assert(emitted.stdout.includes('from "weiv:cells"'));
   assert(emitted.stderr.includes("reactivity.untracked_external_state"));
-  assert(!command("emit", "js-legacy", raw.path).stderr.includes("reactivity.untracked_external_state"));
 
   file("observed.ts", 'import {observable as track} from "weiv:observable"; export const state=track({count:0});');
   file("observed-barrel.ts", 'export * from "./observed";');
@@ -429,7 +428,7 @@ try {
   assert.equal(analyze("<p>{{ state.count }}</p>", 'import {state} from "./conflict-user";').entries[0].code, "reactivity.unverified_dependency");
   file("changed.ts", 'import {observable} from "weiv:observable"; export let state=observable({count:0}); export function replace(){state={count:1}}');
   assert.equal(analyze("<p>{{ state.count }}</p>", 'import {state} from "./changed";').entries[0].code, "reactivity.untracked_external_state");
-  const structured = JSON.parse(command("--json-diagnostics", "emit", "js-cells", raw.path).stderr);
+  const structured = JSON.parse(command("--json-diagnostics", "emit", "js", raw.path).stderr);
   assert.equal(structured.diagnostics[0].code, "reactivity.untracked_external_state");
 
   file("captured.ts", 'import {observable,snapshot} from "weiv:observable"; const source=observable({nested:{count:1}}); export const captured=snapshot(source);');

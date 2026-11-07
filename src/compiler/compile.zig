@@ -1,6 +1,6 @@
 const std = @import("std");
 const compiler_diagnostics = @import("diagnostics.zig");
-const binding = @import("sema/binder.zig");
+const binding = @import("sema/bind.zig");
 const lower = @import("lower/index.zig");
 const component_unit = @import("component_unit.zig");
 const parser = @import("parser/index.zig");

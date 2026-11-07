@@ -68,6 +68,7 @@ pub fn run(
         };
     }
 
+    try rejectRetiredReactivityCommand(command);
     if (std.mem.eql(u8, command, "inspect")) {
         const subcommand = args.next() orelse {
             try printUsage();
@@ -106,6 +107,7 @@ pub fn run(
             try printUsage();
             return;
         };
+        try rejectRetiredReactivityCommand(phase);
         if (std.mem.eql(u8, phase, "state-boundaries")) {
             const path = args.next() orelse {
                 try printUsage();
@@ -148,6 +150,7 @@ pub fn run(
             try printUsage();
             return;
         };
+        try rejectRetiredReactivityCommand(phase);
         if (std.mem.eql(u8, phase, "app")) {
             const root_path = args.next() orelse {
                 try printUsage();
@@ -166,6 +169,7 @@ pub fn run(
             try printUsage();
             return;
         };
+        try rejectRetiredReactivityCommand(phase);
         if (std.mem.eql(u8, phase, "managed-project")) {
             const manifest = args.next() orelse return error.MissingModulePath;
             const output = args.next() orelse return error.MissingOutputDirectory;
@@ -176,16 +180,7 @@ pub fn run(
             };
             return;
         }
-        if (std.mem.eql(u8, phase, "app-cells")) {
-            const root_path = args.next() orelse return error.MissingComponentPath;
-            const out_dir = args.next() orelse return error.MissingOutputDirectory;
-            app_emit.emitAppCells(root_path, out_dir, json_diagnostics_mode, allocator) catch |err| {
-                if (err == error.Reported) return err;
-                try printCliStageError("emit app-cells", root_path, .bundle, "app.cells_emit_failed", err, allocator);
-                return error.Reported;
-            };
-            return;
-        }
+
         if (std.mem.eql(u8, phase, "module-cells")) {
             const path = args.next() orelse return error.MissingModulePath;
             const companion = args.next() orelse return error.MissingModuleCompanion;
@@ -195,7 +190,7 @@ pub fn run(
             const code = script_backend.lowerModuleCells(source, path, companion, bindings, allocator) catch |err| {
                 var bag = compiler_diagnostics.DiagnosticBag.init();
                 defer bag.deinit(allocator);
-                if (try @import("compiler/project/cell_diagnostics.zig").inspectScript(.{ .text = source, .path = path, .document = source }, bindings, true, &bag, allocator)) {
+                if (try @import("compiler/backend/browser/emit/cell_diagnostics.zig").inspectScript(.{ .text = source, .path = path, .document = source }, bindings, true, &bag, allocator)) {
                     try printComponentDiagnosticsFailure("emit module-cells", path, bag.diagnostics.items);
                     return error.Reported;
                 }
@@ -251,13 +246,13 @@ pub fn run(
             try runEmitInvalidationGraph(path, out_path, allocator);
             return;
         }
-        if (std.mem.eql(u8, phase, "js") or std.mem.eql(u8, phase, "js-cells") or std.mem.eql(u8, phase, "js-legacy")) {
+        if (std.mem.eql(u8, phase, "js")) {
             const path = args.next() orelse {
                 try printUsage();
                 return;
             };
             const out_path = args.next();
-            try runEmitJsMode(path, out_path, !std.mem.eql(u8, phase, "js-legacy"), allocator);
+            try runEmitJs(path, out_path, allocator);
             return;
         }
         if (std.mem.eql(u8, phase, "css")) {
@@ -269,7 +264,7 @@ pub fn run(
             try runEmitCss(path, out_path, allocator);
             return;
         }
-        if (std.mem.eql(u8, phase, "app") or std.mem.eql(u8, phase, "app-legacy")) {
+        if (std.mem.eql(u8, phase, "app")) {
             const root_path = args.next() orelse {
                 try printUsage();
                 return;
@@ -278,7 +273,7 @@ pub fn run(
                 try printUsage();
                 return;
             };
-            try runEmitAppMode(root_path, out_dir, !std.mem.eql(u8, phase, "app-legacy"), allocator);
+            try runEmitApp(root_path, out_dir, allocator);
             return;
         }
         try printUsage();
@@ -296,6 +291,7 @@ pub fn run(
                 try printUsage();
                 return;
             };
+            try rejectRetiredReactivityCommand(phase);
             if (std.mem.eql(u8, phase, "script")) {
                 const path = args.next() orelse {
                     try printUsage();
@@ -322,6 +318,7 @@ pub fn run(
                 try printUsage();
                 return;
             };
+            try rejectRetiredReactivityCommand(phase);
             if (std.mem.eql(u8, phase, "app")) {
                 const root_path = args.next() orelse {
                     try printUsage();
@@ -340,6 +337,7 @@ pub fn run(
                 try printUsage();
                 return;
             };
+            try rejectRetiredReactivityCommand(phase);
             if (std.mem.eql(u8, phase, "ast")) {
                 const path = args.next() orelse {
                     try printUsage();
@@ -385,13 +383,13 @@ pub fn run(
                 try runEmitInvalidationGraph(path, out_path, allocator);
                 return;
             }
-            if (std.mem.eql(u8, phase, "js") or std.mem.eql(u8, phase, "js-cells") or std.mem.eql(u8, phase, "js-legacy")) {
+            if (std.mem.eql(u8, phase, "js")) {
                 const path = args.next() orelse {
                     try printUsage();
                     return;
                 };
                 const out_path = args.next();
-                try runEmitJsMode(path, out_path, !std.mem.eql(u8, phase, "js-legacy"), allocator);
+                try runEmitJs(path, out_path, allocator);
                 return;
             }
             if (std.mem.eql(u8, phase, "css")) {
@@ -403,17 +401,8 @@ pub fn run(
                 try runEmitCss(path, out_path, allocator);
                 return;
             }
-            if (std.mem.eql(u8, phase, "app-cells")) {
-                const root_path = args.next() orelse return error.MissingComponentPath;
-                const out_dir = args.next() orelse return error.MissingOutputDirectory;
-                app_emit.emitAppCells(root_path, out_dir, json_diagnostics_mode, allocator) catch |err| {
-                    if (err == error.Reported) return err;
-                    try printCliStageError("emit app-cells", root_path, .bundle, "app.cells_emit_failed", err, allocator);
-                    return error.Reported;
-                };
-                return;
-            }
-            if (std.mem.eql(u8, phase, "app") or std.mem.eql(u8, phase, "app-legacy")) {
+
+            if (std.mem.eql(u8, phase, "app")) {
                 const root_path = args.next() orelse {
                     try printUsage();
                     return;
@@ -422,7 +411,7 @@ pub fn run(
                     try printUsage();
                     return;
                 };
-                try runEmitAppMode(root_path, out_dir, !std.mem.eql(u8, phase, "app-legacy"), allocator);
+                try runEmitApp(root_path, out_dir, allocator);
                 return;
             }
             try printUsage();
@@ -491,13 +480,13 @@ pub fn run(
         return;
     }
 
-    if (std.mem.eql(u8, command, "emit-js") or std.mem.eql(u8, command, "emit-js-legacy")) {
+    if (std.mem.eql(u8, command, "emit-js")) {
         const path = args.next() orelse {
             try printUsage();
             return;
         };
         const out_path = args.next();
-        try runEmitJsMode(path, out_path, !std.mem.eql(u8, command, "emit-js-legacy"), allocator);
+        try runEmitJs(path, out_path, allocator);
         return;
     }
 
@@ -511,7 +500,7 @@ pub fn run(
         return;
     }
 
-    if (std.mem.eql(u8, command, "emit-app") or std.mem.eql(u8, command, "emit-app-legacy")) {
+    if (std.mem.eql(u8, command, "emit-app")) {
         const root_path = args.next() orelse {
             try printUsage();
             return;
@@ -520,7 +509,7 @@ pub fn run(
             try printUsage();
             return;
         };
-        try runEmitAppMode(root_path, out_dir, !std.mem.eql(u8, command, "emit-app-legacy"), allocator);
+        try runEmitApp(root_path, out_dir, allocator);
         return;
     }
 
@@ -687,7 +676,7 @@ fn runInspectRenderTree(path: []const u8, allocator: std.mem.Allocator) !void {
     };
     defer render_tree.deinit(allocator);
 
-    const formatted = try browser_render_tree.debug.formatDocument(&render_tree, allocator);
+    const formatted = try inspect.render_tree.formatDocument(&render_tree, allocator);
     defer allocator.free(formatted);
     try std.Io.File.stdout().writeStreamingAll(std.Io.Threaded.global_single_threaded.io(), formatted);
 }
@@ -769,7 +758,7 @@ fn runEmitRenderTree(path: []const u8, out_path: ?[]const u8, allocator: std.mem
     };
     defer render_tree.deinit(allocator);
 
-    const formatted = try browser_render_tree.debug.formatDocument(&render_tree, allocator);
+    const formatted = try inspect.render_tree.formatDocument(&render_tree, allocator);
     defer allocator.free(formatted);
     try writeOutput(out_path, formatted);
 }
@@ -810,10 +799,6 @@ fn writeOutputFile(path: []const u8, data: []const u8) !void {
 }
 
 fn runEmitJs(path: []const u8, out_path: ?[]const u8, allocator: std.mem.Allocator) !void {
-    return runEmitJsMode(path, out_path, true, allocator);
-}
-
-fn runEmitJsMode(path: []const u8, out_path: ?[]const u8, cells: bool, allocator: std.mem.Allocator) !void {
     var loaded = try loadComponent(path, allocator);
     defer loaded.deinit(allocator);
 
@@ -827,13 +812,13 @@ fn runEmitJsMode(path: []const u8, out_path: ?[]const u8, cells: bool, allocator
     };
     defer browser_component_model.deinit(allocator);
 
-    const js = js_module.emitModuleWithCells(&browser_component_model, cells, allocator) catch |err| {
-        if (cells) {
+    const js = js_module.emitModule(&browser_component_model, allocator) catch |err| {
+        {
             var bag = compiler_diagnostics.DiagnosticBag.init();
             defer bag.deinit(allocator);
             try js_module.collectCellDiagnostics(&browser_component_model, null, &bag, allocator);
             if (bag.hasFatal()) {
-                try printComponentDiagnosticsFailure("emit js-cells", path, bag.diagnostics.items);
+                try printComponentDiagnosticsFailure("emit js", path, bag.diagnostics.items);
                 return error.Reported;
             }
         }
@@ -841,7 +826,7 @@ fn runEmitJsMode(path: []const u8, out_path: ?[]const u8, cells: bool, allocator
         return error.Reported;
     };
     defer allocator.free(js);
-    if (cells) try printStateBoundaryWarnings(&loaded.model, allocator);
+    try printStateBoundaryWarnings(&loaded.model, allocator);
     try writeOutput(out_path, js);
 }
 
@@ -862,10 +847,6 @@ fn runEmitCss(path: []const u8, out_path: ?[]const u8, allocator: std.mem.Alloca
 }
 
 fn runEmitApp(root_path: []const u8, out_dir: []const u8, allocator: std.mem.Allocator) !void {
-    return runEmitAppMode(root_path, out_dir, true, allocator);
-}
-
-fn runEmitAppMode(root_path: []const u8, out_dir: []const u8, cells: bool, allocator: std.mem.Allocator) !void {
     var validation = app_emit.validateApp(root_path, allocator) catch |err| {
         try printCliStageError("validate app", root_path, .bundle, "app.validate_failed", err, allocator);
         return error.Reported;
@@ -877,11 +858,8 @@ fn runEmitAppMode(root_path: []const u8, out_dir: []const u8, cells: bool, alloc
         return error.Reported;
     }
 
-    if (cells) app_emit.emitAppCells(root_path, out_dir, json_diagnostics_mode, allocator) catch |err| {
+    app_emit.emitAppWithDiagnostics(root_path, out_dir, json_diagnostics_mode, allocator) catch |err| {
         if (err == error.Reported) return err;
-        try printCliStageError("emit app", root_path, .bundle, "app.emit_failed", err, allocator);
-        return error.Reported;
-    } else app_emit.emitAppLegacy(root_path, out_dir, allocator) catch |err| {
         try printCliStageError("emit app", root_path, .bundle, "app.emit_failed", err, allocator);
         return error.Reported;
     };
@@ -922,8 +900,6 @@ fn printUsage() !void {
         \\  weiv emit render-tree <path> [out-file]
         \\  weiv emit invalidation-graph <path> [out-file]
         \\  weiv emit js <path> [out-file]
-        \\  weiv emit js-legacy <path> [out-file]  (deprecated compatibility mode)
-        \\  weiv emit app-legacy <root.weiv> <out-dir>  (deprecated compatibility mode)
         \\  weiv emit managed-project <manifest.json> <out-dir>  (bundler integration)
         \\  weiv --runtime-dir <directory> <command>  (packaged runtime location)
         \\  weiv emit css <path> [out-file]
@@ -944,10 +920,8 @@ fn printUsage() !void {
         \\  weiv compile emit app <root.weiv> <out-dir>
         \\  weiv analyze-script <path>
         \\  weiv analyze-component <path>
-        \\  weiv analyze state-boundaries <path> (experimental dependency diagnostics)
+        \\  weiv analyze state-boundaries <path> (dependency diagnostics)
         \\  weiv analyze module-state <path>     (module provenance facts)
-        \\  weiv emit js-cells <path> [out-file]  (compatibility alias of js)
-        \\  weiv emit app-cells <root.weiv> <out-dir>  (compatibility alias of app)
         \\  weiv emit module-cells <path> <companion-import> <bindings-json>  (internal prototype)
         \\  weiv emit-js <path> [out-file]
         \\  weiv emit-css <path> [out-file]
@@ -1604,8 +1578,6 @@ fn appendProxyStateSummary(
 
     var tracked_root_lines = std.ArrayList([]const u8).empty;
     defer tracked_root_lines.deinit(allocator);
-    var escape_warning_lines = std.ArrayList([]const u8).empty;
-    defer escape_warning_lines.deinit(allocator);
     var imported_root_count: usize = 0;
     var prop_root_count: usize = 0;
     var local_root_count: usize = 0;
@@ -1641,11 +1613,7 @@ fn appendProxyStateSummary(
                     if (std.mem.indexOf(u8, line, "kind=local-tracked") != null) local_root_count += 1;
                 }
             },
-            .diagnostics => {
-                if (std.mem.startsWith(u8, line, "  warning escape-warning ")) {
-                    try escape_warning_lines.append(allocator, line["  ".len..]);
-                }
-            },
+            .diagnostics => {},
             .none => {},
         }
     }
@@ -1660,27 +1628,12 @@ fn appendProxyStateSummary(
     for (tracked_root_lines.items) |line| {
         try writer.print("    - {s}\n", .{line});
     }
-    try writer.print("  escape warnings: {d}\n", .{escape_warning_lines.items.len});
-    for (escape_warning_lines.items) |line| {
-        try writer.print("    - {s}\n", .{line});
-        try writer.print("      rewrite: {s}\n", .{escapeWarningGuidance(line)});
-    }
 }
 
 fn isInvalidationGraphTopLevelSection(line: []const u8) bool {
     if (line.len == 0) return false;
     return line[0] != ' ' and
         !std.mem.startsWith(u8, line, "invalidation-graph source=");
-}
-
-fn escapeWarningGuidance(line: []const u8) []const u8 {
-    if (std.mem.indexOf(u8, line, "reason=tracked-root-alias-escape") != null) {
-        return "mutate through the tracked root directly instead of mutating through a local alias";
-    }
-    if (std.mem.indexOf(u8, line, "reason=tracked-root-unowned-callback") != null) {
-        return "move the mutation into an owned boundary or route it through a Weiv-visible tracked update path";
-    }
-    return "keep tracked state on its canonical surface and avoid raw or escaping mutation paths";
 }
 
 fn printComponentAnalysis(model: component.ComponentUnit) !void {
@@ -1781,5 +1734,21 @@ fn printIndent(indent: usize, writer: anytype) !void {
     var i: usize = 0;
     while (i < indent) : (i += 1) {
         try writer.writeAll("  ");
+    }
+}
+
+fn rejectRetiredReactivityCommand(name: []const u8) !void {
+    if (std.mem.endsWith(u8, name, "-legacy") or std.mem.eql(u8, name, "js-cells") or std.mem.eql(u8, name, "app-cells")) {
+        try printComponentDiagnosticsFailure("emit", name, &.{.{
+            .code = "cli.reactivity_mode_removed",
+            .severity = .@"error",
+            .message = "This reactivity mode has been removed. Use emit js or emit app, remove weivUpdate wrappers, and wait for the queued DOM batch before reading updated DOM.",
+            .stage = .emit,
+            .source_path = name,
+            .span = null,
+            .location = null,
+            .fatal = true,
+        }});
+        return error.Reported;
     }
 }

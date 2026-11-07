@@ -4,7 +4,7 @@ import {
   assertEqual,
   byTag,
   click,
-  emitLegacyBrowserModule as emitDirectBrowserModule,
+  emitDirectBrowserModule,
   findElement,
   installDocument,
   loadModules,
@@ -76,6 +76,7 @@ test("slots and projection patch correctly", async () => {
   const panelConditionalButton = findElement(panelConditionalUsageDocument.body, byTag("button"));
   if (!panelConditionalButton) throw new Error("PanelConditionalUsage direct mount missing button");
   click(panelConditionalButton);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
 
   if (panelConditionalUsageTarget.replaceChildrenCalls !== 1) {
     throw new Error("PanelConditionalUsage direct update rerendered the root instead of patching the projected conditional branch");
@@ -101,6 +102,7 @@ test("slots and projection patch correctly", async () => {
   const panelLoopToggleButton = findElement(panelLoopUsageDocument.body, byTag("button"));
   if (!panelLoopToggleButton) throw new Error("PanelLoopUsage direct mount missing button");
   click(panelLoopToggleButton);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
   assertEqual(
     panelLoopUsageTarget.textContent,
     "Toggle completedWrite parser fixtures",
@@ -120,6 +122,7 @@ test("slots and projection patch correctly", async () => {
   const panelNestedCardToggleButton = findElement(panelNestedCardUsageDocument.body, byTag("button"));
   if (!panelNestedCardToggleButton) throw new Error("PanelNestedCardUsage direct mount missing button");
   click(panelNestedCardToggleButton);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
   if (!panelNestedCardUsageTarget.textContent.includes("Nested reports") ||
       !panelNestedCardUsageTarget.textContent.includes("Nested projected report body")) {
     throw new Error("PanelNestedCardUsage direct toggle did not patch nested projected card content");
@@ -137,6 +140,7 @@ test("slots and projection patch correctly", async () => {
   const panelToggleButton = findElement(panelToggleUsageDocument.body, byTag("button"));
   if (!panelToggleButton) throw new Error("PanelToggleUsage direct mount missing button");
   click(panelToggleButton);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
   if (!panelToggleUsageTarget.textContent.includes("Projected second") ||
       panelToggleUsageTarget.textContent.includes("Projected first")) {
     throw new Error("PanelToggleUsage direct toggle did not patch projected content");
@@ -181,6 +185,7 @@ test("slots and projection patch correctly", async () => {
   const cardToggleButton = findElement(cardToggleDocument.body, byTag("button"));
   if (!cardToggleButton) throw new Error("CardToggleUsage direct mount missing button");
   click(cardToggleButton);
+  await new Promise<void>(resolve => queueMicrotask(resolve));
   if (!cardToggleTarget.textContent.includes("Reports") ||
       !cardToggleTarget.textContent.includes("Projected report body") ||
       cardToggleTarget.textContent.includes("Projected card body")) {

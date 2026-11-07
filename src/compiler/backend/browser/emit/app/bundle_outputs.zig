@@ -1,5 +1,5 @@
 const std = @import("std");
-const bundle_graph = @import("graph.zig");
+const component_graph = @import("component_graph.zig");
 const preview_props = @import("preview_props.zig");
 
 pub fn emitBrowserEntry(allocator: std.mem.Allocator) ![]u8 {
@@ -20,7 +20,7 @@ pub fn emitBrowserEntry(allocator: std.mem.Allocator) ![]u8 {
     , .{});
 }
 
-pub fn emitDirectEntry(graph: *bundle_graph.BundleGraph, root_index: usize, allocator: std.mem.Allocator) ![]u8 {
+pub fn emitDirectEntry(graph: *component_graph.ComponentGraph, root_index: usize, allocator: std.mem.Allocator) ![]u8 {
     var out = std.ArrayList(u8).empty;
     defer out.deinit(allocator);
 
@@ -77,7 +77,7 @@ pub fn emitDirectEntry(graph: *bundle_graph.BundleGraph, root_index: usize, allo
     return try out.toOwnedSlice(allocator);
 }
 
-pub fn emitPropsModule(graph: *bundle_graph.BundleGraph, root_index: usize, allocator: std.mem.Allocator) ![]u8 {
+pub fn emitPropsModule(graph: *component_graph.ComponentGraph, root_index: usize, allocator: std.mem.Allocator) ![]u8 {
     const props_literal = try preview_props.inferLiteral(&graph.nodes.items[root_index].model, allocator);
     defer allocator.free(props_literal);
 
@@ -87,7 +87,7 @@ pub fn emitPropsModule(graph: *bundle_graph.BundleGraph, root_index: usize, allo
     , .{props_literal});
 }
 
-pub fn emitIndexHtml(graph: *bundle_graph.BundleGraph, root_index: usize, allocator: std.mem.Allocator) ![]u8 {
+pub fn emitIndexHtml(graph: *component_graph.ComponentGraph, root_index: usize, allocator: std.mem.Allocator) ![]u8 {
     const root_basename = std.fs.path.basename(graph.nodes.items[root_index].abs_path);
     const page_title = if (std.mem.endsWith(u8, root_basename, ".weiv"))
         root_basename[0 .. root_basename.len - ".weiv".len]

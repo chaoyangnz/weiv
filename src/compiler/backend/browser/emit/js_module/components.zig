@@ -1,7 +1,7 @@
 const std = @import("std");
 const browser_render_tree = @import("../../render_tree/index.zig");
 const lir = @import("../../../../lower/lir.zig");
-const expression_codegen = @import("expression_codegen.zig");
+const expressions = @import("expressions.zig");
 
 pub fn componentHasProps(component_node: browser_render_tree.ComponentNode) bool {
     return component_node.bind_effects.len > 0;
@@ -32,7 +32,7 @@ pub fn emitPropsObject(
             .bind => |bind_dir| {
                 if (idx > 0) try out.appendSlice(allocator, ", ");
                 try out.print(allocator, "\"{s}\": ", .{bind_dir.target_name});
-                try expression_codegen.emitResolvedExpression(bind_dir.expression, scope_expr, bindings_json, out, allocator);
+                try expressions.emitResolvedExpression(bind_dir.expression, scope_expr, bindings_json, out, allocator);
             },
             .event => unreachable,
         }
@@ -52,9 +52,9 @@ pub fn emitChildHandlersObject(
         switch (effect) {
             .event => |event_dir| {
                 if (idx > 0) try out.appendSlice(allocator, ", ");
-                try out.print(allocator, "\"{s}\": (payload) => runOwnedBoundary(instance, () => {{ const resolved = ", .{event_dir.event_name});
-                try expression_codegen.emitResolvedExpression(event_dir.expression, scope_expr, bindings_json, out, allocator);
-                try out.appendSlice(allocator, if (expression_codegen.isCellExpression(event_dir.expression)) "; return resolved; })" else "; if (typeof resolved === \"function\") { return resolved(payload); } return resolved; })");
+                try out.print(allocator, "\"{s}\": (payload) => {{ const resolved = ", .{event_dir.event_name});
+                try expressions.emitResolvedExpression(event_dir.expression, scope_expr, bindings_json, out, allocator);
+                try out.appendSlice(allocator, if (expressions.isCellExpression(event_dir.expression)) "; return resolved; }" else "; if (typeof resolved === \"function\") { return resolved(payload); } return resolved; }");
             },
             .bind => unreachable,
         }

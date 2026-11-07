@@ -1,11 +1,10 @@
 pub const bundle = @import("bundle.zig");
-pub const graph = @import("graph.zig");
+pub const component_graph = @import("component_graph.zig");
 
 pub const AppValidationReport = bundle.AppValidationReport;
-pub const BundleGraph = graph.BundleGraph;
+pub const ComponentGraph = component_graph.ComponentGraph;
 
 pub const emitApp = bundle.emitApp;
-pub const emitAppLegacy = bundle.emitAppLegacy;
 pub const emitManagedProject = bundle.emitManagedProject;
-pub const emitAppCells = bundle.emitAppCells;
+pub const emitAppWithDiagnostics = bundle.emitAppWithDiagnostics;
 pub const validateApp = bundle.validateApp;

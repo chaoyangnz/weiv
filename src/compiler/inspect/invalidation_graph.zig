@@ -17,10 +17,6 @@ const BoundaryKind = enum {
 
 const DiagnosticKind = enum {
     hidden_state,
-    expression_mutation,
-    alias_mutation,
-    unowned_callback_mutation,
-    escape_warning,
     runtime_evaluate_fallback,
 };
 
@@ -78,32 +74,6 @@ const Formatter = struct {
                         self.allocator,
                         "{s} hidden-state expression={s} reason={s}\n",
                         .{ severityLabel(diagnostic.severity), diagnostic.subject, diagnostic.reason orelse "no-visible-component-dependency" },
-                    ),
-                    .expression_mutation => try self.out.print(
-                        self.allocator,
-                        "{s} expression-mutation binding={s} offset={d} reason=mutation-not-in-statement-position\n",
-                        .{ severityLabel(diagnostic.severity), diagnostic.subject, diagnostic.offset orelse 0 },
-                    ),
-                    .alias_mutation => try self.out.print(
-                        self.allocator,
-                        "{s} alias-mutation binding={s} alias={s} offset={d} reason=alias-tracking-not-implemented\n",
-                        .{ severityLabel(diagnostic.severity), diagnostic.subject, diagnostic.related orelse "", diagnostic.offset orelse 0 },
-                    ),
-                    .unowned_callback_mutation => try self.out.print(
-                        self.allocator,
-                        "{s} unowned-callback-mutation binding={s} offset={d} reason=callback-boundary-not-owned\n",
-                        .{ severityLabel(diagnostic.severity), diagnostic.subject, diagnostic.offset orelse 0 },
-                    ),
-                    .escape_warning => try self.out.print(
-                        self.allocator,
-                        "{s} escape-warning binding={s} related={s} offset={d} reason={s}\n",
-                        .{
-                            severityLabel(diagnostic.severity),
-                            diagnostic.subject,
-                            diagnostic.related orelse "",
-                            diagnostic.offset orelse 0,
-                            diagnostic.reason orelse "tracked-root-escape",
-                        },
                     ),
                     .runtime_evaluate_fallback => try self.out.print(
                         self.allocator,
@@ -208,60 +178,6 @@ const Formatter = struct {
     fn formatMutations(self: *Formatter) !void {
         for (self.component.script.state_facts.mutations) |mutation| {
             const absolute_offset = self.component.sfc_document.script.content_span.start + mutation.span_start;
-
-            if (self.findAliasTarget(mutation.binding)) |target| {
-                if (self.isVisibleBinding(target) or self.tracked_table.findRoot(target) != null) {
-                    if (self.tracked_table.findRoot(target) != null) {
-                        try self.diagnostics.append(self.allocator, .{
-                            .severity = .warning,
-                            .kind = .escape_warning,
-                            .subject = target,
-                            .related = mutation.binding,
-                            .offset = absolute_offset,
-                            .reason = "tracked-root-alias-escape",
-                        });
-                    }
-                    try self.diagnostics.append(self.allocator, .{
-                        .severity = .warning,
-                        .kind = .alias_mutation,
-                        .subject = target,
-                        .related = mutation.binding,
-                        .offset = absolute_offset,
-                    });
-                }
-                continue;
-            }
-
-            if (!self.isVisibleBinding(mutation.binding) and self.tracked_table.findRoot(mutation.binding) == null) continue;
-
-            if (!mutation.statement_position) {
-                try self.diagnostics.append(self.allocator, .{
-                    .severity = .warning,
-                    .kind = .expression_mutation,
-                    .subject = mutation.binding,
-                    .offset = absolute_offset,
-                });
-                continue;
-            }
-
-            if (mutation.inside_callback and !mutation.callback_owned_candidate) {
-                if (self.tracked_table.findRoot(mutation.binding) != null) {
-                    try self.diagnostics.append(self.allocator, .{
-                        .severity = .warning,
-                        .kind = .escape_warning,
-                        .subject = mutation.binding,
-                        .offset = absolute_offset,
-                        .reason = "tracked-root-unowned-callback",
-                    });
-                }
-                try self.diagnostics.append(self.allocator, .{
-                    .severity = .warning,
-                    .kind = .unowned_callback_mutation,
-                    .subject = mutation.binding,
-                    .offset = absolute_offset,
-                });
-                continue;
-            }
 
             try self.writeIndent(1);
             try self.out.print(self.allocator, "{s} {s} offset={d}\n", .{
@@ -472,10 +388,6 @@ const Formatter = struct {
         }
     }
 
-    fn isVisibleBinding(self: *const Formatter, name: []const u8) bool {
-        return self.findVisibleBinding(name) != null;
-    }
-
     fn findVisibleBinding(self: *const Formatter, name: []const u8) ?sir.ScriptBinding {
         for (self.component.script.bindings) |binding| {
             if (binding.template_visible and std.mem.eql(u8, binding.name, name)) return binding;
@@ -486,13 +398,6 @@ const Formatter = struct {
     fn findHelperFacts(self: *const Formatter, name: []const u8) ?sir.HelperFacts {
         for (self.component.script.state_facts.helpers) |helper| {
             if (std.mem.eql(u8, helper.name, name)) return helper;
-        }
-        return null;
-    }
-
-    fn findAliasTarget(self: *const Formatter, alias_name: []const u8) ?[]const u8 {
-        for (self.component.script.state_facts.aliases) |alias| {
-            if (std.mem.eql(u8, alias.alias, alias_name)) return alias.target;
         }
         return null;
     }

@@ -1,5 +1,5 @@
 import { test } from "bun:test";
-import { emitLegacyBrowserModule as emitDirectBrowserModule, installJsdom, loadModules } from "./support";
+import { emitDirectBrowserModule, installJsdom, loadModules } from "./support";
 
 test("nested conditional child mounts before receiving prop updates", async () => {
   const modules = await loadModules({
@@ -12,12 +12,17 @@ test("nested conditional child mounts before receiving prop updates", async () =
   modules["nested-conditional-parent.mjs"].mount(target, {});
   if (target.querySelector("output")) throw new Error("Child mounted while tab was closed");
   target.querySelectorAll("button")[0]?.dispatchEvent(new window.Event("click"));
+  await new Promise<void>(resolve => queueMicrotask(resolve));
   if (target.querySelector("output")) throw new Error("Child mounted while tab was closed after prop change");
   target.querySelectorAll("button")[1]?.dispatchEvent(new window.Event("click"));
+  await new Promise<void>(resolve => queueMicrotask(resolve));
   if (target.querySelector("output")?.textContent !== "10") throw new Error(`Child did not receive its prop: ${target.innerHTML}`);
   target.querySelectorAll("button")[2]?.dispatchEvent(new window.Event("click"));
+  await new Promise<void>(resolve => queueMicrotask(resolve));
   target.querySelectorAll("button")[0]?.dispatchEvent(new window.Event("click"));
+  await new Promise<void>(resolve => queueMicrotask(resolve));
   if (target.querySelector("output")) throw new Error("Child survived the closed tab");
   target.querySelectorAll("button")[1]?.dispatchEvent(new window.Event("click"));
+  await new Promise<void>(resolve => queueMicrotask(resolve));
   if (target.querySelector("output")?.textContent !== "10") throw new Error(`Child did not remount: ${target.innerHTML}`);
 });

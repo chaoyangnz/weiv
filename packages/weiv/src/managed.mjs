@@ -5,10 +5,8 @@ import { dirname, extname, isAbsolute, join, relative, resolve } from "node:path
 import { resolveWeivBinaryPath } from "./platform.mjs";
 import { fileURLToPath } from "node:url";
 
-export function reactivityMode(options) {
-  const mode = options.reactivity ?? "managed";
-  if (mode !== "managed" && mode !== "legacy") throw new TypeError('Weiv reactivity must be "managed" or "legacy"');
-  return mode;
+export function validateOptions(options) {
+  if (options.reactivity !== undefined) throw new TypeError('The reactivity option has been removed. Use the managed model and await the DOM batch after state writes.');
 }
 
 export function canonical(path) {

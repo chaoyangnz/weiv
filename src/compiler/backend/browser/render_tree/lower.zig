@@ -1,7 +1,7 @@
 const std = @import("std");
 const lir = @import("../../../lower/lir.zig");
 const effects = @import("effects.zig");
-const types = @import("types.zig");
+const tree = @import("tree.zig");
 
 const Lowerer = struct {
     allocator: std.mem.Allocator,
@@ -13,8 +13,8 @@ const Lowerer = struct {
         return id;
     }
 
-    fn lowerNodes(self: *Lowerer, nodes: []const lir.Node) anyerror![]types.Node {
-        var out = std.ArrayList(types.Node).empty;
+    fn lowerNodes(self: *Lowerer, nodes: []const lir.Node) anyerror![]tree.Node {
+        var out = std.ArrayList(tree.Node).empty;
         defer out.deinit(self.allocator);
 
         for (nodes) |node| {
@@ -24,7 +24,7 @@ const Lowerer = struct {
         return try out.toOwnedSlice(self.allocator);
     }
 
-    fn lowerNode(self: *Lowerer, node: lir.Node) anyerror!types.Node {
+    fn lowerNode(self: *Lowerer, node: lir.Node) anyerror!tree.Node {
         return switch (node) {
             .text => |text| .{
                 .text = .{ .content = text.content },
@@ -107,8 +107,8 @@ const Lowerer = struct {
         };
     }
 
-    fn lowerSlotProvisions(self: *Lowerer, provisions: []const lir.SlotProvision) anyerror![]types.SlotProvision {
-        var out = std.ArrayList(types.SlotProvision).empty;
+    fn lowerSlotProvisions(self: *Lowerer, provisions: []const lir.SlotProvision) anyerror![]tree.SlotProvision {
+        var out = std.ArrayList(tree.SlotProvision).empty;
         defer out.deinit(self.allocator);
 
         for (provisions) |provision| {
@@ -122,7 +122,7 @@ const Lowerer = struct {
     }
 };
 
-pub fn lower(document: *const lir.Document, allocator: std.mem.Allocator) anyerror!types.Document {
+pub fn lower(document: *const lir.Document, allocator: std.mem.Allocator) anyerror!tree.Document {
     var lowerer = Lowerer{
         .allocator = allocator,
     };
@@ -133,7 +133,7 @@ pub fn lower(document: *const lir.Document, allocator: std.mem.Allocator) anyerr
     };
 }
 
-fn freeSlotProvisions(provisions: []types.SlotProvision, allocator: std.mem.Allocator) void {
+fn freeSlotProvisions(provisions: []tree.SlotProvision, allocator: std.mem.Allocator) void {
     for (provisions) |*provision| {
         for (provision.children) |*child| child.deinit(allocator);
         allocator.free(provision.children);

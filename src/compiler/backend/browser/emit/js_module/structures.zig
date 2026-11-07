@@ -1,8 +1,9 @@
+const slots = @import("slots.zig");
 const std = @import("std");
 const browser_render_tree = @import("../../render_tree/index.zig");
-const common = @import("common.zig");
-const expression_codegen = @import("expression_codegen.zig");
-const component_codegen = @import("component_codegen.zig");
+const js_output = @import("output.zig");
+const expressions = @import("expressions.zig");
+const components = @import("components.zig");
 const dom_create = @import("dom_create.zig");
 const dom_update = @import("dom_update.zig");
 const dom_destroy = @import("dom_destroy.zig");
@@ -135,7 +136,7 @@ fn emitSingleConditionalHelper(
         "function updateConditional_{d}(instance, scope, refs) {{\n  const next = Boolean(",
         .{conditional.start_ref_id},
     );
-    try expression_codegen.emitResolvedExpression(conditional.condition, "scope", bindings_json, out, allocator);
+    try expressions.emitResolvedExpression(conditional.condition, "scope", bindings_json, out, allocator);
     try out.print(
         allocator,
         ");\n  if (refs[{d}] !== next) {{\n    const previous = refs[{d}];\n    destroyConditionalBranch_{d}(instance, refs, previous === true);\n    refs[{d}] = next;\n    replaceBetween(refs[{d}], refs[{d}], createConditionalFragment_{d}(instance, scope, refs, next));\n  }}\n",
@@ -182,31 +183,31 @@ fn emitKeyedComponentLoopHelper(
     out: *std.ArrayList(u8),
     allocator: std.mem.Allocator,
 ) !void {
-    const has_props = component_codegen.componentHasProps(component_node);
-    const has_handlers = component_codegen.componentHasEventHandlers(component_node);
-    const has_slots = component_codegen.componentHasSlots(component_node);
-    const needs_update = component_codegen.componentNeedsParentUpdate(component_node);
+    const has_props = components.componentHasProps(component_node);
+    const has_handlers = components.componentHasEventHandlers(component_node);
+    const has_slots = components.componentHasSlots(component_node);
+    const needs_update = components.componentNeedsParentUpdate(component_node);
     try out.print(
         allocator,
         "function createForComponentEntry_{d}(instance, scope, item, reference) {{\n  const parent = reference.parentNode;\n  const start = document.createComment(\"for:item:start\");\n  const end = document.createComment(\"for:item:end\");\n  parent.insertBefore(start, reference);\n  parent.insertBefore(end, reference);\n  const loopScope = {{ ...scope, [",
         .{for_loop.start_ref_id},
     );
-    try common.emitString(for_loop.item_name, out, allocator);
+    try js_output.emitString(for_loop.item_name, out, allocator);
     try out.appendSlice(allocator, "]: item };\n");
     if (has_props) {
         try out.appendSlice(allocator, "  const props = ");
-        try component_codegen.emitPropsObject(component_node.bind_effects, out, allocator, "loopScope", bindings_json);
+        try components.emitPropsObject(component_node.bind_effects, out, allocator, "loopScope", bindings_json);
         try out.appendSlice(allocator, ";\n");
     }
     if (has_handlers) {
         try out.appendSlice(allocator, "  const handlers = ");
-        try component_codegen.emitChildHandlersObject(component_node.event_effects, out, allocator, "loopScope", bindings_json);
+        try components.emitChildHandlersObject(component_node.event_effects, out, allocator, "loopScope", bindings_json);
         try out.appendSlice(allocator, ";\n");
     }
     if (has_slots) {
         try out.appendSlice(allocator, "  const slotOwner = { refresh: () => loopScope, update: () => instance.update() };\n");
         try out.appendSlice(allocator, "  const slots = ");
-        try common.emitProjectedSlotObject(component_node, "slotOwner", out, allocator);
+        try slots.emitProjectedSlotObject(component_node, "slotOwner", out, allocator);
         try out.appendSlice(allocator, ";\n");
     }
     try out.print(
@@ -225,28 +226,28 @@ fn emitKeyedComponentLoopHelper(
         "function updateForLoop_{d}(instance, scope, refs) {{\n  const iterable = (",
         .{for_loop.start_ref_id},
     );
-    try expression_codegen.emitResolvedExpression(for_loop.iterable_expr, "scope", bindings_json, out, allocator);
+    try expressions.emitResolvedExpression(for_loop.iterable_expr, "scope", bindings_json, out, allocator);
     try out.print(
         allocator,
         ") ?? [];\n  const previous = refs[{d}] ?? [];\n  const previousByKey = new Map(previous.map((record) => [record.key, record]));\n  const nextRecords = [];\n  for (const item of iterable) {{\n    const key = item?.id ?? item;\n    let record = previousByKey.get(key);\n    const loopScope = {{ ...scope, [",
         .{for_loop.state_ref_id},
     );
-    try common.emitString(for_loop.item_name, out, allocator);
+    try js_output.emitString(for_loop.item_name, out, allocator);
     try out.appendSlice(allocator, "]: item };\n    if (record) {\n      previousByKey.delete(key);\n");
     if (has_props) {
         try out.appendSlice(allocator, "      record.handle.setProps(");
-        try component_codegen.emitPropsObject(component_node.bind_effects, out, allocator, "loopScope", bindings_json);
+        try components.emitPropsObject(component_node.bind_effects, out, allocator, "loopScope", bindings_json);
         try out.appendSlice(allocator, ");\n");
     }
     if (has_handlers) {
         try out.appendSlice(allocator, "      record.handle.setEventHandlers(");
-        try component_codegen.emitChildHandlersObject(component_node.event_effects, out, allocator, "loopScope", bindings_json);
+        try components.emitChildHandlersObject(component_node.event_effects, out, allocator, "loopScope", bindings_json);
         try out.appendSlice(allocator, ");\n");
     }
     if (has_slots) {
         try out.appendSlice(allocator, "      const slotOwner = { refresh: () => loopScope, update: () => instance.update() };\n");
         try out.appendSlice(allocator, "      record.handle.setSlots(");
-        try common.emitProjectedSlotObject(component_node, "slotOwner", out, allocator);
+        try slots.emitProjectedSlotObject(component_node, "slotOwner", out, allocator);
         try out.appendSlice(allocator, ");\n");
     }
     if (needs_update) {
@@ -271,9 +272,9 @@ fn emitKeyedGenericLoopHelper(
         "function createForEntry_{d}(instance, scope, item, reference) {{\n  const parent = reference.parentNode;\n  const start = document.createComment(\"for:item:start\");\n  const end = document.createComment(\"for:item:end\");\n  parent.insertBefore(start, reference);\n  parent.insertBefore(end, reference);\n  const entryRefs = [];\n  let currentItem = item;\n  let loopScope = {{ ...scope, [",
         .{for_loop.start_ref_id},
     );
-    try common.emitString(for_loop.item_name, out, allocator);
+    try js_output.emitString(for_loop.item_name, out, allocator);
     try out.appendSlice(allocator, "]: currentItem };\n  function update(nextScope, nextItem) {\n    if (arguments.length > 1) currentItem = nextItem;\n    const refs = entryRefs;\n    loopScope = { ...nextScope, [");
-    try common.emitString(for_loop.item_name, out, allocator);
+    try js_output.emitString(for_loop.item_name, out, allocator);
     try out.appendSlice(allocator, "]: currentItem };\n");
     for (for_loop.body) |node| {
         try dom_update.emitUpdateNode(node, out, allocator, 2, "loopScope", "entryRefs");
@@ -293,7 +294,7 @@ fn emitKeyedGenericLoopHelper(
         "function updateForLoop_{d}(instance, scope, refs) {{\n  const iterable = (",
         .{for_loop.start_ref_id},
     );
-    try expression_codegen.emitResolvedExpression(for_loop.iterable_expr, "scope", bindings_json, out, allocator);
+    try expressions.emitResolvedExpression(for_loop.iterable_expr, "scope", bindings_json, out, allocator);
     try out.print(
         allocator,
         ") ?? [];\n  const previous = refs[{d}] ?? [];\n  const previousByKey = new Map(previous.map((record) => [record.key, record]));\n  const nextRecords = [];\n  for (const item of iterable) {{\n    const key = item?.id ?? item;\n    let record = previousByKey.get(key);\n    if (record) {{\n      previousByKey.delete(key);\n      record.update(scope, item);\n      moveBoundaryBefore(record.start, record.end, refs[{d}]);\n    }} else {{\n      record = createForEntry_{d}(instance, scope, item, refs[{d}]);\n    }}\n    nextRecords.push(record);\n  }}\n  for (const record of previousByKey.values()) {{\n    if (typeof record.destroy === \"function\") {{\n      record.destroy();\n    }}\n    replaceBetween(record.start, record.end, document.createDocumentFragment());\n    record.start.parentNode.removeChild(record.start);\n    record.end.parentNode.removeChild(record.end);\n  }}\n  refs[{d}] = nextRecords;\n}}\n\n",

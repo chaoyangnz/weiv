@@ -12,8 +12,6 @@ export type WeivBunPlugin = {
 };
 
 export type WeivBunPluginOptions = {
-  /** Managed reactivity is the default. Legacy is a deprecated migration mode. */
-  reactivity?: "managed" | "legacy";
   /** Root of the modules whose state Weiv may manage. Defaults to the project root. */
   root?: string;
   /** Additional component roots for custom entry/alias loaders. */

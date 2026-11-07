@@ -55,7 +55,7 @@ try {
   writeFileSync(join(temp, "publisher.mjs"), "import {createModuleState} from 'weiv:cells';export const moduleState=createModuleState();");
   const componentPath = join(temp, "Names.weiv");
   writeFileSync(componentPath, '<template><p>{{ typeof count }} / {{ decl.name }} / {{ typeof __proto__ }} / {{ initial.name }}</p><button @click="count=class {static label=this.name;static previous=count}">inline</button></template><script lang="ts">' + script + "\nwindow.addEventListener('names',event=>event.detail.result=run());window.addEventListener('names-read',event=>event.detail.result={name:count.name,label:count.label,previous:count.previous.name});</script>");
-  writeFileSync(join(temp, "component.mjs"), execFileSync(binary, ["emit", "js-cells", componentPath], { cwd: root, stdio: ["ignore", "pipe", "pipe"] }));
+  writeFileSync(join(temp, "component.mjs"), execFileSync(binary, ["emit", "js", componentPath], { cwd: root, stdio: ["ignore", "pipe", "pipe"] }));
   const entry = join(temp, "entry.mjs");
   writeFileSync(entry, "export {run} from './managed.mjs';export {mount} from './component.mjs';");
   await build({ configFile: false, root: temp, logLevel: "silent", plugins: [weiv()], build: { target: "esnext", minify: false, outDir: join(temp, "vite"), lib: { entry, formats: ["es"], fileName: () => "names.mjs" } } });

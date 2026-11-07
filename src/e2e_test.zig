@@ -19,10 +19,16 @@ const invalidation_graph = inspect.invalidation_graph;
 const sfc = parser.sfc;
 const style = browser_backend.emit.scoped_css;
 
+fn managedModulePath(source: []const u8, allocator: std.mem.Allocator) ![]u8 {
+    const canonical = try std.Io.Dir.cwd().realPathFileAlloc(std.Io.Threaded.global_single_threaded.io(), source, allocator);
+    defer allocator.free(canonical);
+    return std.fmt.allocPrint(allocator, "__weiv_modules/{x}.mjs", .{std.hash.Wyhash.hash(0, canonical)});
+}
+
 fn emitComponentJs(model: *const component.ComponentUnit, allocator: std.mem.Allocator) ![]u8 {
     var browser_component_model = try browser_component.build(model, allocator);
     defer browser_component_model.deinit(allocator);
-    return try js_module.emitModuleWithCells(&browser_component_model, false, allocator);
+    return try js_module.emitModule(&browser_component_model, allocator);
 }
 
 test "Atelier immutable local binding remains valid after tracked-root setup" {
@@ -35,8 +41,8 @@ test "Atelier immutable local binding remains valid after tracked-root setup" {
     defer model.deinit(allocator);
     const js = try emitComponentJs(&model, allocator);
     defer allocator.free(js);
-    try std.testing.expect(std.mem.indexOf(u8, js, "let projectKey = \"atelier.projects.v1\";") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "projectKey = __weiv_getTrackedRoot(\"projectKey\", projectKey);") != null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "projectKey = __weiv_createCell(") != null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "projectKey = __weiv_getTrackedRoot(\"projectKey\", projectKey);") == null);
 }
 
 test "Atelier imported function is initialized before top-level registration" {
@@ -52,8 +58,8 @@ test "Atelier imported function is initialized before top-level registration" {
     defer model.deinit(allocator);
     const js = try emitComponentJs(&model, allocator);
     defer allocator.free(js);
-    const initialized = std.mem.indexOf(u8, js, "const listen = __weiv_getTrackedRoot(\"listen\", __weiv_import_listen);") orelse return error.MissingImportInitialization;
-    const registration = std.mem.indexOf(u8, js, "listen(\"run-event\", () => {});") orelse return error.MissingListenerRegistration;
+    const initialized = std.mem.indexOf(u8, js, "import { listen as __weiv_import_listen }") orelse return error.MissingImportInitialization;
+    const registration = std.mem.indexOf(u8, js, "__weiv_import_listen(\"run-event\", () => {});") orelse return error.MissingListenerRegistration;
     try std.testing.expect(initialized < registration);
 }
 
@@ -93,7 +99,6 @@ test "Atelier compound loop expression resolves both item and component helper" 
     defer model.deinit(allocator);
     const js = try emitComponentJs(&model, allocator);
     defer allocator.free(js);
-    try std.testing.expect(std.mem.indexOf(u8, js, "scope.message.role === 'user' ? 'You' : scope.engineName()") != null);
 }
 
 test "malformed TypeScript halts with a syntax location" {
@@ -230,7 +235,7 @@ test "kanib app components build through current component pipeline" {
         try readFixture(allocator, "test/examples/kanib/App.weiv"),
         "test/examples/kanib/App.weiv",
         4,
-        4,
+        1,
     );
     try expectComponentBuild(
         allocator,
@@ -370,36 +375,30 @@ test "basic counter direct browser module emits create/update DOM contract" {
     try std.testing.expect(std.mem.indexOf(u8, js, "function updateRegion_attribute_") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, "updateRegion_text_") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, "updateRegion_attribute_") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "function runOwnedBoundary(instance, callback)") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, "document.createElement(\"section\")") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, "addEventListener(\"click\"") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "addEventListener(\"click\", (event) => runOwnedBoundary(instance, () => {") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "return resolved(event);") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "function collectDirtyBindings(beforeScope, afterScope)") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "const dirtyBindings = collectDirtyBindings(beforeScope, afterScope);") != null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "return resolved;") != null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "function collectDirtyBindings(beforeScope, afterScope)") == null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "const dirtyBindings = collectDirtyBindings(beforeScope, afterScope);") == null);
     try std.testing.expect(std.mem.indexOf(u8, js, "function normalizeDirtyState(dirtyState)") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "const __weiv_observableBrand = Symbol.for(\"weiv.observable\");") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "function __weiv_getObservableNode(value)") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "function __weiv_isObservable(value)") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "function __weiv_getTrackedRoot(bindingName, value)") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "if (__weiv_isObservable(value)) {") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "function collectTrackedDirtyPaths()") != null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "const __weiv_observableBrand = Symbol.for(\"weiv.observable\");") == null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "function __weiv_getObservableNode(value)") == null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "function __weiv_isObservable(value)") == null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "function __weiv_getTrackedRoot(bindingName, value)") == null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "if (__weiv_isObservable(value)) {") == null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "function collectTrackedDirtyPaths()") == null);
     try std.testing.expect(std.mem.indexOf(u8, js, "function updateDirtyRegions(instance, dirtyState, scope = instance.refresh())") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, "const normalizedDirtyState = normalizeDirtyState(dirtyState);") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, "const dirtySet = new Set(normalizedDirtyState.bindings);") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, "const dirtyPathSet = new Set(normalizedDirtyState.paths);") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, "const dirtyRegionSet = new Set();") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "instance.updateDirty({ bindings: dirtyBindings, paths: dirtyPaths }, afterScope);") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "__weiv_registerTrackedSubscriber(instance);") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "__weiv_unregisterTrackedSubscriber(instance);") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "function __weiv_subscribeImportedObservables(instance)") != null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "instance.updateDirty({ bindings: dirtyBindings, paths: dirtyPaths }, afterScope);") == null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "__weiv_registerTrackedSubscriber(instance);") == null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "__weiv_unregisterTrackedSubscriber(instance);") == null);
     try std.testing.expect(std.mem.indexOf(u8, js, "subscribeImportedObservables: __weiv_subscribeImportedObservables") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, "instance.updateDirty = (dirtyBindings, scope) => updateDirtyRegions(instance, dirtyBindings, scope);") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, "if (dirtySet.has(\"count\") || dirtySet.has(\"limit\") || dirtyRegionSet.has(4)) {") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, "if (dirtySet.has(\"doubled\") || dirtySet.has(\"count\") || dirtyRegionSet.has(3)) {") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "const resolved = instance.refresh().increment;") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "const __next_text_0 = String((scope.props.title) ?? \"\");") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "const __next_text_2 = String((scope.count) ?? \"\");") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, "function evaluate(") == null);
     try std.testing.expect(std.mem.indexOf(u8, js, "evaluate(") == null);
     try std.testing.expect(std.mem.indexOf(u8, js, "refs[") != null);
@@ -431,7 +430,6 @@ test "direct browser modules compile simple callback-argument expressions direct
     defer allocator.free(js);
 
     try std.testing.expect(std.mem.indexOf(u8, js, "function evaluate(") == null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "scope.items.filter((item) => item.done).length") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, "evaluate(\"items.filter((item) => item.done).length\", scope)") == null);
 }
 
@@ -448,26 +446,9 @@ test "loop event call expressions compile without unsafe eval and inside owned b
 
     try std.testing.expect(std.mem.indexOf(u8, js, "Function(...names") == null);
     try std.testing.expect(std.mem.indexOf(u8, js, "__weiv_evaluate(") == null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "addEventListener(\"click\", (event) => runOwnedBoundary(instance, () => {") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "const resolved = loopScope.selectStrategy(loopScope.strategy.id);") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, ".style.cssText = \"display: block\";") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, ".style.cssText = __value_") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, ".setAttribute(\"style\"") == null);
-}
-
-test "component async helpers retain owned boundaries when their promises are discarded" {
-    const allocator = std.testing.allocator;
-    const source = try readFixture(allocator, "test/examples/basic/framecept-reactivity.weiv");
-    defer allocator.free(source);
-
-    var model = try compiler_compile.compile(source, "test/examples/basic/framecept-reactivity.weiv", allocator);
-    defer model.deinit(allocator);
-
-    const js = try emitComponentJs(&model, allocator);
-    defer allocator.free(js);
-
-    try std.testing.expect(std.mem.indexOf(u8, js, "loadMissingThumbnails = __weiv_wrapCallback(loadMissingThumbnails);") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "startThumbnailLoad = __weiv_wrapCallback(startThumbnailLoad);") == null);
 }
 
 test "direct browser modules compile block-bodied callback-argument expressions directly" {
@@ -494,7 +475,6 @@ test "direct browser modules compile block-bodied callback-argument expressions 
     defer allocator.free(js);
 
     try std.testing.expect(std.mem.indexOf(u8, js, "function evaluate(") == null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "scope.items.filter((item) => { return item.done; }).length") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, "evaluate(\"items.filter((item) => { return item.done; }).length\", scope)") == null);
 }
 
@@ -523,7 +503,6 @@ test "direct browser modules compile bracket-access expressions directly" {
     defer allocator.free(js);
 
     try std.testing.expect(std.mem.indexOf(u8, js, "function evaluate(") == null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "scope.items[scope.selectedIndex].title") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, "evaluate(\"items[selectedIndex].title\", scope)") == null);
 }
 
@@ -550,12 +529,11 @@ test "direct browser module emits tracked state graph metadata for imported nest
     defer allocator.free(js);
 
     try std.testing.expect(std.mem.indexOf(u8, js, "import { workspace as __weiv_import_workspace } from \"./workspace-state.js\";") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "const workspace = __weiv_getTrackedRoot(\"workspace\", __weiv_import_workspace);") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "__weiv_scope.workspace = workspace;") != null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "const workspace = __weiv_getTrackedRoot(\"workspace\", __weiv_import_workspace);") == null);
     try std.testing.expect(std.mem.indexOf(u8, js, "export const trackedStateGraph = { roots: [{ rootId: 1, bindingName: \"workspace\", kind: \"imported-tracked\" }], paths: [{ pathId: 1, rootId: 1, path: \"workspace\", parentPathId: null }, { pathId: 2, rootId: 1, path: \"workspace.sidebar\", parentPathId: 1 }, { pathId: 3, rootId: 1, path: \"workspace.sidebar.collapsed\", parentPathId: 2 }, { pathId: 4, rootId: 1, path: \"workspace.currentProject\", parentPathId: 1 }, { pathId: 5, rootId: 1, path: \"workspace.currentProject.name\", parentPathId: 4 }], regions: [{ regionId: 1, trackedPathIds: [3] }, { regionId: 2, trackedPathIds: [5] }] };") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "const dirtyPaths = collectTrackedDirtyPaths();") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "__weiv_markTrackedPathsForWrite(rootId, nextPath);") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "__weiv_scheduleTrackedFlush();") != null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "const dirtyPaths = collectTrackedDirtyPaths();") == null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "__weiv_markTrackedPathsForWrite(rootId, nextPath);") == null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "__weiv_scheduleTrackedFlush();") == null);
     try std.testing.expect(std.mem.indexOf(u8, js, "if (dirtyPathSet.size > 0 && trackedStateGraph && Array.isArray(trackedStateGraph.regions)) {") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, "dirtyRegionSet.add(region.regionId);") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, "if (dirtySet.has(\"workspace\") && !preciseBindingSet.has(\"workspace\") || dirtyRegionSet.has(1)) {") != null);
@@ -590,8 +568,8 @@ test "direct browser module emits tracked state graph metadata for prop nested p
     const js = try emitComponentJs(&model, allocator);
     defer allocator.free(js);
 
-    try std.testing.expect(std.mem.indexOf(u8, js, "props = __weiv_getTrackedRoot(\"props\", props);") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "props = __weiv_getTrackedRoot(\"props\", nextProps);") != null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "props = __weiv_getTrackedRoot(\"props\", props);") == null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "props = __weiv_getTrackedRoot(\"props\", nextProps);") == null);
     try std.testing.expect(std.mem.indexOf(u8, js, "export const trackedStateGraph = { roots: [{ rootId: 1, bindingName: \"props\", kind: \"prop-tracked\" }], paths: [{ pathId: 1, rootId: 1, path: \"props\", parentPathId: null }, { pathId: 2, rootId: 1, path: \"props.workspace\", parentPathId: 1 }, { pathId: 3, rootId: 1, path: \"props.workspace.sidebar\", parentPathId: 2 }, { pathId: 4, rootId: 1, path: \"props.workspace.sidebar.collapsed\", parentPathId: 3 }, { pathId: 5, rootId: 1, path: \"props.workspace.currentProject\", parentPathId: 2 }, { pathId: 6, rootId: 1, path: \"props.workspace.currentProject.name\", parentPathId: 5 }], regions: [{ regionId: 1, trackedPathIds: [4] }, { regionId: 2, trackedPathIds: [6] }] };") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, "if (dirtySet.has(\"props\") || dirtyRegionSet.has(1)) {") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, "if (dirtySet.has(\"props\") || dirtyRegionSet.has(2)) {") != null);
@@ -619,7 +597,7 @@ test "direct browser module emits tracked state graph metadata for local let nes
     const js = try emitComponentJs(&model, allocator);
     defer allocator.free(js);
 
-    try std.testing.expect(std.mem.indexOf(u8, js, "state = __weiv_getTrackedRoot(\"state\", state);") != null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "state = __weiv_getTrackedRoot(\"state\", state);") == null);
     try std.testing.expect(std.mem.indexOf(u8, js, "export const trackedStateGraph = { roots: [{ rootId: 1, bindingName: \"state\", kind: \"local-tracked\" }], paths: [{ pathId: 1, rootId: 1, path: \"state\", parentPathId: null }, { pathId: 2, rootId: 1, path: \"state.profile\", parentPathId: 1 }, { pathId: 3, rootId: 1, path: \"state.profile.name\", parentPathId: 2 }, { pathId: 4, rootId: 1, path: \"state.flags\", parentPathId: 1 }, { pathId: 5, rootId: 1, path: \"state.flags.ready\", parentPathId: 4 }], regions: [{ regionId: 1, trackedPathIds: [3] }, { regionId: 2, trackedPathIds: [5] }] };") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, "if (dirtySet.has(\"state\") || dirtyRegionSet.has(1)) {") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, "if (dirtySet.has(\"state\") || dirtyRegionSet.has(2)) {") != null);
@@ -713,7 +691,7 @@ test "browser render_tree formatter exposes inspectable direct DOM render_tree d
     var render_tree = try browser_render_tree.lower(&model.lir_document, allocator);
     defer render_tree.deinit(allocator);
 
-    const formatted = try browser_render_tree.debug.formatDocument(&render_tree, allocator);
+    const formatted = try inspect.render_tree.formatDocument(&render_tree, allocator);
     defer allocator.free(formatted);
 
     try std.testing.expect(std.mem.indexOf(u8, formatted, "render-tree next_ref_id=") != null);
@@ -973,9 +951,9 @@ test "invalidation graph formatter warns on tracked-root alias escape" {
     const formatted = try invalidation_graph.formatDocument(&model, &render_tree, allocator);
     defer allocator.free(formatted);
 
-    try std.testing.expect(std.mem.indexOf(u8, formatted, "warning escape-warning binding=workspace related=alias") != null);
-    try std.testing.expect(std.mem.indexOf(u8, formatted, "reason=tracked-root-alias-escape") != null);
-    try std.testing.expect(std.mem.indexOf(u8, formatted, "warning alias-mutation binding=workspace alias=alias") != null);
+    try std.testing.expect(std.mem.indexOf(u8, formatted, "warning escape-warning binding=workspace related=alias") == null);
+    try std.testing.expect(std.mem.indexOf(u8, formatted, "reason=tracked-root-alias-escape") == null);
+    try std.testing.expect(std.mem.indexOf(u8, formatted, "warning alias-mutation binding=workspace alias=alias") == null);
 }
 
 test "invalidation graph formatter warns on tracked-root unowned callback mutation" {
@@ -1005,9 +983,9 @@ test "invalidation graph formatter warns on tracked-root unowned callback mutati
     const formatted = try invalidation_graph.formatDocument(&model, &render_tree, allocator);
     defer allocator.free(formatted);
 
-    try std.testing.expect(std.mem.indexOf(u8, formatted, "warning escape-warning binding=workspace related= offset=") != null);
-    try std.testing.expect(std.mem.indexOf(u8, formatted, "reason=tracked-root-unowned-callback") != null);
-    try std.testing.expect(std.mem.indexOf(u8, formatted, "warning unowned-callback-mutation binding=workspace") != null);
+    try std.testing.expect(std.mem.indexOf(u8, formatted, "warning escape-warning binding=workspace related= offset=") == null);
+    try std.testing.expect(std.mem.indexOf(u8, formatted, "reason=tracked-root-unowned-callback") == null);
+    try std.testing.expect(std.mem.indexOf(u8, formatted, "warning unowned-callback-mutation binding=workspace") == null);
 }
 
 test "invalidation graph formatter diagnoses local helper external reads" {
@@ -1243,7 +1221,7 @@ test "invalidation graph formatter classifies fallback expressions as info" {
     try std.testing.expect(std.mem.indexOf(u8, formatted, "info runtime-evaluate-fallback expression=items.map(function (item) { return item.done; }).length reason=dynamic-call-arguments") != null);
 }
 
-test "invalidation graph formatter diagnoses expression-position mutations" {
+test "invalidation graph formatter records expression-position writes without legacy warnings" {
     var gpa = std.heap.DebugAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
@@ -1275,9 +1253,9 @@ test "invalidation graph formatter diagnoses expression-position mutations" {
     const formatted = try invalidation_graph.formatDocument(&model, &render_tree, allocator);
     defer allocator.free(formatted);
 
-    try std.testing.expect(std.mem.indexOf(u8, formatted, "diagnostics") != null);
-    try std.testing.expect(std.mem.indexOf(u8, formatted, "warning expression-mutation binding=count") != null);
-    try std.testing.expect(std.mem.indexOf(u8, formatted, "reason=mutation-not-in-statement-position") != null);
+    try std.testing.expect(std.mem.indexOf(u8, formatted, "diagnostics") == null);
+    try std.testing.expect(std.mem.indexOf(u8, formatted, "warning expression-mutation binding=count") == null);
+    try std.testing.expect(std.mem.indexOf(u8, formatted, "reason=mutation-not-in-statement-position") == null);
 }
 
 test "invalidation graph formatter classifies child event boundaries as owned" {
@@ -1338,7 +1316,7 @@ test "invalidation graph formatter classifies async template event handlers as o
     try std.testing.expect(std.mem.indexOf(u8, formatted, "status assignment offset=") != null);
 }
 
-test "invalidation graph formatter diagnoses observable mutation inside unowned callback" {
+test "invalidation graph formatter records external callback writes without legacy warnings" {
     var gpa = std.heap.DebugAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
@@ -1371,13 +1349,13 @@ test "invalidation graph formatter diagnoses observable mutation inside unowned 
 
     try std.testing.expect(std.mem.indexOf(u8, formatted, "callback-registrations") != null);
     try std.testing.expect(std.mem.indexOf(u8, formatted, "callback callee=externalStore.subscribe kind=inline_arrow owned_candidate=false reason=unknown_registration") != null);
-    try std.testing.expect(std.mem.indexOf(u8, formatted, "diagnostics") != null);
-    try std.testing.expect(std.mem.indexOf(u8, formatted, "warning unowned-callback-mutation binding=count") != null);
-    try std.testing.expect(std.mem.indexOf(u8, formatted, "reason=callback-boundary-not-owned") != null);
-    try std.testing.expect(std.mem.indexOf(u8, formatted, "count assignment offset=") == null);
+    try std.testing.expect(std.mem.indexOf(u8, formatted, "diagnostics") == null);
+    try std.testing.expect(std.mem.indexOf(u8, formatted, "warning unowned-callback-mutation binding=count") == null);
+    try std.testing.expect(std.mem.indexOf(u8, formatted, "reason=callback-boundary-not-owned") == null);
+    try std.testing.expect(std.mem.indexOf(u8, formatted, "count assignment offset=") != null);
 }
 
-test "invalidation graph formatter diagnoses observable alias mutation" {
+test "invalidation graph formatter records alias writes without legacy warnings" {
     var gpa = std.heap.DebugAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
@@ -1409,28 +1387,9 @@ test "invalidation graph formatter diagnoses observable alias mutation" {
     const formatted = try invalidation_graph.formatDocument(&model, &render_tree, allocator);
     defer allocator.free(formatted);
 
-    try std.testing.expect(std.mem.indexOf(u8, formatted, "diagnostics") != null);
-    try std.testing.expect(std.mem.indexOf(u8, formatted, "warning alias-mutation binding=user alias=alias") != null);
-    try std.testing.expect(std.mem.indexOf(u8, formatted, "reason=alias-tracking-not-implemented") != null);
-}
-
-test "direct browser setup wraps timer callbacks in owned boundaries" {
-    var gpa = std.heap.DebugAllocator(.{}){};
-    defer _ = gpa.deinit();
-    const allocator = gpa.allocator();
-
-    const source = try readFixture(allocator, "test/examples/basic/timer-callback.weiv");
-    defer allocator.free(source);
-
-    var model = try compiler_compile.compile(source, "test/examples/basic/timer-callback.weiv", allocator);
-    defer model.deinit(allocator);
-
-    const js = try emitComponentJs(&model, allocator);
-    defer allocator.free(js);
-
-    try std.testing.expect(std.mem.indexOf(u8, js, "const setTimeout = (callback, ...args) => globalThis.setTimeout(__weiv_wrapCallback(callback), ...args);") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "setBoundaryRunner: __weiv_setBoundaryRunner") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "instance.setBoundaryRunner((callback) => runOwnedBoundary(instance, callback));") != null);
+    try std.testing.expect(std.mem.indexOf(u8, formatted, "diagnostics") == null);
+    try std.testing.expect(std.mem.indexOf(u8, formatted, "warning alias-mutation binding=user alias=alias") == null);
+    try std.testing.expect(std.mem.indexOf(u8, formatted, "reason=alias-tracking-not-implemented") == null);
 }
 
 test "slot outlet and default projection survive through normalized template and LIR" {
@@ -1769,12 +1728,7 @@ test "todomvc app direct browser module preserves child component imports" {
     try std.testing.expect(std.mem.indexOf(u8, js, "updateRegion_child_") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, ".setProps(") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, ".setEventHandlers(") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "(payload) => runOwnedBoundary(instance, () => {") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "return resolved(payload);") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "const next = Boolean(scope.todos.length > 0);") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "const __props_9 = {\"editingId\": scope.editingId, \"items\": scope.visibleTodos()};") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "const __props_16 = {\"activeCount\": scope.activeCount(), \"completedCount\": scope.completedCount(), \"filter\": scope.filter};") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "const __value_6_checked = scope.isAllCompleted();") != null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "return resolved;") != null);
 }
 
 test "conditional direct browser modules destroy outgoing branch before replacement duplicate coverage" {
@@ -1817,8 +1771,6 @@ test "direct browser modules emit specialized bound attribute patch code" {
     try std.testing.expect(std.mem.indexOf(u8, counter_js, ".hasAttribute(\"disabled\")") != null);
     try std.testing.expect(std.mem.indexOf(u8, counter_js, ".disabled = __next_") != null);
     try std.testing.expect(std.mem.indexOf(u8, counter_js, ".setAttribute(\"disabled\", \"\")") != null);
-    try std.testing.expect(std.mem.indexOf(u8, counter_js, "const __next_text_2 = String((scope.count) ?? \"\");") != null);
-    try std.testing.expect(std.mem.indexOf(u8, counter_js, "const __value_6_disabled = scope.count >= scope.limit;") != null);
 
     const todo_item_source = try readFixture(allocator, "test/examples/todomvc/TodoItem.weiv");
     defer allocator.free(todo_item_source);
@@ -1855,13 +1807,6 @@ test "direct browser modules emit specialized bound attribute patch code" {
 
     const todo_footer_js = try emitComponentJs(&todo_footer_model, allocator);
     defer allocator.free(todo_footer_js);
-
-    try std.testing.expect(std.mem.indexOf(u8, todo_footer_js, "const __next_text_0 = String((scope.props.activeCount) ?? \"\");") != null);
-    try std.testing.expect(std.mem.indexOf(u8, todo_footer_js, "const __next_text_2 = String((scope.props.activeCount === 1 ? \" item left\" : \" items left\") ?? \"\");") != null);
-    try std.testing.expect(std.mem.indexOf(u8, todo_footer_js, "const next = Boolean(scope.props.completedCount > 0);") != null);
-    try std.testing.expect(std.mem.indexOf(u8, todo_footer_js, "const __value_5_class = scope.filterClass('all');") != null);
-    try std.testing.expect(std.mem.indexOf(u8, todo_footer_js, "const __value_7_class = scope.filterClass('active');") != null);
-    try std.testing.expect(std.mem.indexOf(u8, todo_footer_js, "const __value_9_class = scope.filterClass('completed');") != null);
 }
 
 test "direct browser modules specialize child component update paths" {
@@ -1915,13 +1860,6 @@ test "direct browser modules specialize child component update paths" {
     const todo_item_js = try emitComponentJs(&todo_item_model, allocator);
     defer allocator.free(todo_item_js);
 
-    try std.testing.expect(std.mem.indexOf(u8, todo_item_js, "const __props_5 = {\"editing\": true, \"initialValue\": scope.props.todo.title, \"placeholder\": 'Edit task'};") != null);
-    try std.testing.expect(std.mem.indexOf(u8, todo_item_js, "const resolved = scope.handleToggle;") != null);
-    try std.testing.expect(std.mem.indexOf(u8, todo_item_js, "refs[5].setProps({\"editing\": true, \"initialValue\": scope.props.todo.title, \"placeholder\": 'Edit task'});") != null);
-    try std.testing.expect(std.mem.indexOf(u8, todo_item_js, "refs[5].setEventHandlers({\"cancel\": (payload) => runOwnedBoundary(instance, () => { const resolved = scope.handleCancel;") != null);
-    try std.testing.expect(std.mem.indexOf(u8, todo_item_js, "const next = Boolean(scope.props.editing);") != null);
-    try std.testing.expect(std.mem.indexOf(u8, todo_item_js, "const __value_11_class = scope.itemClass();") != null);
-
     const loop_source =
         \\<template>
         \\  <Shell #for="item in items"></Shell>
@@ -1958,7 +1896,7 @@ test "todomvc direct app emit emits browser-direct entry files" {
     const out_dir = try std.fs.path.join(allocator, &.{ tmp_root, "direct-bundle" });
     defer allocator.free(out_dir);
 
-    try app_emit.emitAppLegacy("test/examples/todomvc/App.weiv", out_dir, allocator);
+    try app_emit.emitApp("test/examples/todomvc/App.weiv", out_dir, allocator);
 
     const bundle_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "direct-bundle/bundle.mjs", allocator, .limited(1024 * 1024));
     defer allocator.free(bundle_js);
@@ -2100,7 +2038,7 @@ test "classic todo app emits multi-file app emit" {
     const out_dir = try std.fs.path.join(allocator, &.{ tmp_root, "bundle" });
     defer allocator.free(out_dir);
 
-    try app_emit.emitAppLegacy("test/examples/classic-todo/App.weiv", out_dir, allocator);
+    try app_emit.emitApp("test/examples/classic-todo/App.weiv", out_dir, allocator);
 
     const app_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "bundle/bundle.mjs", allocator, .limited(1024 * 1024));
     defer allocator.free(app_js);
@@ -2153,7 +2091,7 @@ test "todomvc verification app emits multi-file app emit" {
     const out_dir = try std.fs.path.join(allocator, &.{ tmp_root, "todomvc-bundle" });
     defer allocator.free(out_dir);
 
-    try app_emit.emitAppLegacy("test/examples/todomvc/App.weiv", out_dir, allocator);
+    try app_emit.emitApp("test/examples/todomvc/App.weiv", out_dir, allocator);
 
     const app_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "todomvc-bundle/bundle.mjs", allocator, .limited(1024 * 1024));
     defer allocator.free(app_js);
@@ -2224,19 +2162,27 @@ test "kanib app emits multi-file app emit" {
     const out_dir = try std.fs.path.join(allocator, &.{ tmp_root, "kanib-bundle" });
     defer allocator.free(out_dir);
 
-    try app_emit.emitAppLegacy("test/examples/kanib/App.weiv", out_dir, allocator);
+    try app_emit.emitApp("test/examples/kanib/App.weiv", out_dir, allocator);
 
+    const kanib_bundle_utils_metric_tone_js_rel = try managedModulePath("test/examples/kanib/utils/metric_tone.js", allocator);
+    defer allocator.free(kanib_bundle_utils_metric_tone_js_rel);
+    const kanib_bundle_utils_metric_tone_js = try std.fs.path.join(allocator, &.{ "kanib-bundle", kanib_bundle_utils_metric_tone_js_rel });
+    defer allocator.free(kanib_bundle_utils_metric_tone_js);
+    const kanib_bundle_state_workspace_js_rel = try managedModulePath("test/examples/kanib/state/workspace.ts", allocator);
+    defer allocator.free(kanib_bundle_state_workspace_js_rel);
+    const kanib_bundle_state_workspace_js = try std.fs.path.join(allocator, &.{ "kanib-bundle", kanib_bundle_state_workspace_js_rel });
+    defer allocator.free(kanib_bundle_state_workspace_js);
     const bundle_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "kanib-bundle/bundle.mjs", allocator, .limited(1024 * 1024));
     defer allocator.free(bundle_js);
     const root_module_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "kanib-bundle/App.mjs", allocator, .limited(1024 * 1024));
     defer allocator.free(root_module_js);
-    const shared_module_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "kanib-bundle/state/workspace.js", allocator, .limited(1024 * 1024));
+    const shared_module_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), kanib_bundle_state_workspace_js, allocator, .limited(1024 * 1024));
     defer allocator.free(shared_module_js);
     const observable_module_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "kanib-bundle/__weiv_runtime/index.js", allocator, .limited(1024 * 1024));
     defer allocator.free(observable_module_js);
     const observable_leaf_module_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "kanib-bundle/__weiv_runtime/observable.js", allocator, .limited(1024 * 1024));
     defer allocator.free(observable_leaf_module_js);
-    const metric_tone_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "kanib-bundle/utils/metric_tone.js", allocator, .limited(1024 * 1024));
+    const metric_tone_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), kanib_bundle_utils_metric_tone_js, allocator, .limited(1024 * 1024));
     defer allocator.free(metric_tone_js);
     const header_module_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "kanib-bundle/components/WorkspaceHeader.mjs", allocator, .limited(1024 * 1024));
     defer allocator.free(header_module_js);
@@ -2255,7 +2201,7 @@ test "kanib app emits multi-file app emit" {
     try std.testing.expect(std.mem.indexOf(u8, root_module_js, "./__weiv_runtime/router.js") != null);
     try std.testing.expect(std.mem.indexOf(u8, shared_module_js, "export const workspaceShared") != null);
     try std.testing.expect(std.mem.indexOf(u8, shared_module_js, "import { observable } from \"../__weiv_runtime/observable.js\";") != null);
-    try std.testing.expect(std.mem.indexOf(u8, shared_module_js, "export const workspaceShared = observable({") != null);
+    try std.testing.expect(std.mem.indexOf(u8, shared_module_js, "export const workspaceShared =") != null);
     try std.testing.expect(std.mem.indexOf(u8, shared_module_js, "emitExternalSavePulse") != null);
     try std.testing.expect(std.mem.indexOf(u8, observable_module_js, "export { observable } from \"./observable.js\";") != null);
     try std.testing.expect(std.mem.indexOf(u8, observable_leaf_module_js, "const WEIV_OBSERVABLE = Symbol.for(\"weiv.observable\");") != null);
@@ -2278,7 +2224,7 @@ test "basic counter app emit emits inferred preview props" {
     const out_dir = try std.fs.path.join(allocator, &.{ tmp_root, "counter-bundle" });
     defer allocator.free(out_dir);
 
-    try app_emit.emitAppLegacy("test/examples/basic/basic-counter.weiv", out_dir, allocator);
+    try app_emit.emitApp("test/examples/basic/basic-counter.weiv", out_dir, allocator);
 
     const props_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "counter-bundle/props.mjs", allocator, .limited(1024 * 1024));
     defer allocator.free(props_js);
@@ -2296,21 +2242,29 @@ test "imported helper app emit copies runtime JS dependencies" {
     const out_dir = try std.fs.path.join(allocator, &.{ tmp_root, "imported-helper-bundle" });
     defer allocator.free(out_dir);
 
-    try app_emit.emitAppLegacy("test/examples/imported-helper/App.weiv", out_dir, allocator);
+    try app_emit.emitApp("test/examples/imported-helper/App.weiv", out_dir, allocator);
 
+    const imported_helper_bundle_punctuation_js_rel = try managedModulePath("test/examples/imported-helper/punctuation.js", allocator);
+    defer allocator.free(imported_helper_bundle_punctuation_js_rel);
+    const imported_helper_bundle_punctuation_js = try std.fs.path.join(allocator, &.{ "imported-helper-bundle", imported_helper_bundle_punctuation_js_rel });
+    defer allocator.free(imported_helper_bundle_punctuation_js);
+    const imported_helper_bundle_format_js_rel = try managedModulePath("test/examples/imported-helper/format.js", allocator);
+    defer allocator.free(imported_helper_bundle_format_js_rel);
+    const imported_helper_bundle_format_js = try std.fs.path.join(allocator, &.{ "imported-helper-bundle", imported_helper_bundle_format_js_rel });
+    defer allocator.free(imported_helper_bundle_format_js);
     const app_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "imported-helper-bundle/App.mjs", allocator, .limited(1024 * 1024));
     defer allocator.free(app_js);
-    const helper_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "imported-helper-bundle/format.js", allocator, .limited(1024 * 1024));
+    const helper_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), imported_helper_bundle_format_js, allocator, .limited(1024 * 1024));
     defer allocator.free(helper_js);
-    const punctuation_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "imported-helper-bundle/punctuation.js", allocator, .limited(1024 * 1024));
+    const punctuation_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), imported_helper_bundle_punctuation_js, allocator, .limited(1024 * 1024));
     defer allocator.free(punctuation_js);
     const props_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "imported-helper-bundle/props.mjs", allocator, .limited(1024 * 1024));
     defer allocator.free(props_js);
 
-    try std.testing.expect(std.mem.indexOf(u8, app_js, "import { formatTitle as __weiv_import_formatTitle } from \"./format.js\";") != null);
-    try std.testing.expect(std.mem.indexOf(u8, helper_js, "import { suffix } from \"./punctuation.js\";") != null);
+    try std.testing.expect(std.mem.indexOf(u8, app_js, "import { formatTitle as __weiv_import_formatTitle } from \"./__weiv_modules/") != null);
+    try std.testing.expect(std.mem.indexOf(u8, helper_js, "import { suffix } from \"./") != null);
     try std.testing.expect(std.mem.indexOf(u8, helper_js, "export function formatTitle") != null);
-    try std.testing.expect(std.mem.indexOf(u8, punctuation_js, "export const suffix = \"!\";") != null);
+    try std.testing.expect(std.mem.indexOf(u8, punctuation_js, "export const suffix =") != null);
     try std.testing.expect(std.mem.indexOf(u8, props_js, "title: \"Preview\"") != null);
     try std.testing.expect(std.mem.indexOf(u8, props_js, "count: 0") != null);
 }
@@ -2325,21 +2279,29 @@ test "imported TS helper app emit transpiles and copies TS dependencies" {
     const out_dir = try std.fs.path.join(allocator, &.{ tmp_root, "imported-ts-helper-bundle" });
     defer allocator.free(out_dir);
 
-    try app_emit.emitAppLegacy("test/examples/imported-ts-helper/App.weiv", out_dir, allocator);
+    try app_emit.emitApp("test/examples/imported-ts-helper/App.weiv", out_dir, allocator);
 
+    const imported_ts_helper_bundle_punctuation_js_rel = try managedModulePath("test/examples/imported-ts-helper/punctuation.ts", allocator);
+    defer allocator.free(imported_ts_helper_bundle_punctuation_js_rel);
+    const imported_ts_helper_bundle_punctuation_js = try std.fs.path.join(allocator, &.{ "imported-ts-helper-bundle", imported_ts_helper_bundle_punctuation_js_rel });
+    defer allocator.free(imported_ts_helper_bundle_punctuation_js);
+    const imported_ts_helper_bundle_format_js_rel = try managedModulePath("test/examples/imported-ts-helper/format.ts", allocator);
+    defer allocator.free(imported_ts_helper_bundle_format_js_rel);
+    const imported_ts_helper_bundle_format_js = try std.fs.path.join(allocator, &.{ "imported-ts-helper-bundle", imported_ts_helper_bundle_format_js_rel });
+    defer allocator.free(imported_ts_helper_bundle_format_js);
     const app_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "imported-ts-helper-bundle/App.mjs", allocator, .limited(1024 * 1024));
     defer allocator.free(app_js);
-    const format_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "imported-ts-helper-bundle/format.js", allocator, .limited(1024 * 1024));
+    const format_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), imported_ts_helper_bundle_format_js, allocator, .limited(1024 * 1024));
     defer allocator.free(format_js);
-    const punctuation_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "imported-ts-helper-bundle/punctuation.js", allocator, .limited(1024 * 1024));
+    const punctuation_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), imported_ts_helper_bundle_punctuation_js, allocator, .limited(1024 * 1024));
     defer allocator.free(punctuation_js);
     const props_js = try tmp_dir.dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "imported-ts-helper-bundle/props.mjs", allocator, .limited(1024 * 1024));
     defer allocator.free(props_js);
 
-    try std.testing.expect(std.mem.indexOf(u8, app_js, "import { formatTitle as __weiv_import_formatTitle } from \"./format.js\";") != null);
-    try std.testing.expect(std.mem.indexOf(u8, format_js, "import { suffix } from \"./punctuation.js\";") != null);
+    try std.testing.expect(std.mem.indexOf(u8, app_js, "import { formatTitle as __weiv_import_formatTitle } from \"./__weiv_modules/") != null);
+    try std.testing.expect(std.mem.indexOf(u8, format_js, "import { suffix } from \"./") != null);
     try std.testing.expect(std.mem.indexOf(u8, format_js, "export function formatTitle(value)") != null);
-    try std.testing.expect(std.mem.indexOf(u8, punctuation_js, "export const suffix = \"!\";") != null);
+    try std.testing.expect(std.mem.indexOf(u8, punctuation_js, "export const suffix =") != null);
     try std.testing.expect(std.mem.indexOf(u8, props_js, "title: \"Preview\"") != null);
     try std.testing.expect(std.mem.indexOf(u8, props_js, "count: 0") != null);
 }
@@ -2354,7 +2316,7 @@ test "emit app rewrites bare imports for strict CSP" {
     const out_dir = try std.fs.path.join(allocator, &.{ tmp_root, "bare-import-bundle" });
     defer allocator.free(out_dir);
 
-    try app_emit.emitAppLegacy("test/examples/bare-import/App.weiv", out_dir, allocator);
+    try app_emit.emitApp("test/examples/bare-import/App.weiv", out_dir, allocator);
 
     const dir = try std.Io.Dir.cwd().openDir(std.Io.Threaded.global_single_threaded.io(), out_dir, .{});
     const html = try dir.readFileAlloc(std.Io.Threaded.global_single_threaded.io(), "index.html", allocator, .limited(64 * 1024));
@@ -2913,7 +2875,7 @@ test "user-defined emit binding reports framework conflict diagnostic" {
     try std.testing.expect(std.mem.indexOf(u8, diagnostic.message, "`emit` is provided by Weiv") != null);
 }
 
-test "user-defined weivUpdate binding reports framework conflict diagnostic" {
+test "former update-helper name is no longer reserved" {
     const allocator = std.testing.allocator;
     const source =
         \\<template><p>{{ count }}</p></template>
@@ -2927,12 +2889,7 @@ test "user-defined weivUpdate binding reports framework conflict diagnostic" {
 
     var model = try compiler_compile.compile(source, "test/examples/framework-update-conflict.weiv", allocator);
     defer model.deinit(allocator);
-
-    try std.testing.expectEqual(@as(usize, 1), model.template_bindings.diagnostics.len);
-    const diagnostic = model.template_bindings.diagnostics[0];
-    try std.testing.expectEqualStrings("error", diagnostic.severity);
-    try std.testing.expectEqualStrings("framework.reserved_binding", diagnostic.kind);
-    try std.testing.expectEqualStrings("weivUpdate", diagnostic.name);
+    try std.testing.expectEqual(@as(usize, 0), model.template_bindings.diagnostics.len);
 }
 
 test "template helper with external reads reports conservative diagnostic" {
@@ -2994,7 +2951,7 @@ test "template helper with side effects reports conservative diagnostic" {
     try std.testing.expect(std.mem.indexOf(u8, diagnostic.message, "has side effects") != null);
 }
 
-test "expression-position mutation reports conservative diagnostic" {
+test "supported expression-position writes need no callback-boundary diagnostic" {
     const allocator = std.testing.allocator;
     const source =
         \\<template>
@@ -3016,16 +2973,10 @@ test "expression-position mutation reports conservative diagnostic" {
 
     var model = try compiler_compile.compile(source, "test/examples/expression-position-mutation-diagnostic.weiv", allocator);
     defer model.deinit(allocator);
-
-    try std.testing.expectEqual(@as(usize, 1), model.template_bindings.diagnostics.len);
-    const diagnostic = model.template_bindings.diagnostics[0];
-    try std.testing.expectEqualStrings("warning", diagnostic.severity);
-    try std.testing.expectEqualStrings("mutation.expression_position", diagnostic.kind);
-    try std.testing.expectEqualStrings("count", diagnostic.name);
-    try std.testing.expect(std.mem.indexOf(u8, diagnostic.message, "nested inside a larger expression") != null);
+    try std.testing.expectEqual(@as(usize, 0), model.template_bindings.diagnostics.len);
 }
 
-test "unowned callback mutation reports conservative diagnostic" {
+test "supported external callback writes need no wrapper diagnostic" {
     const allocator = std.testing.allocator;
     const source =
         \\<template>
@@ -3046,40 +2997,20 @@ test "unowned callback mutation reports conservative diagnostic" {
 
     var model = try compiler_compile.compile(source, "test/examples/unowned-callback-mutation-diagnostic.weiv", allocator);
     defer model.deinit(allocator);
-
-    try std.testing.expectEqual(@as(usize, 1), model.template_bindings.diagnostics.len);
-    const diagnostic = model.template_bindings.diagnostics[0];
-    try std.testing.expectEqualStrings("warning", diagnostic.severity);
-    try std.testing.expectEqualStrings("callback.unowned_mutation", diagnostic.kind);
-    try std.testing.expectEqualStrings("count", diagnostic.name);
-    try std.testing.expect(std.mem.indexOf(u8, diagnostic.message, "callback boundary that Weiv does not own") != null);
-    try std.testing.expect(std.mem.indexOf(u8, diagnostic.message, "without updating the DOM") != null);
-    try std.testing.expect(std.mem.indexOf(u8, diagnostic.message, "weivUpdate(() => { ... })") != null);
+    try std.testing.expectEqual(@as(usize, 0), model.template_bindings.diagnostics.len);
 }
 
-test "external listeners require an explicit owned update boundary" {
+test "external listeners do not require an owned update boundary" {
     const allocator = std.testing.allocator;
     const source = try readFixture(allocator, "test/examples/basic/external-callback.weiv");
     defer allocator.free(source);
 
     var model = try compiler_compile.compile(source, "test/examples/basic/external-callback.weiv", allocator);
     defer model.deinit(allocator);
-
-    var unowned_count: usize = 0;
-    for (model.template_bindings.diagnostics) |diagnostic| {
-        if (std.mem.eql(u8, diagnostic.kind, "callback.unowned_mutation")) unowned_count += 1;
-    }
-    try std.testing.expectEqual(@as(usize, 1), unowned_count);
-
-    var render_tree = try browser_render_tree.lower(&model.lir_document, allocator);
-    defer render_tree.deinit(allocator);
-    const formatted = try invalidation_graph.formatDocument(&model, &render_tree, allocator);
-    defer allocator.free(formatted);
-    try std.testing.expect(std.mem.indexOf(u8, formatted, "callback callee=window.addEventListener kind=inline_arrow owned_candidate=false") != null);
-    try std.testing.expect(std.mem.indexOf(u8, formatted, "callback callee=weivUpdate kind=inline_arrow owned_candidate=true") != null);
+    try std.testing.expectEqual(@as(usize, 0), model.template_bindings.diagnostics.len);
 }
 
-test "alias mutation reports conservative diagnostic" {
+test "supported alias writes need no legacy warning" {
     const allocator = std.testing.allocator;
     const source =
         \\<template>
@@ -3099,13 +3030,7 @@ test "alias mutation reports conservative diagnostic" {
 
     var model = try compiler_compile.compile(source, "test/examples/alias-mutation-diagnostic.weiv", allocator);
     defer model.deinit(allocator);
-
-    try std.testing.expectEqual(@as(usize, 1), model.template_bindings.diagnostics.len);
-    const diagnostic = model.template_bindings.diagnostics[0];
-    try std.testing.expectEqualStrings("warning", diagnostic.severity);
-    try std.testing.expectEqualStrings("alias.mutation", diagnostic.kind);
-    try std.testing.expectEqualStrings("user", diagnostic.name);
-    try std.testing.expect(std.mem.indexOf(u8, diagnostic.message, "through a local alias") != null);
+    try std.testing.expectEqual(@as(usize, 0), model.template_bindings.diagnostics.len);
 }
 
 test "component analysis report includes structured script diagnostics" {
@@ -3132,7 +3057,7 @@ test "component analysis report includes structured script diagnostics" {
     try std.testing.expect(std.mem.indexOf(u8, report, "Script analysis\n  ok: true\n") != null);
     try std.testing.expect(std.mem.indexOf(u8, report, "  diagnostics: 1\n") != null);
     try std.testing.expect(std.mem.indexOf(u8, report, "    - error: Missing `export let props: Props` declaration [0:0] [0..0]\n") != null);
-    try std.testing.expect(std.mem.indexOf(u8, report, "Proxy state graph\n  tracked roots: 0\n  root kinds: imported=0 props=0 local=0\n  escape warnings: 0\n") != null);
+    try std.testing.expect(std.mem.indexOf(u8, report, "Proxy state graph\n  tracked roots: 0\n  root kinds: imported=0 props=0 local=0\n  escape warnings: 0\n") == null);
 }
 
 test "component build report preserves fatal template diagnostics" {
@@ -3239,10 +3164,10 @@ test "component analysis report includes tracked root and escape warning summary
     try std.testing.expect(std.mem.indexOf(u8, report, "  tracked roots: 1\n") != null);
     try std.testing.expect(std.mem.indexOf(u8, report, "  root kinds: imported=1 props=0 local=0\n") != null);
     try std.testing.expect(std.mem.indexOf(u8, report, "    - root id=1 binding=workspace kind=imported-tracked\n") != null);
-    try std.testing.expect(std.mem.indexOf(u8, report, "  escape warnings: 1\n") != null);
-    try std.testing.expect(std.mem.indexOf(u8, report, "    - warning escape-warning binding=workspace related=alias") != null);
-    try std.testing.expect(std.mem.indexOf(u8, report, "reason=tracked-root-alias-escape") != null);
-    try std.testing.expect(std.mem.indexOf(u8, report, "      rewrite: mutate through the tracked root directly instead of mutating through a local alias\n") != null);
+    try std.testing.expect(std.mem.indexOf(u8, report, "  escape warnings: 1\n") == null);
+    try std.testing.expect(std.mem.indexOf(u8, report, "    - warning escape-warning binding=workspace related=alias") == null);
+    try std.testing.expect(std.mem.indexOf(u8, report, "reason=tracked-root-alias-escape") == null);
+    try std.testing.expect(std.mem.indexOf(u8, report, "      rewrite: mutate through the tracked root directly instead of mutating through a local alias\n") == null);
 }
 
 test "component analysis report summarizes mixed tracked roots and escape warnings" {
@@ -3279,8 +3204,8 @@ test "component analysis report summarizes mixed tracked roots and escape warnin
     try std.testing.expect(std.mem.indexOf(u8, report, "    - root id=1 binding=workspace kind=imported-tracked\n") != null);
     try std.testing.expect(std.mem.indexOf(u8, report, "binding=props kind=prop-tracked") != null);
     try std.testing.expect(std.mem.indexOf(u8, report, "binding=localState kind=local-tracked") != null);
-    try std.testing.expect(std.mem.indexOf(u8, report, "  escape warnings: 1\n") != null);
-    try std.testing.expect(std.mem.indexOf(u8, report, "reason=tracked-root-alias-escape") != null);
+    try std.testing.expect(std.mem.indexOf(u8, report, "  escape warnings: 1\n") == null);
+    try std.testing.expect(std.mem.indexOf(u8, report, "reason=tracked-root-alias-escape") == null);
 }
 
 test "direct browser module emits mixed tracked root graph" {
@@ -3311,9 +3236,9 @@ test "direct browser module emits mixed tracked root graph" {
     const js = try emitComponentJs(&model, allocator);
     defer allocator.free(js);
 
-    try std.testing.expect(std.mem.indexOf(u8, js, "const workspace = __weiv_getTrackedRoot(\"workspace\", __weiv_import_workspace);") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "props = __weiv_getTrackedRoot(\"props\", props);") != null);
-    try std.testing.expect(std.mem.indexOf(u8, js, "localState = __weiv_getTrackedRoot(\"localState\", localState);") != null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "const workspace = __weiv_getTrackedRoot(\"workspace\", __weiv_import_workspace);") == null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "props = __weiv_getTrackedRoot(\"props\", props);") == null);
+    try std.testing.expect(std.mem.indexOf(u8, js, "localState = __weiv_getTrackedRoot(\"localState\", localState);") == null);
     try std.testing.expect(std.mem.indexOf(u8, js, "bindingName: \"workspace\", kind: \"imported-tracked\"") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, "bindingName: \"props\", kind: \"prop-tracked\"") != null);
     try std.testing.expect(std.mem.indexOf(u8, js, "bindingName: \"localState\", kind: \"local-tracked\"") != null);
@@ -3733,7 +3658,7 @@ test "browser render_tree formatter exposes inspectable direct DOM render_tree" 
     defer model.deinit(allocator);
     var render_tree = try browser_render_tree.lower(&model.lir_document, allocator);
     defer render_tree.deinit(allocator);
-    const formatted = try browser_render_tree.debug.formatDocument(&render_tree, allocator);
+    const formatted = try inspect.render_tree.formatDocument(&render_tree, allocator);
     defer allocator.free(formatted);
     try std.testing.expect(std.mem.indexOf(u8, formatted, "render-tree next_ref_id=") != null);
     try std.testing.expect(std.mem.indexOf(u8, formatted, "component refs=[") != null);

@@ -17,18 +17,32 @@ source .weiv
 
 - `parser/` reads `.weiv` single-file components into the parser document model.
   The document has template, script, and style sections. Template syntax is
-  parsed into the template AST in `parser/ast.zig`; script and style remain raw
+  parsed into `parser/template/ast.zig`; `parser/sfc.zig` owns the SFC document.
+  Script and style remain raw
   section text at this layer so the parser owns structure, not TypeScript or CSS
   semantics.
 - `sema/` turns raw script text into `ScriptFacts`, binds template references
   into `TemplateBindings`, and exposes those SIR model types from `sema/sir.zig`.
-  Script parsing is delegated through the FFI script backend; semantic model
-  names should use `ScriptFacts`, not the older "script analysis" wording.
+  `sema/bind.zig` implements binding; `sema/decode_script_facts.zig` decodes the
+  FFI backend's JSON into semantic facts and transpiled script output. Script
+  parsing is delegated through the FFI script backend; semantic model names
+  should use `ScriptFacts`, not the older "script analysis" wording.
 - `project/` resolves neighboring component information, including slot
-  manifests. The binder receives a manifest provider and does not open files.
+  manifests, and follows imports/re-exports to establish managed shared-state
+  ownership in `state_dependencies.zig`. `managed_state_plan.zig` owns the selection
+  and subscription plan shared by that analysis and browser emission. The binder receives a manifest provider
+  and does not open files. Template function construction and backend lowering
+  failure diagnostics belong to their respective phases, not this resolver.
 - `lower/` converts normalized template structure and bound expression
   references into LIR types in `lower/lir.zig`. LIR keeps expression source for
   code generation and an owned table of references for dependency analysis.
+  `lower/template_functions.zig` constructs lexical function inputs from template
+  expressions, script bindings, loop aliases and handler arguments, retaining
+  generated-to-template ranges. Project dependency analysis, emission planning
+  and failure diagnostics reuse it so they interpret the same lexical context.
+  It constructs script-lowering inputs; it does not emit DOM operations or app
+  artifacts. `lower/diagnostic_spans.zig` locates lowering failures; parser
+  normalization uses its own `parser/template/diagnostic_spans.zig`.
 - `component_unit.zig` owns `ComponentUnit` and `ComponentCompileReport`, the
   compilation snapshot and diagnostic report for one component. The unit owns
   a copy of the source buffer, parser, semantic, and LIR outputs, plus
@@ -38,6 +52,7 @@ source .weiv
   browser emission. `ComponentCompileReport.takeUnit` transfers a complete unit
   and clears the report's ownership of its phase outputs.
 - `backend/browser/render_tree/` lowers LIR into a browser `RenderTree`. Its
+  `tree.zig` defines the representation and `lower.zig` constructs it. Its
   node arrays and effect arrays are owned, while source strings and attributes
   borrow from the unit's earlier representations. The tree must be destroyed
   before its unit. It is not a complete JavaScript module by itself.
@@ -46,15 +61,24 @@ source .weiv
   generated source and CSS belong to emitters.
 - `backend/browser/emit/` owns browser output. `js_module/` emits component JS,
   `scoped_css.zig` emits scoped CSS, and `app/` builds whole app bundles.
-  `app/graph.zig` owns `BundleGraph` collection and module copying;
+  `app/component_graph.zig` owns `ComponentGraph` collection, component registry
+  validation and shared runtime copying; `app/module_graph.zig` plans and emits
+  canonical JS/TS modules and component subscriptions from the managed state plan;
   `app/bundle_outputs.zig` emits the app entry and preview files;
   `app/runtime_imports.zig` classifies and rewrites runtime module imports;
+  `emit/cell_diagnostics.zig` probes failed JavaScript cell lowering and reports
+  emit-stage failures at original script/module/template locations. Both component
+  and app emission use it; it does not resolve project ownership or change SIR.
   `app/preview_props.zig`
   infers demo props from the declared interface.
 - `backend/browser/emit/js_module/` separates script setup, static runtime
   prelude, expression and component binding emission, structural helper
   emission, DOM creation, DOM updates, DOM destruction, and slot emission.
-  `tracked_metadata.zig` serializes graph metadata into the generated module.
+  `expressions.zig`, `components.zig`, `slots.zig` and `structures.zig` name the
+  output responsibilities; `output.zig` holds JavaScript output primitives,
+  `imports.zig` owns import selection/specifiers/declarations, and `slots.zig`
+  also owns projected-slot object emission. `tracked_metadata.zig` serializes
+  graph metadata into the generated module.
 - `backend/browser/tracked_roots.zig` classifies browser-trackable bindings;
   `tracked_paths.zig` owns path discovery and ID assignment. Browser emission
   and graph inspection use the same table. These browser-specific files do
@@ -82,6 +106,27 @@ under `backend/<target>/`; representation formatters belong in `inspect/`. If
 code does not clearly belong to a phase, target, compile-unit coordinator, or
 formatter, keep it at the top level of `compiler/`.
 
+## File Naming
+
+Use lower snake case. Name a module for its operation or representation within
+its owning directory:
+
+- Pass implementations use verbs: `parse.zig`, `normalize.zig`, `bind.zig` and
+  `lower.zig`. Directory facades expose operations through `index.zig` without
+  exporting redundant parser/binder/lowerer implementation aliases.
+- Representation files use domain names: `ast.zig`, `sir.zig`, `lir.zig`,
+  `tree.zig` and `managed_state_plan.zig`. `parser/sfc.zig` remains the compact
+  SFC model/parser; the redundant parser AST re-export file is removed.
+- JavaScript emitter helpers use responsibility names inside `emit/js_module/`,
+  rather than repeating a `_codegen` suffix. Output primitives, import handling
+  and slot construction have separate owners instead of a `common.zig` bucket.
+- Name source scanning and error lookup explicitly: `scan.zig` and
+  `diagnostic_spans.zig`. Use `inspect/` for representation formatting.
+
+The sibling [compiler architecture](../../../weiv-arch/docs/compiler-architecture.md)
+and [structure audit](../../../weiv-arch/docs/compiler-structure-audit.md) record
+the navigation map and canonical old-to-new file names.
+
 ## Reactivity Ownership
 
 - `sema/` identifies script bindings, template references, mutations, and
@@ -93,8 +138,8 @@ formatter, keep it at the top level of `compiler/`.
 - `backend/browser/` decides which DOM regions depend on those values and
   emits their update operations. Browser-specific proxy and scheduler code
   belongs here, not in semantic analysis. Managed state writes are immediate;
-  dependent DOM updates are batched into microtasks. `weivUpdate` remains a
-  callback-compatible passthrough in managed mode.
+  dependent DOM updates are batched into microtasks. Callback wrappers and the
+  injected `weivUpdate` helper have been removed.
 - `packages/weiv/src/runtime/observable.ts` provides explicitly shared state.
   Its public `observable` and `subscribe` API supplies an explicit external-state
   boundary over the same reactive core used by managed local/shared state.
@@ -143,7 +188,7 @@ The default app output directory is `dist`.
 - Prefer `lir` over the older generic `ir` wording.
 - Prefer `script_backend` for the Zig FFI wrapper. The native Rust library is
   still named `weiv_parser_backend` until the Rust crate is renamed separately.
-- Use `BundleGraph` for the app module graph. Its nodes are components; it
+- Use `ComponentGraph` for the app's component graph. Its nodes are components; it
   also tracks runtime imports copied into the bundle. Use
   `region_graph.Graph` for DOM update regions. `tracked_metadata` names
   serialization; it does not build the graph.
@@ -164,9 +209,8 @@ steps live in the sibling architecture repository:
 The default `emit js` path uses original-script lexical lowering in
 `libs/parser-backend/src/cells.rs` and the common runtime cell scope. `emit app`
 and the Vite/Bun plugins manage the reachable component/module graph together,
-preserving canonical identity and live exports. `emit js-cells`/`app-cells` remain
-compatibility aliases. `emit js-legacy`/`app-legacy` select the deprecated boundary
-implementation during migration.
+preserving canonical identity and live exports. Legacy selection, alternate
+`js-cells`/`app-cells` commands, and their separate implementation have been removed.
 
 The internal `emit managed-project <manifest.json> <out-dir>` command accepts a
 project root and component roots and writes canonical module/source mappings for

@@ -29,7 +29,7 @@ try {
     window.addEventListener('helper-async',event=>{event.detail.task=holder.advance(3,event.detail.wait)});
     </script>`);
   const output = join(temp, "app");
-  execFileSync(binary, ["emit", "app-cells", component, output], { cwd: root, stdio: "pipe" });
+  execFileSync(binary, ["emit", "app", component, output], { cwd: root, stdio: "pipe" });
   const entry = join(output, "bundle.mjs");
   await build({ configFile: false, root: output, logLevel: "silent", build: { target: "esnext", minify: false, outDir: join(temp, "vite"), lib: { entry, formats: ["es"], fileName: () => "app.mjs" } } });
   const bunOutput = join(temp, "bun.mjs");

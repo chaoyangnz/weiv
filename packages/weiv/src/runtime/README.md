@@ -99,8 +99,8 @@ Current source uses a shared scheduler for observable notifications. It captures
 all pending root notifications before delivery, then runs queued owner jobs once
 per wave. Owner jobs can be cancelled; replacing a captured job defers the new
 registration to the next wave. Default component output subscribes local and shared
-state through one cell scope. The deprecated legacy emitter retains its older
-direct owned-boundary checks and observable bridge during migration.
+state through one cell scope. The former synchronous owned-boundary checks,
+callback/timer wrappers and private observable listener bridge have been removed.
 
 Errors from preparation, delivery, and jobs are collected while independent work
 continues. The default reporter sends an `AggregateError` to `globalThis.reportError`

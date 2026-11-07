@@ -2,12 +2,10 @@ const std = @import("std");
 const compiler_compile = @import("../../../../compile.zig");
 const compiler_diagnostics = @import("../../../../diagnostics.zig");
 const component = @import("../../../../component_unit.zig");
-const browser_component = @import("../../component.zig");
-const js_module = @import("../js_module.zig");
 const style = @import("../scoped_css.zig");
 const runtime_imports = @import("runtime_imports.zig");
 
-pub const BundleGraph = struct {
+pub const ComponentGraph = struct {
     root_dir: []const u8,
     allocator: std.mem.Allocator,
     nodes: std.ArrayList(Node),
@@ -17,7 +15,7 @@ pub const BundleGraph = struct {
     copied_runtime_paths: std.StringHashMap(void),
     bare_imports: std.StringHashMap(void),
 
-    pub fn init(root_dir: []const u8, allocator: std.mem.Allocator) BundleGraph {
+    pub fn init(root_dir: []const u8, allocator: std.mem.Allocator) ComponentGraph {
         return .{
             .root_dir = root_dir,
             .allocator = allocator,
@@ -30,7 +28,7 @@ pub const BundleGraph = struct {
         };
     }
 
-    pub fn deinit(self: *BundleGraph) void {
+    pub fn deinit(self: *ComponentGraph) void {
         for (self.nodes.items) |*node| node.deinit(self.allocator);
         self.nodes.deinit(self.allocator);
         self.index_by_abs_path.deinit();
@@ -56,7 +54,7 @@ pub const BundleGraph = struct {
         self.bare_imports.deinit();
     }
 
-    pub fn collect(self: *BundleGraph, abs_path: []const u8) !usize {
+    pub fn collect(self: *ComponentGraph, abs_path: []const u8) !usize {
         if (self.index_by_abs_path.get(abs_path)) |existing| return existing;
 
         const source = try std.Io.Dir.cwd().readFileAlloc(std.Io.Threaded.global_single_threaded.io(), abs_path, self.allocator, .limited(1024 * 1024));
@@ -96,7 +94,7 @@ pub const BundleGraph = struct {
     }
 
     pub fn collectValidated(
-        self: *BundleGraph,
+        self: *ComponentGraph,
         abs_path: []const u8,
         bag: *compiler_diagnostics.DiagnosticBag,
     ) !void {
@@ -156,7 +154,7 @@ pub const BundleGraph = struct {
         }
     }
 
-    pub fn emitStylesheet(self: *BundleGraph, allocator: std.mem.Allocator) ![]u8 {
+    pub fn emitStylesheet(self: *ComponentGraph, allocator: std.mem.Allocator) ![]u8 {
         var out = std.ArrayList(u8).empty;
         defer out.deinit(allocator);
 
@@ -173,44 +171,7 @@ pub const BundleGraph = struct {
         return try out.toOwnedSlice(allocator);
     }
 
-    pub fn writeComponentModulesDirect(self: *BundleGraph, out_dir: std.Io.Dir, allocator: std.mem.Allocator) !void {
-        for (self.nodes.items) |*node| {
-            var browser_component_model = try browser_component.build(&node.model, allocator);
-            defer browser_component_model.deinit(allocator);
-
-            const js = try js_module.emitModuleWithCells(&browser_component_model, false, allocator);
-            defer allocator.free(js);
-            const rewritten_js = try runtime_imports.rewriteRuntimeImportSpecifiers(js, node.module_rel_path, allocator);
-            defer allocator.free(rewritten_js);
-            if (std.fs.path.dirname(node.module_rel_path)) |output_dirname| {
-                if (!std.mem.eql(u8, output_dirname, ".") and output_dirname.len > 0) {
-                    try out_dir.createDirPath(std.Io.Threaded.global_single_threaded.io(), output_dirname);
-                }
-            }
-            try out_dir.writeFile(std.Io.Threaded.global_single_threaded.io(), .{ .sub_path = node.module_rel_path, .data = rewritten_js });
-        }
-    }
-
-    pub fn writeRuntimeImports(self: *BundleGraph, out_dir: std.Io.Dir, allocator: std.mem.Allocator) !void {
-        for (self.nodes.items) |*node| {
-            const component_dir = std.fs.path.dirname(node.abs_path) orelse continue;
-            for (node.model.script.imports) |import_record| {
-                if (!runtime_imports.shouldCopyRuntimeImport(import_record, &node.model.script)) continue;
-                try self.copyRuntimeImport(out_dir, component_dir, import_record.source, allocator);
-            }
-        }
-    }
-
-    pub fn validateRuntimeImports(self: *BundleGraph) !void {
-        for (self.nodes.items) |*node| {
-            for (node.model.script.imports) |import_record| {
-                if (!runtime_imports.shouldPreserveRuntimeImport(import_record, &node.model.script)) continue;
-                try validateRuntimeImportSpecifier(self, node.abs_path, import_record.source);
-            }
-        }
-    }
-
-    pub fn collectValidationDiagnostics(self: *BundleGraph, allocator: std.mem.Allocator) ![]compiler_diagnostics.Diagnostic {
+    pub fn collectValidationDiagnostics(self: *ComponentGraph, allocator: std.mem.Allocator) ![]compiler_diagnostics.Diagnostic {
         var bag = compiler_diagnostics.DiagnosticBag.init();
         defer bag.deinit(allocator);
 
@@ -243,7 +204,7 @@ pub const BundleGraph = struct {
         return bag.toOwnedSlice(allocator);
     }
 
-    fn registerComponent(self: *BundleGraph, tag_name: []const u8, node_index: usize) !void {
+    fn registerComponent(self: *ComponentGraph, tag_name: []const u8, node_index: usize) !void {
         if (self.component_registry.get(tag_name)) |existing| {
             if (existing != node_index) return error.ComponentTagConflict;
             return;
@@ -254,7 +215,7 @@ pub const BundleGraph = struct {
     }
 
     fn registerComponentValidated(
-        self: *BundleGraph,
+        self: *ComponentGraph,
         bag: *compiler_diagnostics.DiagnosticBag,
         importer_node: *const Node,
         tag_name: []const u8,
@@ -295,69 +256,7 @@ pub const BundleGraph = struct {
         try self.component_registry.put(owned_tag_name, node_index);
     }
 
-    fn copyRuntimeImport(
-        self: *BundleGraph,
-        out_dir: std.Io.Dir,
-        importer_dir: []const u8,
-        source_specifier: []const u8,
-        allocator: std.mem.Allocator,
-    ) !void {
-        if (runtime_imports.isWeivRuntimeSpecifier(source_specifier)) {
-            try self.copyWeivRuntimeModule(out_dir, allocator);
-            if (std.mem.eql(u8, source_specifier, runtime_imports.weiv_virtual_cells_specifier)) {
-                const cell_path = try runtime_imports.runtimeSource("cell", allocator);
-                defer allocator.free(cell_path);
-                try self.copyWeivRuntimeDependency(out_dir, cell_path, "__weiv_runtime/cell.js", allocator);
-            }
-            return;
-        }
-        if (std.fs.path.isAbsolute(source_specifier)) return;
-        if (!std.mem.startsWith(u8, source_specifier, "./") and
-            !std.mem.startsWith(u8, source_specifier, "../"))
-        {
-            return;
-        }
-
-        const abs_source = try std.fs.path.resolve(allocator, &.{ importer_dir, source_specifier });
-        defer allocator.free(abs_source);
-        const rel_source = try std.fs.path.relative(allocator, ".", null, self.root_dir, abs_source);
-        defer allocator.free(rel_source);
-        const output_rel_source = try runtime_imports.emittedRuntimeImportPath(rel_source, allocator);
-        defer allocator.free(output_rel_source);
-        if (std.mem.startsWith(u8, output_rel_source, "..")) return error.ExternalRuntimeImportUnsupported;
-        if (self.copied_runtime_paths.contains(output_rel_source)) return;
-
-        const file_data = try std.Io.Dir.cwd().readFileAlloc(std.Io.Threaded.global_single_threaded.io(), abs_source, allocator, .limited(1024 * 1024));
-        defer allocator.free(file_data);
-        const module_output = try runtime_imports.emitRuntimeImportOutput(file_data, abs_source, output_rel_source, allocator);
-        defer allocator.free(module_output);
-        if (std.fs.path.dirname(output_rel_source)) |output_dirname| {
-            if (!std.mem.eql(u8, output_dirname, ".") and output_dirname.len > 0) {
-                try out_dir.createDirPath(std.Io.Threaded.global_single_threaded.io(), output_dirname);
-            }
-        }
-        try out_dir.writeFile(std.Io.Threaded.global_single_threaded.io(), .{ .sub_path = output_rel_source, .data = module_output });
-        try self.copied_runtime_paths.put(try self.allocator.dupe(u8, output_rel_source), {});
-
-        if (!runtime_imports.isJavaScriptModule(output_rel_source)) return;
-
-        const dependency_dir = std.fs.path.dirname(abs_source) orelse return;
-        const import_scan_source = if (runtime_imports.isTranspilableTypeScriptModule(abs_source)) file_data else module_output;
-        const nested_imports = try runtime_imports.parseJsModuleImports(import_scan_source, allocator);
-        defer {
-            for (nested_imports) |item| allocator.free(item);
-            allocator.free(nested_imports);
-        }
-
-        for (nested_imports) |nested_specifier| {
-            if (!runtime_imports.isWeivRuntimeSpecifier(nested_specifier) and
-                !runtime_imports.isBrowserLoadableImport(nested_specifier) and
-                !runtime_imports.isTranspilableTypeScriptModule(nested_specifier)) continue;
-            try self.copyRuntimeImport(out_dir, dependency_dir, nested_specifier, allocator);
-        }
-    }
-
-    pub fn copyWeivRuntimeModule(self: *BundleGraph, out_dir: std.Io.Dir, allocator: std.mem.Allocator) !void {
+    pub fn copyWeivRuntimeModule(self: *ComponentGraph, out_dir: std.Io.Dir, allocator: std.mem.Allocator) !void {
         const runtime_abs_source = try runtime_imports.runtimeSource("index", allocator);
         defer allocator.free(runtime_abs_source);
 
@@ -365,7 +264,7 @@ pub const BundleGraph = struct {
     }
 
     pub fn copyWeivRuntimeDependency(
-        self: *BundleGraph,
+        self: *ComponentGraph,
         out_dir: std.Io.Dir,
         abs_source: []const u8,
         output_rel_source: []const u8,
@@ -451,29 +350,4 @@ fn replaceExtension(path: []const u8, new_extension: []const u8, allocator: std.
         return try std.fmt.allocPrint(allocator, "{s}{s}", .{ path[0 .. path.len - ".weiv".len], new_extension });
     }
     return try std.fmt.allocPrint(allocator, "{s}{s}", .{ path, new_extension });
-}
-
-fn validateRuntimeImportSpecifier(graph: *BundleGraph, importer_path: []const u8, source_specifier: []const u8) !void {
-    _ = importer_path;
-    if (std.fs.path.isAbsolute(source_specifier)) {
-        return error.UnsupportedRuntimeImport;
-    }
-
-    if (runtime_imports.isWeivRuntimeSpecifier(source_specifier)) {
-        return;
-    }
-
-    const is_relative = std.mem.startsWith(u8, source_specifier, "./") or
-        std.mem.startsWith(u8, source_specifier, "../");
-    if (!is_relative) {
-        if (!graph.bare_imports.contains(source_specifier)) {
-            const duped = try graph.allocator.dupe(u8, source_specifier);
-            try graph.bare_imports.put(duped, {});
-        }
-        return;
-    }
-
-    if (!runtime_imports.isBrowserLoadableImport(source_specifier) and !runtime_imports.isTranspilableTypeScriptModule(source_specifier)) {
-        return error.UnsupportedRuntimeImport;
-    }
 }

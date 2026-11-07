@@ -14,7 +14,7 @@ const temp = mkdtempSync(join(tmpdir(), "weiv-core-package-"));
 try {
   const entry = join(temp, "entry.js");
   const binary = process.env.WEIV_BINARY_PATH || join(repoRoot, "zig-out/bin/weiv");
-  const compiled = execFileSync(binary, ["emit", "js-cells", "test/examples/basic/compiler-cells.weiv"], { cwd: repoRoot, encoding: "utf8" });
+  const compiled = execFileSync(binary, ["emit", "js", "test/examples/basic/compiler-cells.weiv"], { cwd: repoRoot, encoding: "utf8" });
   writeFileSync(join(temp, "Compiled.mjs"), compiled);
   writeFileSync(entry, `
     export { mount as mountCells } from "./Compiled.mjs";
