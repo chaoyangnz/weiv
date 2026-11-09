@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "../..");
-const binary = process.env.WEIV_BINARY_PATH || join(root, "zig-out/bin/weiv");
+const binary = process.env.WEIV_BINARY_PATH || join(root, "cyna-out/bin/weiv");
 const temp = mkdtempSync(join(tmpdir(), "weiv-cell-diagnostics-"));
 function run(...args) {
   return spawnSync(binary, args, { cwd: root, encoding: "utf8" });

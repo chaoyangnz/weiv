@@ -246,8 +246,8 @@ Avoid turning the whole app into shared-state-first architecture.
 
 The replacement app should become the main flagship verification app for:
 
-- `zig build test`
-- `zig build component-test`
+- `cyna test .`
+- `npm run test:component`
 - future browser e2e smoke paths
 
 Compiler-side checks should cover:

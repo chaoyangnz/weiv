@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 const root = resolve(import.meta.dirname, "../..");
-const binary = process.env.WEIV_BINARY_PATH || join(root, "zig-out/bin/weiv");
+const binary = process.env.WEIV_BINARY_PATH || join(root, "cyna-out/bin/weiv");
 const dir = mkdtempSync(join(tmpdir(), "weiv-module-state-"));
 function analyze(source) {
   const path = join(dir, "state.ts");

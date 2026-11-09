@@ -1,3 +1,0 @@
-#!/usr/bin/env sh
-echo "placeholder weiv linux-x64-gnu binary package; replace with real binary" >&2
-exit 1

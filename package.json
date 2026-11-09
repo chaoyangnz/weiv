@@ -9,10 +9,9 @@
     "packages/ui-components"
   ],
   "scripts": {
-    "weiv": "zig build run --",
+    "weiv": "node ./packages/weiv/bin/weiv.mjs",
     "build:cyna": "node ./tools/build-cyna-release.mjs",
-    "test:zig": "zig build test",
-    "test:zig:all": "zig build test-all",
+    "test:cyna": "cyna test .",
     "test:component": "bun test test/component",
     "test:inspect": "bun test test/inspect",
     "test:runtime": "bun test test/runtime",

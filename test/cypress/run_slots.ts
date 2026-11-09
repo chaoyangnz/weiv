@@ -2,7 +2,7 @@ import { test } from "bun:test";
 import { createServer } from "node:net";
 
 const cwd = process.cwd();
-const outDir = ".zig-cache/cypress-slots-direct";
+const outDir = ".cyna-cache/cypress-slots-direct";
 const entry = "test/examples/slots/SlotShowcase.weiv";
 const specPath = "test/cypress/assets/e2e/slots-direct.cy.js";
 
@@ -40,7 +40,7 @@ async function main() {
   const baseUrl = `http://127.0.0.1:${port}`;
 
   const server = Bun.spawn({
-    cmd: ["zig", "build", "run", "--", "dev", entry, outDir],
+    cmd: ["cyna-out/bin/weiv", "dev", entry, outDir],
     cwd,
     env: { ...process.env, PORT: port },
     stdout: "inherit",

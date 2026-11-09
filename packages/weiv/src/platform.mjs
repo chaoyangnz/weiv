@@ -6,11 +6,7 @@ import { fileURLToPath } from "node:url";
 const require = createRequire(import.meta.url);
 
 const PLATFORM_PACKAGES = {
-  "darwin-arm64": "@weivjs/weiv-darwin-arm64",
-  "darwin-x64": "@weivjs/weiv-darwin-x64",
-  "linux-x64": "@weivjs/weiv-linux-x64-gnu",
-  "linux-arm64": "@weivjs/weiv-linux-arm64-gnu",
-  "win32-x64": "@weivjs/weiv-win32-x64-msvc"
+  "darwin-arm64": "@weivjs/weiv-darwin-arm64"
 };
 
 export function resolveWeivBinaryPath() {
@@ -58,7 +54,7 @@ function resolveSourceCheckoutBinary() {
   }
 
   const binaryName = process.platform === "win32" ? "weiv.exe" : "weiv";
-  const candidate = join(checkoutRoot, "zig-out", "bin", binaryName);
+  const candidate = join(checkoutRoot, "cyna-out", "bin", binaryName);
   assertExecutable(candidate, "Weiv source checkout (run npm run build:cyna or set WEIV_BINARY_PATH)");
   return candidate;
 }

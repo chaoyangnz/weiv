@@ -72,58 +72,9 @@ jobs:
             npm publish ./packages/weiv-darwin-arm64 --access public
           fi
 
-  publish-windows-x64:
-    needs: prepare-release
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          package-manager-cache: false
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: goto-bus-stop/setup-zig@v2
-        with:
-          version: 0.16.0
-
-      - name: Build Windows x64 package
-        env:
-          VERSION: ${{ inputs.version }}
-        run: |
-          actual="$(node -p "require('./packages/weiv-win32-x64-msvc/package.json').version")"
-          test "$actual" = "$VERSION"
-          cargo build --release --manifest-path libs/parser-backend/Cargo.toml
-          zig build -Dtarget=x86_64-windows-msvc -Doptimize=ReleaseFast
-          cp zig-out/bin/weiv.exe packages/weiv-win32-x64-msvc/bin/weiv.exe
-          ./packages/weiv-win32-x64-msvc/bin/weiv.exe --help
-          ./packages/weiv-win32-x64-msvc/bin/weiv.exe emit js test/examples/basic/external-callback.weiv |
-            grep -Fq 'const weivUpdate = (callback) => __weiv_runBoundary(callback);'
-
-      - name: Upload Windows x64 release asset
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release upload "${{ needs.prepare-release.outputs.tag }}" \
-            "packages/weiv-win32-x64-msvc/bin/weiv.exe#weiv-win32-x64-msvc.exe" --clobber
-
-      - name: Publish Windows x64 package
-        env:
-          VERSION: ${{ inputs.version }}
-        run: |
-          package="@weivjs/weiv-win32-x64-msvc"
-          if npm view "${package}@${VERSION}" version >/dev/null 2>&1; then
-            echo "${package}@${VERSION} already published"
-          else
-            npm publish ./packages/weiv-win32-x64-msvc --access public
-          fi
-
   publish-main:
     needs:
       - publish-darwin-arm64
-      - publish-windows-x64
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

@@ -7,7 +7,7 @@ import { pathToFileURL } from "node:url";
 import { build } from "vite";
 
 const root = resolve(import.meta.dirname, "../..");
-const binary = process.env.WEIV_BINARY_PATH || join(root, "zig-out/bin/weiv");
+const binary = process.env.WEIV_BINARY_PATH || join(root, "cyna-out/bin/weiv");
 execFileSync(process.execPath, ["packages/weiv/scripts/build.mjs"], { cwd: root, stdio: "pipe" });
 const { weiv } = await import("../../packages/weiv/dist/vite.mjs");
 const temp = mkdtempSync(join(tmpdir(), "weiv-class-names-"));

@@ -47,7 +47,7 @@ weivjs/vite            — Vite adapter surface
 
 | Option | How | Pros | Cons |
 |--------|-----|------|------|
-| WASM | Compile Zig+Rust to `wasm32-wasi`, ship `.wasm` in npm | Single artifact, all platforms, no native deps | Zig+Rust cross-toolchain WASM linking is unproven; ~10% slower |
+| WASM | Compile Cyna and Rust to `wasm32-wasi`, ship `.wasm` in npm | Single artifact, all platforms, no native deps | Cyna and Rust cross-toolchain WASM linking is unproven |
 | Native + NAPI-RS | Prebuilt binaries per platform via `optionalDependencies` | Fastest runtime, proven pattern (SWC, esbuild) | Platform matrix packaging, CI complexity |
 | CLI exec | Plugin shells out to `weiv` binary on PATH | Works today, zero new infra | Users install `weiv` separately, process-per-file overhead |
 
@@ -55,7 +55,7 @@ weivjs/vite            — Vite adapter surface
 - Svelte, Vue, Angular — compiler is pure JS, direct import. No native code.
 - SWC, esbuild, Lightning CSS, Turbopack — native code distributed as platform-specific npm packages via `optionalDependencies`, with optional WASM fallback.
 
-**Weiv compiler stats:** ~9200 lines of Zig (parse → analyze → lower → emit) + ~1700 lines of Rust (Oxc parser backend). Rewriting to JS is not viable.
+**Weiv compiler:** Cyna handles parsing, analysis, lowering, and emission; Rust provides the Oxc script backend.
 
 **Current path:** CLI-exec bridge is implemented inside `weivjs` adapters. Next step is performance/distribution hardening without changing the adapter API.
 

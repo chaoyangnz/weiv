@@ -1,3 +1,0 @@
-#!/usr/bin/env sh
-echo "placeholder weiv darwin-x64 binary package; replace with real binary" >&2
-exit 1

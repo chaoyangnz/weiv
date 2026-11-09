@@ -64,10 +64,6 @@ publish_pkg() {
 # Platform packages first
 a=(
   "./packages/weiv-darwin-arm64"
-  "./packages/weiv-darwin-x64"
-  "./packages/weiv-linux-x64-gnu"
-  "./packages/weiv-linux-arm64-gnu"
-  "./packages/weiv-win32-x64-msvc"
 )
 
 for pkg in "${a[@]}"; do

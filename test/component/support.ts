@@ -363,7 +363,7 @@ export function keydown(element: FakeElement, key: string) {
 
 function emitCommand(args: string[]): string {
   const proc = Bun.spawnSync({
-    cmd: ["zig", "build", "run", "--", ...args],
+    cmd: ["cyna-out/bin/weiv", ...args],
     stdout: "pipe",
     stderr: "pipe",
     cwd: process.cwd(),

@@ -8,7 +8,7 @@ import { installJsdom, loadModules } from "./support";
 
 const tick = () => new Promise<void>(resolve => queueMicrotask(resolve));
 function emit(path: string) {
-  return Bun.spawnSync(["zig", "build", "run", "--", "emit", "js", path], { stdout: "pipe", stderr: "pipe" });
+  return Bun.spawnSync(["cyna-out/bin/weiv", "emit", "js", path], { stdout: "pipe", stderr: "pipe" });
 }
 async function fixture(path = "test/examples/basic/compiler-cells.weiv") {
   const result = emit(path);

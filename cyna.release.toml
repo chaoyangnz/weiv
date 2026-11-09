@@ -1,0 +1,16 @@
+name = "weiv-cyna"
+version = "0.1.0"
+src = "src"
+type = "exe"
+entry = "src/main.cy"
+
+[build]
+target = "native"
+opt = "release"
+
+[link]
+libs = ["weiv_parser_backend", "iconv"]
+search_paths = ["libs/parser-backend/target/release"]
+
+[c]
+sources = ["src/ffi/script_backend_bridge.c"]

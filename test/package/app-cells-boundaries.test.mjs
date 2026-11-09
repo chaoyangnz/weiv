@@ -6,7 +6,7 @@ import {join,resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {JSDOM} from 'jsdom';
 const root=resolve(import.meta.dirname,'../..');
-const binary=process.env.WEIV_BINARY_PATH||join(root,'zig-out/bin/weiv');
+const binary=process.env.WEIV_BINARY_PATH||join(root,'cyna-out/bin/weiv');
 const temp=mkdtempSync(join(tmpdir(),'weiv-app-boundary-'));
 const project=join(temp,'project'),output=join(temp,'dist');mkdirSync(project);
 const previous={window:globalThis.window,document:globalThis.document};let dom,handle;

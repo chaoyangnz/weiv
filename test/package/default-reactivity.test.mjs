@@ -7,7 +7,7 @@ import { pathToFileURL } from "node:url";
 import { build, createServer } from "vite";
 
 const repo = resolve(import.meta.dirname, "../..");
-const binary = join(repo, "zig-out/bin/weiv");
+const binary = join(repo, "cyna-out/bin/weiv");
 execFileSync(process.execPath, ["packages/weiv/scripts/build.mjs"], { cwd: repo, stdio: "pipe" });
 const { weiv } = await import("../../packages/weiv/dist/vite.mjs");
 const temp = realpathSync(mkdtempSync(join(tmpdir(), "weiv-default-reactivity-")));

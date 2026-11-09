@@ -15,9 +15,19 @@ def run(*args: str) -> None:
 
 def emit_app(entry: str, output: Path) -> None:
     run(
-        "cyna", "run", "cyna-port", "--", "--runtime-dir", str(RUNTIME_DIST),
+        str(ROOT / "cyna-out/bin/weiv"), "--runtime-dir", str(RUNTIME_DIST),
         "emit", "app", entry, str(output),
     )
+
+
+def find_module(output: Path, content: str) -> Path:
+    matches = [path for path in (output / "__weiv_modules").glob("*.mjs") if content in path.read_text()]
+    assert len(matches) == 1, (content, matches)
+    return matches[0]
+
+
+def module_import(output: Path, content: str) -> str:
+    return f'./__weiv_modules/{find_module(output, content).name}'
 
 
 with TemporaryDirectory(prefix=".cyna-project-", dir=ROOT) as directory:
@@ -53,15 +63,14 @@ console.log("Cyna project component and slots runtime passed");
     run("bun", str(harness))
 
     nested_output = output / "nested-project"
-    emit_app("cyna-port/fixtures/local-module/App.weiv", nested_output)
+    emit_app("test/fixtures/cyna/local-module/App.weiv", nested_output)
     assert {"App.mjs", "__weiv_modules", "styles.css", "__weiv_runtime"}.issubset(
         {path.name for path in nested_output.iterdir()}
     )
-    marker_code = (nested_output / "__weiv_modules/7777f37e492788be.mjs").read_text()
+    marker_code = find_module(nested_output, 'from "../__weiv_runtime/observable.js"').read_text()
     assert 'from "../__weiv_runtime/observable.js"' in marker_code
     assert '"weiv:cells"' in marker_code
-    assert 'from "./888eff0220692a5.mjs"' in marker_code
-    assert (nested_output / "__weiv_modules/888eff0220692a5.mjs").exists()
+    assert 'from "./' in marker_code
     nested_harness = nested_output / "runtime.mjs"
     nested_harness.write_text('''import assert from "node:assert/strict";
 import {JSDOM} from "jsdom";
@@ -129,7 +138,7 @@ console.log("Cyna transitive TypeScript module graph passed");
     run("bun", str(typescript_harness))
 
     managed_output = output / "managed-project"
-    emit_app("cyna-port/fixtures/managed-state/App.weiv", managed_output)
+    emit_app("test/fixtures/cyna/managed-state/App.weiv", managed_output)
     assert {"App.mjs", "__weiv_modules", "styles.css", "__weiv_runtime"}.issubset(
         {path.name for path in managed_output.iterdir()}
     )
@@ -137,7 +146,7 @@ console.log("Cyna transitive TypeScript module graph passed");
     managed_harness.write_text('''import assert from "node:assert/strict";
 import {JSDOM} from "jsdom";
 import * as App from "./App.mjs";
-import {count, other} from "./__weiv_modules/37a574638e2a0b9.mjs";
+import {count, other} from "STATE_MODULE";
 const dom = new JSDOM("<main></main>");
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
@@ -152,11 +161,11 @@ assert.equal(root.querySelector("p")?.textContent, "1 / 1");
 handle.destroy();
 assert.equal(root.textContent, "");
 console.log("Cyna direct managed publisher runtime passed");
-''')
+'''.replace("STATE_MODULE", module_import(managed_output, "export let count")))
     run("bun", str(managed_harness))
 
     alias_output = output / "managed-alias-project"
-    emit_app("cyna-port/fixtures/managed-alias/App.weiv", alias_output)
+    emit_app("test/fixtures/cyna/managed-alias/App.weiv", alias_output)
     assert {"App.mjs", "__weiv_modules", "styles.css", "__weiv_runtime"}.issubset(
         {path.name for path in alias_output.iterdir()}
     )
@@ -164,7 +173,7 @@ console.log("Cyna direct managed publisher runtime passed");
     alias_harness.write_text('''import assert from "node:assert/strict";
 import {JSDOM} from "jsdom";
 import * as App from "./App.mjs";
-import {shown} from "./__weiv_modules/4b5e25a670df9da2.mjs";
+import {shown} from "ALIAS_MODULE";
 const dom = new JSDOM("<main></main>");
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
@@ -178,21 +187,21 @@ assert.equal(root.querySelector("p")?.textContent, "1");
 handle.destroy();
 assert.equal(root.textContent, "");
 console.log("Cyna managed export and import aliases passed");
-''')
+'''.replace("ALIAS_MODULE", module_import(alias_output, "export { count as shown }")))
     run("bun", str(alias_harness))
 
     reexport_output = output / "managed-reexport-project"
-    emit_app("cyna-port/fixtures/managed-reexport/App.weiv", reexport_output)
+    emit_app("test/fixtures/cyna/managed-reexport/App.weiv", reexport_output)
     assert {"App.mjs", "__weiv_modules", "styles.css", "__weiv_runtime"}.issubset(
         {path.name for path in reexport_output.iterdir()}
     )
-    assert (reexport_output / "__weiv_modules/e7696116c4077457.mjs").exists()
-    assert (reexport_output / "__weiv_modules/19d67629b129cde1.publisher.mjs").exists()
+    assert find_module(reexport_output, "export { count as shown").exists()
+    assert find_module(reexport_output, "createModuleState").exists()
     reexport_harness = reexport_output / "runtime.mjs"
     reexport_harness.write_text('''import assert from "node:assert/strict";
 import {JSDOM} from "jsdom";
 import * as App from "./App.mjs";
-import {shown} from "./__weiv_modules/cec8d44aeecbb671.mjs";
+import {shown} from "REEXPORT_MODULE";
 const dom = new JSDOM("<main></main>");
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
@@ -206,20 +215,20 @@ assert.equal(root.querySelector("p")?.textContent, "1");
 handle.destroy();
 assert.equal(root.textContent, "");
 console.log("Cyna managed named reexport runtime passed");
-''')
+'''.replace("REEXPORT_MODULE", module_import(reexport_output, "export { count as shown")))
     run("bun", str(reexport_harness))
 
     star_output = output / "managed-star-project"
-    emit_app("cyna-port/fixtures/managed-star/App.weiv", star_output)
+    emit_app("test/fixtures/cyna/managed-star/App.weiv", star_output)
     assert {"App.mjs", "__weiv_modules", "styles.css", "__weiv_runtime"}.issubset(
         {path.name for path in star_output.iterdir()}
     )
-    assert (star_output / "__weiv_modules/64d771279ac37ef9.publisher.mjs").exists()
+    assert find_module(star_output, "createModuleState").exists()
     star_harness = star_output / "runtime.mjs"
     star_harness.write_text('''import assert from "node:assert/strict";
 import {JSDOM} from "jsdom";
 import * as App from "./App.mjs";
-import {count} from "./__weiv_modules/3516a6ff2938a45f.mjs";
+import {count} from "STAR_MODULE";
 const dom = new JSDOM("<main></main>");
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
@@ -233,5 +242,5 @@ assert.equal(root.querySelector("p")?.textContent, "1");
 handle.destroy();
 assert.equal(root.textContent, "");
 console.log("Cyna managed star reexport runtime passed");
-''')
+'''.replace("STAR_MODULE", module_import(star_output, "export let count")))
     run("bun", str(star_harness))

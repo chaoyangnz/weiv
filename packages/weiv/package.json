@@ -34,11 +34,7 @@
     }
   },
   "optionalDependencies": {
-    "@weivjs/weiv-darwin-arm64": "0.1.2",
-    "@weivjs/weiv-darwin-x64": "0.1.0",
-    "@weivjs/weiv-linux-x64-gnu": "0.1.0",
-    "@weivjs/weiv-linux-arm64-gnu": "0.1.0",
-    "@weivjs/weiv-win32-x64-msvc": "0.1.2"
+    "@weivjs/weiv-darwin-arm64": "0.1.2"
   },
   "peerDependencies": {
     "vite": "^5.0.0 || ^6.0.0 || ^7.0.0"

@@ -13,7 +13,7 @@ const logger = createLogger("info", { prefix: "" });
 logger.warn = (message) => warnings.push(message);
 
 try {
-  process.env.WEIV_BINARY_PATH = join(repoRoot, "zig-out", "bin", "weiv");
+  process.env.WEIV_BINARY_PATH = join(repoRoot, "cyna-out", "bin", "weiv");
 
   writeFileSync(
     join(tempRoot, "index.html"),

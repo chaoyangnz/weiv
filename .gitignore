@@ -5,7 +5,8 @@ dist
 .idea
 .vscode
 .zig-cache
-zig-out
+cyna-out
+.cyna-cache
 libs/parser-backend/target
 cypress/screenshots
 cypress/videos

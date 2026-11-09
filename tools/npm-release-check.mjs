@@ -53,7 +53,7 @@ function detectPlaceholder(platformTar) {
 try {
   const mainTar = pack("./packages/weiv");
   const version = JSON.parse(readFileSync(join(repoRoot, "packages/weiv/package.json"), "utf8")).version;
-  const platformDirs = ["weiv-darwin-arm64", "weiv-darwin-x64", "weiv-linux-x64-gnu", "weiv-linux-arm64-gnu", "weiv-win32-x64-msvc"];
+  const platformDirs = ["weiv-darwin-arm64"];
   const platformTars = platformDirs
     .filter((name) => JSON.parse(readFileSync(join(repoRoot, "packages", name, "package.json"), "utf8")).version === version)
     .map((name) => pack(`./packages/${name}`));

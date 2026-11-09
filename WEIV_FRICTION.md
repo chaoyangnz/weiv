@@ -1,5 +1,14 @@
 # Weiv integration friction
 
+## Cyna cutover component regressions (2026-11-09)
+
+- **Classification:** confirmed Cyna compiler compatibility gaps in mounted component behavior; the package and native Cyna suites pass, while the broader component suite does not.
+- **Context:** macOS arm64, Cyna 0.5.0, Bun 1.2.16, Node 22.22.1; `main` uses `cyna-out/bin/weiv` for `test/component/support.ts` and direct component emit tests.
+- **Reproduction:** run `npm run build:cyna`, then `npm run test:component` from the repository root.
+- **Expected:** all mounted component behaviors pass with the Cyna compiler, including native objects, callable state, alias replacement, and Kanib navigation.
+- **Actual:** 55 passed, 11 failed, and 3 unhandled errors across 66 tests. The complete output is reproducible with the command above. Representative failures: `destructuring declarations initialize each binding before subsequent extraction` throws `TypeError: Weiv observable state requires writable data properties`; `inline events preserve loop aliases, script shadows and callback parameters` exits with `Cannot emit JavaScript`; `replacing local aliases releases old graphs and keeps scalar snapshots ordinary` expects update count 2 but receives 3; `replaced callable state subscribes to newly captured roots` expects `"1"` but receives `"0"`; several callback, conversion, and Kanib tests throw `TypeError: Weiv observable state supports only plain objects and arrays`.
+- **Workaround/status:** the previous compiler and its passing behavior remain on `legacy`. Keep these tests as active Cyna regression coverage; no test expectations were weakened during the branch cleanup.
+
 ## Cyna emit js duplicates JSON diagnostics on fatal cell error (2026-11-09)
 
 - **Classification:** confirmed Cyna port CLI output defect; fixed in the current source and rebuilt Darwin arm64 binary.

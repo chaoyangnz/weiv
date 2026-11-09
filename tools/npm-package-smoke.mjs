@@ -4,7 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
 
 const repoRoot = process.cwd();
-const weivBin = resolve(repoRoot, "zig-out/bin/weiv");
+const weivBin = resolve(repoRoot, "cyna-out/bin/weiv");
 const tempRoot = mkdtempSync(join(tmpdir(), "weiv-npm-smoke-"));
 const packedTarballs = [];
 
@@ -51,18 +51,6 @@ function unpackTarball(tarballPath, destDir) {
 function currentPlatformPackageDir() {
   if (process.platform === "darwin" && process.arch === "arm64") {
     return "./packages/weiv-darwin-arm64";
-  }
-  if (process.platform === "darwin" && process.arch === "x64") {
-    return "./packages/weiv-darwin-x64";
-  }
-  if (process.platform === "linux" && process.arch === "x64") {
-    return "./packages/weiv-linux-x64-gnu";
-  }
-  if (process.platform === "linux" && process.arch === "arm64") {
-    return "./packages/weiv-linux-arm64-gnu";
-  }
-  if (process.platform === "win32" && process.arch === "x64") {
-    return "./packages/weiv-win32-x64-msvc";
   }
   return null;
 }

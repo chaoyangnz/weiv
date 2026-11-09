@@ -5,8 +5,8 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const compiler = process.env.CYNA || "cyna";
-const manifest = resolve(repoRoot, "cyna-port", "cyna.release.toml");
-const output = resolve(repoRoot, "zig-out", "bin", process.platform === "win32" ? "weiv.exe" : "weiv");
+const manifest = resolve(repoRoot, "cyna.release.toml");
+const output = resolve(repoRoot, "cyna-out", "bin", process.platform === "win32" ? "weiv.exe" : "weiv");
 const env = { ...process.env };
 const platformPackage = process.platform === "darwin" && process.arch === "arm64"
   ? resolve(repoRoot, "packages", "weiv-darwin-arm64", "bin", "weiv")

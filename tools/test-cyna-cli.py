@@ -7,8 +7,7 @@ import tempfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BINARY = Path(os.environ.get("CYNA_WEIV_BINARY", ROOT / "zig-out/bin/weiv"))
-REFERENCE = os.environ.get("WEIV_ZIG_REFERENCE")
+BINARY = Path(os.environ.get("CYNA_WEIV_BINARY", ROOT / "cyna-out/bin/weiv"))
 FIXTURE = "test/examples/basic/basic-counter.weiv"
 
 
@@ -24,23 +23,6 @@ def invoke(*args: str) -> subprocess.CompletedProcess[bytes]:
 def assert_equal(left: bytes, right: bytes, label: str) -> None:
     if left != right:
         raise AssertionError(f"{label} differs")
-
-
-def compare_reference(*args: str) -> None:
-    if not REFERENCE:
-        return
-    expected = subprocess.run(
-        (REFERENCE, *args),
-        cwd=ROOT,
-        check=False,
-        capture_output=True,
-    )
-    actual = invoke(*args)
-    assert (actual.returncode, actual.stdout, actual.stderr) == (
-        expected.returncode,
-        expected.stdout,
-        expected.stderr,
-    ), f"reference mismatch: {' '.join(args)}"
 
 
 def main() -> None:
@@ -81,8 +63,6 @@ def main() -> None:
             assert result.returncode == 0, f"compile {' '.join(form)}"
             assert result.stdout == b""
             assert compile_emitted.read_bytes() == direct.stdout
-            compare_reference(*form, FIXTURE)
-            compare_reference("compile", *form, FIXTURE)
 
         for alias, form in aliases.items():
             expected = invoke(*form, FIXTURE)
@@ -90,14 +70,12 @@ def main() -> None:
             assert actual.returncode == expected.returncode
             assert_equal(actual.stdout, expected.stdout, " ".join(alias))
             assert_equal(actual.stderr, expected.stderr, " ".join(alias))
-            compare_reference(*alias, FIXTURE)
 
         for command in ("inspect-project", "build-browser"):
             result = invoke(command, FIXTURE, str(output / "unused"))
             expected = invoke()
             assert result.returncode == 0
             assert_equal(result.stderr, expected.stderr, f"{command} usage")
-            compare_reference(command, FIXTURE, str(output / "unused"))
 
         missing = output / "missing.weiv"
         for form in (("emit", "lir"), ("analyze", "component"), ("validate", "app")):
@@ -107,10 +85,8 @@ def main() -> None:
             assert structured.returncode == 1
             assert b"cli.read_failed" in text.stderr or b"app.validate_failed" in text.stderr
             assert b'"ok": false' in structured.stderr
-            compare_reference(*form, str(missing))
-            compare_reference("--json-diagnostics", *form, str(missing))
 
-    print("Cyna CLI inspection, alias, output, and failure parity passed")
+    print("Cyna CLI inspection, alias, output, and failure checks passed")
 
 
 if __name__ == "__main__":
