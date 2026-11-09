@@ -1,0 +1,54 @@
+{
+  "name": "weiv",
+  "title": "Weiv",
+  "description": "Compiler-first frontend framework docs for single-file components, direct DOM updates, and a shared reactive runtime.",
+  "version": "0.1.1",
+  "repo": "https://github.com/neucine/weiv",
+  "docs": "docs",
+  "nav": [
+    { "text": "Guide", "link": "/getting-started" },
+    { "text": "Docs", "link": "/architecture" },
+    { "text": "Runtime API", "link": "/runtime-api" },
+    { "text": "GitHub", "link": "https://github.com/neucine/weiv" }
+  ],
+  "sidebar": [
+    {
+      "text": "Examples",
+      "items": [
+        { "text": "Simple Component", "link": "/simple-component" },
+        { "text": "Shared State", "link": "/shared-state" },
+        { "text": "Router Example", "link": "/router-example" }
+      ]
+    },
+    {
+      "text": "Guide",
+      "items": [
+        { "text": "Getting Started", "link": "/getting-started" },
+        { "text": "Template Syntax", "link": "/template-syntax" },
+        { "text": "Reactivity", "link": "/reactivity" },
+        { "text": "Bundling", "link": "/bundling" },
+        { "text": "Props And Emits", "link": "/props-and-emits" },
+        { "text": "VS Code Extension", "link": "/vscode-extension" },
+        { "text": "Status", "link": "/status" }
+      ]
+    },
+    {
+      "text": "Reference",
+      "items": [
+        { "text": "Architecture", "link": "/architecture" },
+        { "text": "Runtime Scheduling", "link": "/runtime-scheduling" },
+        { "text": "Runtime API", "link": "/runtime-api" },
+        { "text": "Terminology", "link": "/terminology" }
+      ]
+    },
+    {
+      "text": "Packages",
+      "items": [
+        { "text": "NPM Distribution", "link": "/npm-single-package-distribution" }
+      ]
+    }
+  ],
+  "footer": {
+    "copyright": "Copyright © 2026 Weiv"
+  }
+}
