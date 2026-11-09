@@ -1,0 +1,5 @@
+<template><button @click="increment">Increment</button><p>{{ count }}</p></template>
+<script lang="ts">
+  import { count, increment } from "./barrel/index.ts";
+  export let props = {};
+</script>

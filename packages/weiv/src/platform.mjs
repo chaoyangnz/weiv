@@ -59,7 +59,7 @@ function resolveSourceCheckoutBinary() {
 
   const binaryName = process.platform === "win32" ? "weiv.exe" : "weiv";
   const candidate = join(checkoutRoot, "zig-out", "bin", binaryName);
-  assertExecutable(candidate, "Weiv source checkout (run zig build or set WEIV_BINARY_PATH)");
+  assertExecutable(candidate, "Weiv source checkout (run npm run build:cyna or set WEIV_BINARY_PATH)");
   return candidate;
 }
 

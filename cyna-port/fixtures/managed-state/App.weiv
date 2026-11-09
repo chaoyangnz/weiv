@@ -1,0 +1,5 @@
+<template><button @click="increment">Increment</button><p>{{ count }} / {{ other }}</p></template>
+<script lang="ts">
+  import { count, other, increment } from "./state.ts";
+  export let props = {};
+</script>

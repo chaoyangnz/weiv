@@ -5,6 +5,19 @@ import { dirname, extname, isAbsolute, join, relative, resolve } from "node:path
 import { resolveWeivBinaryPath } from "./platform.mjs";
 import { fileURLToPath } from "node:url";
 
+const RUNTIME_FILES = ["binding.js", "cell.js", "index.js", "observable.js", "reactive-core.js", "router.js"];
+
+function runtimeDirectory() {
+  const candidates = [
+    fileURLToPath(new URL("./runtime", import.meta.url)),
+    fileURLToPath(new URL("../dist/runtime", import.meta.url)),
+  ];
+  const found = candidates.find(directory => RUNTIME_FILES.every(file => existsSync(join(directory, file))));
+  // Leave failure reporting to the native CLI so installed-package diagnostics
+  // keep one source of truth.
+  return found ?? candidates[0];
+}
+
 export function validateOptions(options) {
   if (options.reactivity !== undefined) throw new TypeError('The reactivity option has been removed. Use the managed model and await the DOM batch after state writes.');
 }
@@ -81,7 +94,7 @@ export function createManagedProject(options = {}) {
         directory ??= mkdtempSync(join(tmpdir(), "weiv-managed-"));
         const input = join(directory, "input.json"), output = join(directory, "output");
         writeFileSync(input, JSON.stringify({ root, components: [...roots].sort() }));
-        const result = spawnSync(resolveWeivBinaryPath(), ["--runtime-dir", fileURLToPath(new URL("./runtime", import.meta.url)), "--json-diagnostics", "emit", "managed-project", input, output], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+        const result = spawnSync(resolveWeivBinaryPath(), ["--runtime-dir", runtimeDirectory(), "--json-diagnostics", "emit", "managed-project", input, output], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
         if (result.error) throw result.error;
         const entries = diagnostics(result.stderr);
         if (result.status !== 0) {

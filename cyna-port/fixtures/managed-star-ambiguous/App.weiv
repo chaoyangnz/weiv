@@ -1,0 +1,5 @@
+<template><p>{{ count }}</p></template>
+<script lang="ts">
+  import { count } from "./barrel.ts";
+  export let props = {};
+</script>

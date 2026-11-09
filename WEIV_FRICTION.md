@@ -1,5 +1,23 @@
 # Weiv integration friction
 
+## Cyna emit js duplicates JSON diagnostics on fatal cell error (2026-11-09)
+
+- **Classification:** confirmed Cyna port CLI output defect; fixed in the current source and rebuilt Darwin arm64 binary.
+- **Context:** Darwin arm64, Cyna 0.5.0, Node 22.22.1, Weiv Cyna port and retained Rust script backend.
+- **Reproduction:** build with `npm run build:cyna`, then run `node test/package/cell-diagnostics.test.mjs`. The first fixture is `<p>{{ count++ }}</p>` with `let count=0;`, compiled through `weiv --json-diagnostics emit js`.
+- **Expected:** one JSON failure report with `reactivity.render_mutation`, parseable as a single document.
+- **Actual:** stderr contained a warning JSON report followed by the fatal JSON report. `JSON.parse` failed with `SyntaxError: Unexpected non-whitespace character after JSON at position 774 (line 4 column 1)`; the test exited 1.
+- **Cause and fix:** the direct `emit js` path printed state boundary warnings before checking fatal cell diagnostics. It now checks cell diagnostics first and returns on a fatal error, leaving one JSON report. The normal warning path remains available after successful validation. Rebuilt with `npm run build:cyna`; `node test/package/cell-diagnostics.test.mjs` and the full `test/package/*.test.mjs` suite pass.
+
+## Affon report compile allocator mismatch (2026-11-07)
+
+- **Classification:** confirmed compiler tooling defect in the local Zig 0.16.0 build at commit `c8e7443` with uncommitted source changes; subsequent local binary retest passes. The saved HTML filter test also needed to await Weiv's asynchronous DOM update and is a test timing issue, not a runtime defect.
+- **Context:** Affon `test/benchmark/report/App.weiv`, macOS arm64, `weivjs` 0.1.2 source checkout, Zig 0.16.0. The report renderer calls `node_modules/.bin/weiv compile <App.weiv> <temporary output>`.
+- **Reproduction:** from `/Users/chao.yang/Private/affon`, run `python3 tools/render-performance-report.py` with the local Weiv binary that existed before the 2026-11-07 rebuild.
+- **Expected:** Weiv compiles the report and returns its generated files.
+- **Actual:** compilation aborted with `error(DebugAllocator): Allocation size 66 bytes does not match free size 65`. Allocation stack: `std.mem.Allocator.dupeSentinel` → `std.Io.Dir.realPathFileAlloc` → `src/compiler/backend/browser/emit/app/runtime_imports.zig:12 runtimeSource`; free stack: `src/compiler/backend/browser/emit/app/graph.zig:362 copyWeivRuntimeModule` → `allocator.free(runtime_abs_source)`. The command exited from `SIGABRT`, and the report renderer raised `subprocess.CalledProcessError`.
+- **Cause and workaround:** Zig 0.16 `realPathFileAlloc` returns a sentinel slice. Returning it as `[]u8` erased the sentinel length for `allocator.free`. The local source now returns `[:0]u8` from `runtimeSource`; rebuilding the Weiv binary and rerunning the Affon report succeeded. No external issue was filed.
+
 ## Quick defect index
 
 Status reflects the latest verification recorded here, not the original report. “Fixed in source” means the local checkout has a tested change; publication is unverified unless a released version is named. Related reports share a row. Project-only setup issues and documentation-only findings are omitted.
@@ -2893,3 +2911,160 @@ weiv run failed for <process>
 - **Expected:** SVG, path, and circle are created in `http://www.w3.org/2000/svg`; the red line and point render inside the 200 × 200 viewport.
 - **Actual:** generated code calls `document.createElement("path")`, `document.createElement("circle")`, and likewise for the parent SVG. The graph frame appears but its path and point do not paint. No compiler error was emitted; complete error output: none.
 - **Workaround:** use a Weiv managed `<canvas>` and draw the curve with the Canvas 2D API; keep the surrounding controls and state in Weiv. Explicit canvas dimensions and pointer handlers provide the required graph interaction.
+
+
+## Cyna migration comparison transient formatting input (2026-11-07)
+
+- **Classification:** port-tooling/workflow gap, not a Weiv language/runtime or Cyna formatter defect.
+- **Task/context:** native Rust adapter integration; a live normalization comparison was running while the project formatting gate ran in parallel.
+- **Version/environment:** Weiv branch `codex/cyna-port`, base `00cd64e9a47e22e30f88e9c049c0f3450c430262`, uncommitted port tools; Darwin arm64, Cyna 0.4.1, Zig 0.17.0, Python 3.13.16. Comparison tooling creates temporary Cyna test roots under `cyna-port/src` for project discovery.
+- **Reproduction:** start `python3 tools/test-cyna-normalize.py`; while `cyna-port/src/normalize_corpus_*.test.cy` exists, independently run `cyna fmt cyna-port/src --check`.
+- **Expected workflow:** formatting verification reports only persistent source regressions, or the comparison's generated test input already satisfies formatting.
+- **Actual:** the temporary generated root is found and fails the formatting gate. Complete output from this occurrence: `cyna-port/src/normalize_corpus_u33bwtts.test.cy`; exit status 1. No persistent source was incorrectly formatted.
+- **Workaround verified:** wait for comparison cleanup, then run the whole-source formatting gate; it passes. Keep these two gates sequential. A future harness improvement can format generated input before publishing it for project test discovery.
+
+
+## Cyna script-fact oracle blocked by Zig allocator API change (2026-11-07)
+
+- **Classification:** Zig-version compatibility gap in the existing Weiv FFI wrapper, not a Rust backend or Cyna decoder defect.
+- **Task/context:** compare Cyna typed script facts with `src/compiler/sema/decode_script_facts.zig` using the retained Rust backend. Weiv branch `codex/cyna-port`, base `00cd64e9a47e22e30f88e9c049c0f3450c430262`, uncommitted port; Darwin arm64, Zig 0.17.0, Cargo 1.99.0, OXC dependencies 0.116, Cyna 0.4.1.
+- **Reproduction:** create a repository-root Zig test importing `src/ffi/script_backend.zig` and call `analyzeScriptRaw("const x = 1;", "x.ts", allocator)`; run `zig test` with the release Rust archive linked, as attempted by `tools/test-cyna-script-facts.py` before its transport workaround.
+- **Expected:** the existing wrapper compiles so the typed Zig decoder can serve as the oracle.
+- **Actual, complete compiler diagnostic:**
+
+```text
+src/ffi/script_backend.zig:89:35: error: no field or member function named 'dupeZ' in 'mem.Allocator'
+    const source_z = try allocator.dupeZ(u8, source);
+                         ~~~~~~~~~^~~~~~
+/opt/homebrew/Cellar/zig/0.17.0/lib/zig/std/mem/Allocator.zig:1:1: note: struct declared here
+//! The standard memory allocation interface.
+^
+referenced by:
+    test.script facts 0: .cyna-script-oracle-is3ni3to.zig:9:49
+```
+
+- **Workaround:** the optional oracle calls the unchanged Rust ABI with equivalent scoped input/output ownership, using Zig 0.17 `dupeSentinel(u8, source, 0)` instead of removed `dupeZ`. It still invokes the actual Zig semantic decoder. No production wrapper replacement or general Zig migration is included in the Cyna port.
+
+
+## Template binding diagnostic coordinate precision (2026-11-07)
+
+- **Classification:** reference diagnostic precision/coordinate-contract gap, preserved numerically during the Cyna port rather than silently fixed.
+- **Task/context:** port `src/compiler/sema/bind.zig`; compare diagnostics, not only successful expression resolution. Weiv branch `codex/cyna-port`, base `00cd64e9a47e22e30f88e9c049c0f3450c430262`; Darwin arm64, Zig 0.17.0, installed Cyna 0.4.1, retained Rust/OXC 0.116 backend.
+- **Reproduction:** bind template `{{ missing + missing() }}` with no visible `missing` binding and no imported component manifests. The permanent Cyna case "unknown identifiers are diagnosed once per expression using legacy offsets" in `cyna-port/src/template_bind.test.cy` asserts the current ranges; `python3 tools/test-cyna-binding.py` compares the same `binding-edge-0` case with the actual Zig binder. Both checks pass with the legacy values below.
+- **Expected:** the first identifier `missing` highlights template byte range `[3,10)`.
+- **Actual binding diagnostic:** severity `error`, kind `unresolved_binding`, name `missing`, message `Unresolved template binding`, span `[0,7)`. The expression source itself starts at byte 3. The binder adds the identifier offset within trimmed expression text to the enclosing node span, omitting the expression's own source offset. There is no compiler crash; complete error payload is the diagnostic just listed.
+- **Related coordinate ambiguity:** `framework.reserved_binding` uses script-binding-relative coordinates, while ordinary binding diagnostics use template-relative coordinates. The Zig diagnostic record has no field identifying that origin. This is visible in the binder's script-binding validation path independently of the interpolation precision issue.
+- **Port policy/refinement:** keep legacy numeric ranges/order/messages for parity. Cyna's diagnostic model adds explicit `BindingSource.template` / `.script` metadata, and the binder already retains exact expression source spans. A later precision fix can use those spans and the compilation owner's source mapping, with separate compatibility tests. Source-origin metadata is an architectural addition; it does not claim that existing numeric highlighting is corrected.
+
+
+## Template-function mappings can select an earlier equal substring (2026-11-07)
+
+- **Classification:** confirmed source-mapping precision defect in the Zig collector, separate from binding diagnostic offsets.
+- **Context/environment:** Cyna template-function port on `codex/cyna-port`, Weiv reference `00cd64e9a47e22e30f88e9c049c0f3450c430262`; Darwin arm64, Zig 0.17.0, Cyna 0.4.1/LLVM 22.1.2, retained Rust backend/OXC 0.116.
+- **Reproduction:** parse/normalize `<a #if="a">{{a}}</a>{{a}}`, then walk `src/compiler/lower/template_functions.zig`'s Collector with `include_pure = true`. `python3 tools/test-cyna-template-functions.py` includes this case, runs the unchanged collector through the retained Rust ABI, and separately checks exact expression pointer offsets. The optional Zig 0.17 adapter uses `dupeSentinel` as documented above.
+- **Expected:** the conditional function's template mapping points at the condition expression `[8,9)`.
+- **Actual:** `std.mem.indexOfPos(template, node.span.start, expression)` selects the tag name at `[1,2)`. Generated function text is correct; its original-source mapping is wrong. No diagnostic/crash is produced; the complete incorrect mapping payload is `template: { start: 1, end: 2 }` instead of `{ start: 8, end: 9 }`.
+- **Port refinement/workaround:** Cyna's lexical input model keeps parser-provided expression spans and uses them directly. Generated function bytes and generated ranges still match the original Zig collector. An independent oracle changes only the search to source-pointer offset subtraction and checks corrected numeric ranges. Across 77 components plus 16 targeted cases in both collection modes, nine emitted mapping records differ from the legacy search. Production Zig source remains unchanged; the report is ready for its own precision fix.
+
+
+## Tracked-path scanner includes quoted/commented paths for referenced roots (2026-11-07)
+
+- **Classification:** confirmed path/dependency precision defect in browser tracking, preserved for this port's compatibility gates.
+- **Context/environment:** Cyna tracked-root/path port on `codex/cyna-port`; Weiv reference `00cd64e9a47e22e30f88e9c049c0f3450c430262`, Darwin arm64, Zig 0.17.0, Cyna 0.4.1 with LLVM 22.1.2, retained Rust/OXC 0.116 script backend.
+- **Reproduction:** define a visible noncallable immutable `root` object with no alias target or whole-binding mutation, bind template `{{"root.quoted" + root.value}}`, and call `tracked_paths.Table.collectExpressionIds` with that LIR expression. `python3 tools/test-cyna-tracked-paths.py` includes this as `tracked-edge-7`, compares the actual Zig classifier/table, and also exercises comment paths (`tracked-edge-8`). The native case "legacy bound scanner keeps quoted paths when the same root is referenced elsewhere" uses the equivalent single-quoted expression.
+- **Expected:** track the actual member read `root.value`; canonical paths are `root` and `root.value`, with only the member leaf returned.
+- **Actual, complete relevant result:** roots `[{ id: 1, binding_name: "root", kind: "local-tracked" }]`; paths `[{ id: 1, root_id: 1, path: "root", parent_path_id: null }, { id: 2, root_id: 1, path: "root.quoted", parent_path_id: 1 }, { id: 3, root_id: 1, path: "root.value", parent_path_id: 1 }]`; expression leaf IDs `[2, 3]`. There is no compiler error or diagnostic.
+- **Cause/evidence:** the scanner does not skip strings/comments. Its LIR bound-fact check validates root-name presence for the whole expression; `root` passes because of `root.value`, which also admits the quoted `root.quoted` occurrence. With no bound reference to `root`, a bound expression is filtered correctly; unbound fallback expressions have no bound-name filter.
+- **Workaround/port policy:** preserve numeric IDs and scanner behavior so region/metadata parity remains assessable. Keep discovery in its own operation and record the discrepancy rather than silently substituting the template binder scanner, whose quote and keyword behavior differs. A future precision fix should inspect syntax/token occurrence identity and update shared browser emission/inspection expectations together. No production Zig change is included here.
+
+
+## Dependency helper lookup expands shadowed script callables (2026-11-07)
+
+- **Classification:** confirmed lexical binding-identity precision gap in browser dependency analysis, preserved during this port.
+- **Context/environment:** dependency analysis on `codex/cyna-port`, reference Weiv `00cd64e9a47e22e30f88e9c049c0f3450c430262`; Darwin arm64, Zig 0.17.0, Cyna 0.4.1/LLVM 22.1.2, retained Rust/OXC 0.116.
+- **Reproduction:** compile template `<i #for="f in items">{{f()}}</i>` with visible `items`, `a` and script helper `function f(){return a;}`. Collect dependencies for the loop subtree using `dependencies.collectNodeDeps`. `python3 tools/test-cyna-dependencies.py --targeted-only` includes the full backend/binder/render-tree path in `dependency-edge-16`; native test "legacy name-only callable lookup expands script helpers shadowed by loop locals" uses equivalent typed facts.
+- **Expected:** the call resolves to loop-local `f`, so it must not expand the unrelated script helper's read of `a`. Before external-binding filtering, the loop dependencies can include `items` and local `f`; script `a` is not read by this template call.
+- **Actual, complete relevant dependency payload:** `items: ["items", "f", "a"]`. Visible-binding compaction retains the same names because it also checks names without lexical identity. No compiler error or diagnostic is emitted.
+- **Cause/evidence:** the collector's call path finds a visible script binding by name and expands helper facts before consulting supplied loop locals. Bound references retain names/call flags but no resolved binding identity, so the same ambiguity also affects compaction and other name-based consumers.
+- **Port policy/workaround:** keep Zig order/closure behavior in the dependency parity contract and record a focused regression. Treat lexical binding identity as a separate correction across binder facts, dependency/helper selection and visible compaction; checking only textual equality or replacing a scanner is insufficient to fix all stages. No production Zig behavior was changed here.
+
+
+## Scoped CSS preserves unsupported group contents and misreads comment braces (2026-11-07)
+
+- **Classification:** scoped-CSS capability/precision gaps in the Zig reference, preserved in the Cyna port's compatibility contract.
+- **Context/environment:** browser assembly/CSS port on `codex/cyna-port`, Weiv reference `00cd64e9a47e22e30f88e9c049c0f3450c430262`; Darwin arm64, Zig 0.17.0, Cyna 0.4.1/LLVM 22.1.2. Scope IDs use the same seed-zero Wyhash algorithm in both implementations. The CSS oracle itself does not need the Rust backend; the Cyna end-to-end test retains it for component compilation.
+- **Reproduction:** `python3 tools/test-cyna-css.py` compares `emitScopedCss` and emit diagnostics for all components plus focused styles. `css-edge-23.weiv` contains `@container x{p{color:red}}`; `css-edge-29.weiv` contains `p { /* } */ color:red; }`. Handwritten Cyna tests additionally exercise the equivalent public low-level rewrite with scope selector `[s]`.
+- **Container expected:** scope the qualified rule inside the group, e.g. `@container x{p[s], [s] p {color:red}}` for `[s]`.
+- **Container actual, complete CSS:** `@container x{p{color:red}}`; no diagnostic. `shouldRecurseAtRule` recognizes only `@media`, `@supports` and `@layer` prefixes, so valid container groups retain unscoped inner selectors. `@scope` groups similarly remain raw. This can let those selectors affect elements outside the component.
+- **Comment expected:** ignore the `}` inside `/* ... */` and emit `p[s], [s] p { /* } */ color:red; }`.
+- **Comment actual:** `UnterminatedRule`; fatal emit diagnostic code `style.unterminated_rule`, severity `error`, message `Unterminated scoped style rule`, with the whole style content's full-file byte span. There is no additional compiler diagnostic. `findMatchingBrace` handles quoted strings but counts comment braces as structural braces. An opening comment brace (`css-edge-30`) can also make valid CSS appear unterminated.
+- **Related compatibility boundary:** prefix-based recursion also scopes `@mediax{p{}}`, yielding `@mediax{p[s], [s] p {}}` with `[s]`, despite `mediax` not being the recognized `media` keyword. Whole `:global(...)` selectors unwrap; mixed global selectors and nested qualified-rule bodies retain the reference's limited treatment.
+- **Workaround/port policy:** no container-scoping workaround was adopted; the recursion policy leaves the container body raw. For comment braces, removing the brace-bearing comment or placing comments outside rule blocks avoids the reproduced failure. The port does not change either behavior: iterative CSS traversal and explicit scope-ID calculation keep a separate place for a later token-aware precision/capability fix. Production Zig code is unchanged.
+
+
+## JavaScript import emission can produce invalid module syntax (2026-11-07)
+
+- **Classification:** confirmed reference code-generation defects, preserved by the Cyna compatibility slice.
+- **Context/environment:** Weiv `00cd64e9a47e22e30f88e9c049c0f3450c430262`, `codex/cyna-port`, Darwin arm64, Zig 0.17.0, Cyna 0.4.1/LLVM 22.1.2. The affected operation is `src/compiler/backend/browser/emit/js_module/imports.zig`.
+- **Reproduction:** supply an import record with kind `side_effect`, source `./quote".ts`, local name empty; separately supply kind `side_effect`, source `./Card.weiv`, local name empty. Call preserved-import emission with no overrides. Permanent Cyna regression: "reference import output preserves unescaped specifiers and empty component side-effect aliases" in `cyna-port/src/javascript.test.cy`; the operation transcribes the Zig branch ordering and literal interpolation.
+- **Expected:** JavaScript-escape source specifiers; preserve a side-effect component import without requiring a namespace identifier.
+- **Actual, complete output for each input:**
+  ```js
+  import "./quote".js";
+  ```
+  ```js
+  import * as  from "./Card.mjs";
+  ```
+  Each output has a blank line after the import. Neither is valid module syntax. The reference operation emits no diagnostic: specifiers are interpolated raw, and the `.weiv` branch precedes side-effect handling.
+- **Workaround/port policy:** avoid quote-bearing specifiers and use a named component import where appropriate; explicit safe import overrides can avoid the quoting case. The port retains exact output for parity. A separate fix should share the JavaScript string writer and handle side-effect imports before namespace lowering.
+
+## Template parser rejects HTML comments (2026-11-07)
+
+- **Classification:** reference template syntax capability gap.
+- **Context/environment:** same Weiv reference and host/toolchain as above. Discovered while constructing the static module oracle fixture.
+- **Reproduction:** call the actual Zig `parseTemplate` on `<!-- comment -->text` (or place those bytes inside a component template); the original targeted fixture in `tools/test-cyna-javascript.py` failed in parsing before emission and was replaced with a valid custom-element fixture.
+- **Expected:** ignore the HTML comment and retain text, or explicitly diagnose unsupported comment syntax.
+- **Actual, complete parser failure:** `MismatchedCloseTag`. No module is emitted; this is a parser failure rather than a JavaScript emitter mismatch.
+- **Workaround/port policy:** omit HTML comments in current templates. This packet does not extend template syntax or silently correct the reference parser during an emission port.
+## Cyna browser emission crashed when traversing owned subscriptions (2026-11-08)
+
+- **Classification:** Cyna port integration and ownership traversal problem. The evidence identifies a reliable workaround; a standalone Cyna compiler defect has not been reduced or confirmed.
+- **Context/environment:** Weiv `00cd64e`, branch `codex/cyna-port`; macOS arm64, Cyna 0.4.1 with LLVM 22.1.2, retained Rust/OXC backend. The project builder selected a local cell for `count` and an imported observable for `shared` in `test/examples/basic/compiler-cells-import.weiv`.
+- **Reproduction:** on the pre-fix `emit_setup.cy` implementation, run `cyna run cyna-port -- build-browser test/examples/basic/compiler-cells-import.weiv /tmp/weiv-cyna-imported-project`. A reduced component with `<template><p>{{ count }}</p></template>` and script `import { shared } from "./state.mjs"; export let props = {}; let count = 0;` also crashed. Removing the named import or emitting without the selected local subscription avoided the crash.
+- **Expected:** emit the component module, local `count` watcher, imported `shared` watcher, and local JavaScript dependency.
+- **Actual, complete CLI failure:** `error: NativeRunFailed` after `warning: overriding the module target triple with arm64-apple-macosx26.0.0 [-Woverride-module]` and `1 warning generated.` A directly built executable exited 133 with no output. LLDB stopped in `libsystem_malloc.dylib` `_xzm_xzone_malloc_freelist_outlined`; its stack ran through `cyna_fmt_append_bytes`, `ref_name`, `create_element`, `emit_nodes_into`, and `emit_with_selection` after setup emission. The crash location was downstream of the suspected ownership problem.
+- **Workaround/verification:** replace by-value loops over `selection.local_subscriptions`, `selection.managed_subscriptions`, and script imports in setup emission with indexed borrowed reads. The original fixture then builds; Bun/jsdom verifies its local and imported values change from `0 / 0` to `1 / 1` after `cells-mixed` and a scheduler flush. `cyna test cyna-port --jobs 2` passed 394 tests. No external issue was filed.
+
+## Cyna browser output needs a prepared runtime directory (2026-11-08)
+
+- **Classification:** package integration gap in the Cyna port; the runtime source and JavaScript package build work, while automatic runtime preparation in the Cyna CLI is missing.
+- **Context/environment:** Weiv `00cd64e`, branch `codex/cyna-port`; macOS arm64, Cyna 0.4.1/LLVM 22.1.2, Bun 1.2.16, retained Rust/OXC backend. The canonical runtime is `packages/weiv/src/runtime/*.ts`, and `packages/weiv/scripts/build.mjs` transpiles it to six `.js` files under `packages/weiv/dist/runtime`.
+- **Reproduction:** from the repository root, run `cyna run cyna-port -- build-browser test/examples/basic/compiler-cells-import.weiv /tmp/weiv-cyna-output` and inspect the emitted imports. The Cyna project emits `"weiv:cells"` in the component and `"weiv:observable"` in its copied dependency. A plain browser module loader cannot resolve either specifier. There is no CLI diagnostic because this mode expects bundler resolution.
+- **Expected:** a standalone browser build contains the runtime modules and relative imports without requiring a separate source rewrite.
+- **Workaround/current behavior:** run the package build (`npm run build --prefix packages/weiv`), then pass `packages/weiv/dist/runtime` as the optional fifth `build-browser` argument. The CLI copies the six files into `__weiv_runtime` and rewrites parsed import literals. `python3 tools/test-cyna-project.py` verifies the written modules in Bun/jsdom without editing them. Automatic runtime preparation and package discovery remain open; no external issue was filed.
+## Cyna package preview writer was missing (2026-11-09)
+
+- **Classification:** Missing Cyna port capability and package integration gap; no confirmed Weiv or Cyna compiler defect.
+- **Task/context:** Run the existing `weivjs` package E2E test with the standalone Cyna port binary selected through `WEIV_BINARY_PATH`.
+- **Versions/environment:** Weiv `00cd64e` on `codex/cyna-port`, Cyna 0.4.1, Zig 0.17.0, Node 22.22.1, Bun 1.2.16, macOS arm64. The retained Rust script backend is built from this checkout.
+- **Reproduction:** `cyna build cyna-port --output /tmp/weiv-cyna-package-candidate`, then `WEIV_BINARY_PATH=/tmp/weiv-cyna-package-candidate node test/package/package-e2e.test.mjs` from the Weiv root. The test installs the local package in a temporary consumer and invokes `npx weiv --help` followed by `npx weiv compile emit app App.weiv ./dist`.
+- **Expected:** The package test produces `dist/App.mjs`, `dist/bundle.mjs`, `dist/index.html`, and `dist/server.ts`, then completes as with the Zig binary.
+- **Actual, complete decisive error:** `Error: Command failed: npx weiv compile emit app App.weiv ./dist` with exit status 2. The Cyna binary prints `Usage: weiv-cyna build-browser <entry.weiv> <out-dir> [runtime-dir] | emit-js <entry.weiv> | emit-css <entry.weiv> | emit-module-cells <module> <companion> <bindings-json> | inspect-project <entry.weiv> | inspect-lir <entry.weiv> | inspect-render-tree <entry.weiv>` because it has no `compile emit app` command or preview output writer.
+- **Current disposition:** `compile emit app` and `emit app` now generate preview entry, HTML, props, package and server files from the Cyna project build. With `WEIVJS_PACKAGE_SPEC=/Users/chao.yang/Private/weiv/packages/weiv` and `WEIV_BINARY_PATH=/tmp/weiv-cyna-package-candidate`, `test/package/package-e2e.test.mjs` passes; a direct Bun/jsdom preview mount and click also pass. Preview props and server output now match Zig on focused fixtures. The installed registry package is older and carries only two runtime files, so it is not a valid test of the current six-file runtime contract.
+
+## Installed Cyna 0.4.1 crashes while reporting missing runtime files (2026-11-09)
+
+- **Classification:** Confirmed installed Cyna toolchain failure during a Weiv integration error path; consistent with Cyna LG-31 (imported typed-failure trace context omitted in the installed release). The current Cyna source checkout records LG-31 as fixed but unreleased. This report does not establish a new independent compiler defect.
+- **Context/environment:** Weiv `00cd64e` on `codex/cyna-port`, installed Cyna 0.4.1 with LLVM 22.1.2, macOS arm64, Node 22.22.1. `cyna build cyna-port --output /tmp/weiv-cyna-package-candidate` produces the affected binary. The registry `weivjs` 0.1.2 package runtime has `observable.js` and `router.js`; the current writer requires `binding.js`, `cell.js`, `index.js`, `observable.js`, `reactive-core.js`, and `router.js`.
+- **Reproduction:** Run `/tmp/weiv-cyna-package-candidate build-browser /tmp/weiv-cyna-preview-repro/App.weiv /tmp/weiv-cyna-missing-runtime-debug <registry-package>/dist/runtime` with a valid component and that two-file runtime directory. The same failure occurs via `WEIV_BINARY_PATH=/tmp/weiv-cyna-package-candidate node test/package/package-e2e.test.mjs` when the test installs registry `weivjs` 0.1.2.
+- **Expected:** A typed filesystem error reaches the CLI and it exits with a readable missing-runtime message.
+- **Actual, complete decisive output:** The process exits 139 (`SIGSEGV`) with no CLI output. LLDB stops at `lock_context` in `failure_trace.c:24` with `EXC_BAD_ACCESS (code=1, address=0x10)`. The crash is on error unwinding after a required runtime file is absent.
+- **Workaround/verification:** The CLI now checks all six files before entering the writer and prints `Cannot write browser project: runtime directory is missing required files`, exiting 1. The current local package build includes all six files and passes package E2E. The source Cyna fix for LG-31 has not yet been adopted by the installed 0.4.1 binary.
+## Preview prop scanner hit Cyna optional slice return rejection (2026-11-09)
+
+- **Classification:** Confirmed Cyna compiler semantic defect, tracked as Cyna LG-66; the Weiv workaround is an owned result string.
+- **Context/environment:** Weiv `codex/cyna-port` at `00cd64e`, macOS arm64, installed Cyna 0.4.1 and source checkout compiler `387d56f7`.
+- **Reproduction:** Put `fn maybe_slice(value: []const u8): ?[]const u8 { if value.len() == 0 { return none; } return value; }` in a Cyna file and run `cyna check` on it. The full minimal file and both compiler outputs are recorded in Cyna `docs/LANGUAGE_GAPS.md` LG-66.
+- **Expected:** `return none` is accepted for a `?[]const u8` result under SPEC §11.2.
+- **Actual:** `error: \`none\` requires an expected optional type` at the `return none` statement.
+- **Workaround/verification:** `preview_props.cy` returns `?string` and copies the found interface body. The Weiv project checks, and generated props match Zig byte for byte on `basic-counter.weiv`, `CardUsage.weiv`, `EmptyStateUsage.weiv` and `imported-ts-helper/App.weiv`.

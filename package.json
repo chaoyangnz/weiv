@@ -10,6 +10,7 @@
   ],
   "scripts": {
     "weiv": "zig build run --",
+    "build:cyna": "node ./tools/build-cyna-release.mjs",
     "test:zig": "zig build test",
     "test:zig:all": "zig build test-all",
     "test:component": "bun test test/component",

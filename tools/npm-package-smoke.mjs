@@ -104,14 +104,14 @@ try {
   );
 
   const boundaryFixture = join(appRoot, "ExternalCallback.weiv");
-  writeFileSync(boundaryFixture, `<template><p>{{ count }}</p></template>\n<script lang="ts">let count = 0; window.addEventListener("message", () => weivUpdate(() => { count += 1; }));</script>\n`);
+  writeFileSync(boundaryFixture, `<template><p>{{ count }}</p></template>\n<script lang="ts">let count = 0; window.addEventListener("message", () => { count += 1; });</script>\n`);
   const emitted = execFileSync("node", [join(nodeModules, "weivjs", "bin", "weiv.mjs"), "emit", "js", boundaryFixture], {
     cwd: appRoot,
     encoding: "utf8",
     env: { ...process.env, WEIV_BINARY_PATH: "" },
   });
-  if (!emitted.includes("const weivUpdate = (callback) => __weiv_runBoundary(callback);")) {
-    throw new Error("Packed platform binary did not define the component-scoped weivUpdate boundary");
+  if (!emitted.includes("__weiv_createCellScope") || emitted.includes("const weivUpdate =")) {
+    throw new Error("Packed platform binary did not emit managed component state");
   }
 
   console.log(`Smoke test completed in ${tempRoot}`);

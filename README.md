@@ -151,10 +151,15 @@ Public docs live at [weiv.dev](https://weiv.dev).
 
 ## Contributor Commands
 
-Use Zig 0.16 for the compiler commands below. Zig 0.17 is not yet compatible
-with this repository's `build.zig`.
+Build the source checkout CLI and Darwin arm64 package binary with Cyna 0.5.0
+and Cargo. The Zig commands exercise the preserved reference compiler; they
+require Zig 0.16 because Zig 0.17 is not compatible with `build.zig`.
 
 ```bash
+npm run build:cyna
+cyna check cyna-port
+cyna test cyna-port
+npm run pkg:smoke
 zig build test
 zig build component-test
 zig build runtime-test

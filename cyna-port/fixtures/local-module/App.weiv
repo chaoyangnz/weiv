@@ -1,0 +1,6 @@
+<template><p>{{ props.title }}</p></template>
+<script lang="ts">
+  import "./sub/marker.mjs";
+  export interface Props { title: string; }
+  export let props: Props;
+</script>
