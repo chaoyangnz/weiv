@@ -44,6 +44,7 @@ project stylesheet. `emit module-cells` lowers a JavaScript or TypeScript
 module for managed shared state. `analyze state-boundaries` reports dependency
 warnings. `--json-diagnostics` selects structured CLI diagnostics.
 
-The compiler sources and permanent tests live under `src`.
+The compiler sources live under `src`; permanent Cyna tests live under
+`test/cyna`, selected by the manifest's `[test]` directory.
 `docs/compiler/ARCHITECTURE.md` describes the pipeline. The former compiler
 and its comparison history are retained on the `legacy` branch.

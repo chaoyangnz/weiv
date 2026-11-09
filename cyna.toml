@@ -4,6 +4,9 @@ src = "src"
 type = "exe"
 entry = "src/main.cy"
 
+[test]
+dir = "test/cyna"
+
 [link]
 libs = ["weiv_parser_backend", "iconv"]
 search_paths = ["libs/parser-backend/target/release"]

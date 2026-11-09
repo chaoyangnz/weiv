@@ -8,6 +8,9 @@ entry = "src/main.cy"
 target = "native"
 opt = "release"
 
+[test]
+dir = "test/cyna"
+
 [link]
 libs = ["weiv_parser_backend", "iconv"]
 search_paths = ["libs/parser-backend/target/release"]

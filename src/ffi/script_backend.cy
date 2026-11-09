@@ -74,7 +74,7 @@ pub fn analyze_raw(source: string, source_path: string): string ! ScriptBackendE
     return try take_response(response);
 }
 
-fn take_response(response: c_size_t): string ! ScriptBackendError {
+pub fn take_response(response: c_size_t): string ! ScriptBackendError {
     if response == 0 {
         throw ScriptBackendError.backend_failure;
     }
