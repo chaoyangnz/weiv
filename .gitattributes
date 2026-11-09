@@ -1,1 +1,2 @@
 apps/storybook/storybook-static/** linguist-generated=true
+*.cy linguist-language=Cyna
