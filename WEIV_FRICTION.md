@@ -1,5 +1,14 @@
 # Weiv integration friction
 
+## Managed-project reactivity warnings in Neiv Lightcept (2026-11-09)
+
+- **Classification:** needs investigation; compiler diagnostics are non-fatal and the managed project emits successfully.
+- **Context:** Lightcept `src/ui/neiv`, Weiv checkout `v0.1.2-11-ged71d0e`, macOS arm64, Node 22.22.1. The app uses `weivUpdate` for callback and subscription state changes.
+- **Reproduction:** from `lightcept`, run `node ../weiv/packages/weiv/bin/weiv.mjs compile emit app src/ui/neiv/web/App.weiv /tmp/neiv-web`.
+- **Expected:** compilation reports the success result without unresolved reactivity warnings for state explicitly updated through `weivUpdate`.
+- **Actual:** compilation succeeds but returns 22 `reactivity.unverified_dependency` warnings. Representative dependencies are `percent` through `PhotoZoomControls` event props, `shadowsPercent` through a reassigned callback, and `hslBands` through a helper return value.
+- **Workaround/status:** the app compiles and Neiv check passes. Review whether the managed-state analyzer should understand these adapter patterns before treating the warnings as app defects.
+
 ## Cyna cutover component regressions (2026-11-09)
 
 - **Classification:** confirmed Cyna compiler compatibility gaps in mounted component behavior; the package and native Cyna suites pass, while the broader component suite does not.
@@ -8,6 +17,17 @@
 - **Expected:** all mounted component behaviors pass with the Cyna compiler, including native objects, callable state, alias replacement, and Kanib navigation.
 - **Actual:** 55 passed, 11 failed, and 3 unhandled errors across 66 tests. The complete output is reproducible with the command above. Representative failures: `destructuring declarations initialize each binding before subsequent extraction` throws `TypeError: Weiv observable state requires writable data properties`; `inline events preserve loop aliases, script shadows and callback parameters` exits with `Cannot emit JavaScript`; `replacing local aliases releases old graphs and keeps scalar snapshots ordinary` expects update count 2 but receives 3; `replaced callable state subscribes to newly captured roots` expects `"1"` but receives `"0"`; several callback, conversion, and Kanib tests throw `TypeError: Weiv observable state supports only plain objects and arrays`.
 - **Workaround/status:** the previous compiler and its passing behavior remain on `legacy`. Keep these tests as active Cyna regression coverage; no test expectations were weakened during the branch cleanup.
+
+## Valid app fails JavaScript emission with no diagnostic (2026-11-10)
+
+- **Classification:** confirmed CLI/tooling defect or missing diagnostic; the same app source previously compiled, and the current validator accepts it.
+- **Task/context:** regenerate the Affon performance report (`test/benchmark/report/App.weiv`, about 33 KB) from the retained aggregate JSON. The report uses nested `#for` sections, event handlers, and the `globalThis.__WEIV_PROPS__` payload already consumed by the previous build.
+- **Versions/environment:** Weiv `ed71d0e` on `main`, macOS arm64, Node 22.x, CLI invoked as `/Users/chao.yang/Private/weiv/node_modules/.bin/weiv`. The app source and the previously generated HTML bundle are unchanged since the successful 2026-11-07 build.
+- **Reproduction:** from the Affon repository run `weiv compile test/benchmark/report/App.weiv /tmp/affon-weiv-report`. Also run `weiv emit js test/benchmark/report/App.weiv /tmp/app.js` and `weiv --json-diagnostics emit js test/benchmark/report/App.weiv /tmp/app.js`.
+- **Expected:** compilation emits the browser project, or the validator/emitter reports at least one fatal diagnostic with a source location.
+- **Actual:** `weiv validate app test/benchmark/report/App.weiv --json` returns `"ok": true` with only non-fatal `helper.external_state` and `helper.side_effects` warnings. `weiv compile` exits 1 with only `Cannot build browser project: browser emission failed`. `weiv emit js` exits 2 with only `Cannot emit JavaScript`. `--json-diagnostics` adds no diagnostic detail. The HEAD version of the same app fails identically.
+- **Further diagnosis (2026-11-10):** at commit `1a33328`, a temporary diagnostic build that printed the caught `JavaScriptError` variant identified `unsupported_template` from `emit_browser_module`. The temporary source instrumentation was removed after diagnosis. `emit sir`, `emit lir`, and `emit css` succeed on the same file; `emit js` fails. The source has nested `#for` loops, which `src/compiler/backend/browser/emit/js_module/emit_loops.cy` rejects in `validate_body`, though the precise failing node has not yet been isolated. Expected: either support the validated template or report the unsupported node and location. Environment: macOS arm64, Node 22.22.1, Cyna 0.5.0, `weivjs` 0.1.2. Reproduce with `node_modules/.bin/weiv emit js ../affon/test/benchmark/report/App.weiv /tmp/affon-report.js` from the Weiv checkout; actual output is `Cannot emit JavaScript` and exit 2.
+- **Workaround/verification:** regenerate the report data with the Python generator, then replace the `globalThis.__WEIV_PROPS__={...}` payload in the last successfully compiled HTML bundle while preserving its emitted script and CSS. The resulting HTML loads with the new 23,900 operator and 23,895 Program cases. Automatic recompilation remains blocked until the emitter returns a diagnostic.
 
 ## Cyna emit js duplicates JSON diagnostics on fatal cell error (2026-11-09)
 
@@ -35,7 +55,8 @@ Status key: 🔴 open · 🟠 needs investigation or retest · 🟡 fixed in sou
 
 | Defect | Reported | Status | Current status | Details |
 | --- | --- | :---: | --- | --- |
-| SVG elements use HTML namespace | 2026-11-07 | 🔴 | Open: graph paths do not paint | [Report](#svg-elements-compile-into-the-html-namespace-2026-11-07) |
+| Managed-project reactivity warnings | 2026-11-09 | 🟠 | Needs investigation: 22 warnings, successful emit | [Report](#managed-project-reactivity-warnings-in-neiv-lightcept-2026-11-09) |
+| SVG elements use HTML namespace | 2026-11-07 | 🟠 | Current source passes; Lightcept build path needs investigation | [Report](#svg-elements-compile-into-the-html-namespace-2026-11-07) |
 | State updates after detached async work | 2026-11-06 | 🔴 | Open: scalar async notifications | [Report](#predictable-state-contract-audit-2026-11-06) |
 | Template literal in child prop | 2026-11-06 | 🟡 | Fixed in source; app retest pending | [Report](#custom-component-prop-template-expression-in-ceiv-2026-11-06) |
 | Boolean ARIA attribute values | 2026-11-05 | 🟡 | Fixed in source; native retest pending | [Report](#boolean-aria-selected-binding-reports-the-active-tab-as-off-2026-11-05) |
@@ -1476,6 +1497,12 @@ Source follow-up (2026-11-06): child update regions now return when the handle i
 - **Workaround:** define `function helpId() { return `help-${props.id}`; }` in the script and bind `:describedBy="helpId()"`. The pinned Ceiv build then succeeds; the packaged app displayed the nested slider and Increase Contrast advanced history from edit 8/8 to 9/9 with value `+10`.
 
 Source follow-up (2026-11-06): the emitter now rewrites `${...}` expressions in template literals. A mounted parent and child fixture passes the reported `:describedBy` expression and updates it when parent props change. The packaged Ceiv build has not been repeated.
+
+Neiv follow-up (2026-11-10): Neiv `0.1.3` still reproduces
+`UnsupportedTemplateExpression` because `app-build.sh` prefers
+`packages/neiv/node_modules/weivjs` (`0.1.2`) over the sibling Weiv source. The
+Lightcept workaround is to compute the prop in script and bind
+`:label="decreaseLabel()"`; the build then succeeds.
 
 
 ## Predictable state contract audit (2026-11-06)
@@ -2920,6 +2947,8 @@ weiv run failed for <process>
 - **Expected:** SVG, path, and circle are created in `http://www.w3.org/2000/svg`; the red line and point render inside the 200 × 200 viewport.
 - **Actual:** generated code calls `document.createElement("path")`, `document.createElement("circle")`, and likewise for the parent SVG. The graph frame appears but its path and point do not paint. No compiler error was emitted; complete error output: none.
 - **Workaround:** use a Weiv managed `<canvas>` and draw the curve with the Canvas 2D API; keep the surrounding controls and state in Weiv. Explicit canvas dimensions and pointer handlers provide the required graph interaction.
+- **Lightcept recurrence (2026-11-10):** In the Neiv manual RAW editor, Weiv checkout `1a33328` with Node 22.22.1 on macOS arm64 compiled `<button><svg viewBox="0 0 24 24"><path d="M6 2v14a2 2 0 0 0 2 2h14M2 6h14a2 2 0 0 1 2 2v14" /></svg></button>` using `node ../weiv/packages/weiv/bin/weiv.mjs compile emit app ui/neiv/web/App.weiv /tmp/lightcept-ux-weiv-check-8`. Expected: a visible crop glyph inside the button. Actual: the user saw no icon, and generated `App.mjs` called `document.createElement("svg")` and `document.createElement("path")`; no compiler error was emitted, only the existing `reactivity.unverified_dependency` warnings. A Weiv-owned button with a CSS border-drawn glyph and visible `Crop` label avoids SVG namespace creation and keeps the action accessible.
+- **Path check (2026-11-10):** At Weiv `1a33328`, `bun test test/component/svg-namespace.test.ts` passes (Bun 1.2.16, 1 pass). `packages/weiv/bin/weiv.mjs` imports `../dist/run-bin.mjs`, whose `platform.mjs` resolves a source-checkout invocation to `cyna-out/bin/weiv` unless `WEIV_BINARY_PATH` overrides it. Running `node packages/weiv/bin/weiv.mjs emit js test/examples/basic/svg-namespace.weiv /tmp/weiv-svg-path-check.mjs` from the Weiv root emits `document.createElementNS` for `<svg>` and its `<path>`. Thus the current CLI path works. The Lightcept output likely came from an older binary, an override, or a previously generated module; confirm the exact binary and output timestamp in that build before attributing it to a current compiler defect.
 
 
 ## Cyna migration comparison transient formatting input (2026-11-07)
@@ -3077,3 +3106,50 @@ referenced by:
 - **Expected:** `return none` is accepted for a `?[]const u8` result under SPEC §11.2.
 - **Actual:** `error: \`none\` requires an expected optional type` at the `return none` statement.
 - **Workaround/verification:** `preview_props.cy` returns `?string` and copies the found interface body. The Weiv project checks, and generated props match Zig byte for byte on `basic-counter.weiv`, `CardUsage.weiv`, `EmptyStateUsage.weiv` and `imported-ts-helper/App.weiv`.
+## Removed `weivUpdate` wrapper compiles without an unresolved-binding diagnostic (2026-11-09)
+
+- **Classification:** compiler validation gap for removed API usage, exposed during the Neiv desktop integration.
+- **Context/environment:** Weiv `ed71d0e` on `main`; macOS arm64; Neiv host `WKWebView`; the component called the removed global `weivUpdate` API inside 114 assignments.
+- **Reproduction:** compile a `.weiv` component whose script calls the undefined global `weivUpdate(() => { count += 1; })`, then invoke the generated event handler. Use the full Lightcept command `node ../weiv/packages/weiv/bin/weiv.mjs compile emit app src/ui/neiv/web/App.weiv src/ui/neiv/build/web-open-fix-2`.
+- **Expected:** report an unresolved `weivUpdate` binding at compile/check time, or emit the documented migration diagnostic for the removed API.
+- **Actual:** compilation exits successfully with 22 unrelated dependency warnings and emits `App.mjs` containing calls to `weivUpdate`. At runtime, clicks invoke the handler, the async callback rejects with `ReferenceError: Can't find variable: weivUpdate`, and the UI remains unchanged. There is no visible error in the app.
+- **Workaround/verification:** define `function weivUpdate(update: () => void) { update(); }` in the component, recompile, and verify the central Open Photo button opens the native file picker. A direct migration that removes all 114 wrappers is preferable; static rejection of the removed global would have made the migration failure immediate.
+- **Update (2026-11-10):** Lightcept removed the shim and all 114 wrappers. The page now compiles in managed mode with the same 22 pre-existing dependency warnings, the generated `App.mjs` contains no `weivUpdate` calls, and the Neiv bundle rebuilds successfully.
+
+## Affon performance report `weiv compile` fails without a diagnostic (2026-11-10)
+
+- **Classification:** tooling/diagnostics gap; confirmed failure, root cause not reduced.
+- **Task/context:** Regenerate `test/benchmark/results/performance-report.html` from the checked-in Affon `test/benchmark/report/App.weiv` (163 lines) after promoting CUDA reduction cells. Only the injected props payload changes; the template is unchanged.
+- **Versions/environment:** Weiv `1a33328` on `main`; macOS arm64; Node `22.22.1`; Bun `1.2.16`; CLI at `/Users/chao.yang/Private/weiv/node_modules/.bin/weiv`; Affon checkout `/Users/chao.yang/Private/affon`.
+- **Reproduction:** `mktemp -d /tmp/affon-weiv-repro.XXXXXX`, then `weiv compile test/benchmark/report/App.weiv <temp-dir>` from the Affon repository root.
+- **Expected:** emit the browser project (including `main.mjs`, `report.mjs`, and `styles.css`), as the checked-in report was previously built.
+- **Actual:** exit status `1`; stdout is exactly `Cannot build browser project: browser emission failed`; stderr is empty; nothing is written to the output directory. No module, file, line, or underlying error is identified.
+- **Workaround/verification:** Reuse the previously compiled bundle and CSS from the checked-in `performance-report.html`, replacing only `<script>globalThis.__WEIV_PROPS__=…</script>` with the refreshed payload. `test/parity/test_performance_report.py` (9 tests) and `test/parity/test_promote.py` pass against the injected report. A diagnostic that names the failing emission step would remove the need for this workaround.
+
+## Neiv frontend build inherits workspace TypeScript types (2026-11-10)
+
+- **Classification:** Neiv tooling integration problem while building a Weiv desktop page; no confirmed Weiv compiler defect.
+- **Task/context:** Build Harngine's `apps/coding-desktop` Neiv app, whose page is `web/App.weiv`. Neiv source commit `243b556`, package `0.1.2` (prepack reports `0.1.3`), Weiv checkout commit `1a33328`, `weivjs` dependency `0.1.2`, macOS arm64, Node `22.22.1`, TypeScript `5.9.3`.
+- **Reproduction:** From `/Users/chao.yang/Private/harngine`, run `node /Users/chao.yang/Private/neiv/packages/neiv/bin/neiv.mjs build apps/coding-desktop`. The Harngine workspace has `@types/chai` and `@types/node` installed. Neiv's `packages/neiv/scripts/build-frontend.mjs` invokes `tsc` without a project file or explicit `--types`/module resolution.
+- **Expected:** Neiv builds its frontend SDK and the app's Weiv page independently of the caller's unrelated ambient TypeScript types.
+- **Actual:** Build exits 2 while compiling the Neiv frontend SDK: `node_modules/@types/chai/index.d.ts(2,58): error TS2792: Cannot find module 'assertion-error'`; `node_modules/@types/node/http.d.ts(2122,36)`, `(2126,37)`, `(2130,39)`, `web-globals/fetch.d.ts(3,25)`, and `worker_threads.d.ts(66,34)` each report `TS2792: Cannot find module 'undici-types'`.
+- **Workaround:** Run `node packages/neiv/bin/neiv.mjs build /Users/chao.yang/Private/harngine/apps/coding-desktop` with cwd `/Users/chao.yang/Private/neiv`. That build succeeds and emits `build/NeivApp.app`; the Harngine launcher sets this cwd.
+
+## Scoped `body` CSS leaves Neiv page colors unreadable (2026-11-10)
+
+- **Classification:** Weiv scoped CSS behavior and documentation gap for document root selectors; confirmed in a Neiv WKWebView app.
+- **Task/context:** Harngine `apps/coding-desktop/web/App.weiv` on macOS arm64, Neiv commit `243b556` (`neiv` package `0.1.2`, prepack `0.1.3`), Weiv checkout commit `1a33328`, `weivjs` `0.1.2`, Node `22.22.1`.
+- **Reproduction:** Put `body { color: #e8e9e5; background: #101310; }` in a `.weiv` component's `<style>`, build it with `node packages/neiv/bin/neiv.mjs build /absolute/path/to/app`, and open the resulting Neiv app. The generated `styles.css` scopes the rule as `body[data-weiv-scope="..."]` and `[data-weiv-scope="..."] body`.
+- **Expected:** The page body receives the intended dark background and light text, or the compiler warns that a component style cannot target the document body.
+- **Actual:** The body remains white with default black text because the actual `<body>` is outside the component scope. Dark child cards then contain unreadable black text. No build diagnostic is emitted.
+- **Workaround:** Put background, text color, and font on the component's root `<main>` and set `document.body.style.margin` and `document.body.style.backgroundColor` for the outer canvas. The rebuilt app screenshot showed readable colors.
+
+## Deferred polling state in Neiv's Weiv 0.1.2 bundle (2026-11-10)
+
+- **Classification:** released-runtime reactivity/documentation gap for the desktop integration; current Weiv source at `1a33328` documents managed deferred writes, while Neiv 0.1.3 depends on `weivjs` 0.1.2.
+- **Context:** macOS arm64, Node 22.22.1, Neiv 0.1.3, Harngine Coding Desktop `App.weiv` in WKWebView. A long-running `async function monitorWork` awaited local HTTP calls in a `while` loop, then assigned scalar `workStatus` and array `interactions`.
+- **Reproduce:** Start a writable coding Work that calls an approval-gated edit. After the Work reaches `waiting` and `GET /works/{id}` returns an approval interaction, observe the desktop panel. The server returns `waitingFor: "approval"` and the exact `interactions` array; the panel continues to show `Starting…` and no approval card.
+- **Expected:** the waiting label and approval card update as the poll receives each snapshot.
+- **Actual:** deferred assignments inside the never-ending async poll did not refresh those template regions. The generated `App.mjs` for this Neiv bundle provides `weivUpdate` through `__weiv_runBoundary`.
+- **Workaround:** wrap the snapshot-driven assignments in `weivUpdate(() => { ... })`. The component builds with `node packages/neiv/bin/neiv.mjs build /Users/chao.yang/Private/harngine/apps/coding-desktop`. Runtime retest is pending.
+- **Runtime retest:** with `weivUpdate` around the polling assignments, the same pending Work displayed `Waiting for approval`, the file path, removed and added text, and Approve/Deny buttons after the app relaunched. Approval then advanced the Work. This confirms the workaround in the Neiv 0.1.3 / `weivjs` 0.1.2 bundle.
