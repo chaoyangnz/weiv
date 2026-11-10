@@ -376,10 +376,11 @@ fn add_dependency_closure(path: string, root: string, publisher: string, subscri
                     }
                     i = i + 1;
                 }
-                if subscribe_dependencies and dependency_kind != "function" and (lookup.name != root or root_kind != "destructured") {
+                const unverified = dependency_kind != "function" and try assignment_unverified(path, dependency);
+                if subscribe_dependencies and dependency_kind != "function" and not unverified and (lookup.name != root or root_kind != "destructured") {
                     add_managed_subscription(selection, component_module, publisher, subscription_binding, dependency);
                 }
-                if dependency_kind != "function" and not has_dependency(targets, path, dependency) {
+                if dependency_kind != "function" and not unverified and not has_dependency(targets, path, dependency) {
                     const module_index = register(entries, path) catch (code) {
                         throw ManagedSelectionError.invalid_path;
                     };
@@ -428,13 +429,16 @@ fn decode_assignment(value: &const Value): AssignmentRecord ! ScriptDecodeError 
 
 fn assignment_unverified(path: string, name: string): bool ! ManagedSelectionError {
     const published = try published_local(path, name);
-    if not published.found {
-        return false;
+    var source_path = path;
+    var local_name = name;
+    if published.found {
+        source_path = published.path;
+        local_name = published.name;
     }
-    const source = fs.read_file(published.path) catch (code) {
+    const source = fs.read_file(source_path) catch (code) {
         throw ManagedSelectionError.read_failure;
     };
-    const raw = analyze_module_state_raw(source, published.path) catch (code) {
+    const raw = analyze_module_state_raw(source, source_path) catch (code) {
         throw ManagedSelectionError.analysis_failure;
     };
     const value = json.parse(raw) catch (code) {
@@ -448,7 +452,7 @@ fn assignment_unverified(path: string, name: string): bool ! ManagedSelectionErr
             var i: usize = 0;
             while i < assignments.len() {
                 const assignment = &assignments[i];
-                if assignment.target == published.name and
+                if assignment.target == local_name and
                 (assignment.inputs.len() > 0 or assignment.value.value_kind == "input") {
                     return true;
                 }

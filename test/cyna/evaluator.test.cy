@@ -323,7 +323,8 @@ test "explicit local cell selection lowers template writes and subscribes to dir
     subscriptions.push({
         name: "value",
         binding: "value",
-        publisher_backed: false
+        publisher_backed: false,
+        guarded_alias: false
     });
     const selection: CellSelection = {
         local_names: names,
@@ -365,7 +366,8 @@ test "selected observable import watches its requested binding" {
     subscriptions.push({
         name: "state",
         binding: "state",
-        publisher_backed: false
+        publisher_backed: false,
+        guarded_alias: false
     });
     const selection: CellSelection = {
         local_names: list<string>(),

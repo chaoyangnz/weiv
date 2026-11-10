@@ -3,6 +3,7 @@ pub struct LocalSubscription {
     pub name: string;
     pub binding: string;
     pub publisher_backed: bool;
+    pub guarded_alias: bool;
 }
 
 pub struct ManagedSubscription {

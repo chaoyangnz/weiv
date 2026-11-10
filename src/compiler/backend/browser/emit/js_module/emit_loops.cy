@@ -82,6 +82,7 @@ fn validate_body(tree: &const RenderDocument, roots: &const List<usize>): void !
             }
             .conditional(value) => {}
             .component(value) => {}
+            .for_loop(value) => {}
             _ => {
                 throw JavaScriptError.unsupported_template;
             }

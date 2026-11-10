@@ -56,6 +56,9 @@ pub fn emit(unit: &const ComponentUnit, evaluators: string, selection: &const Ce
         if is_selected(selection, subscription.name) {
             append(&out, $"    __weiv_cellScope.watch({subscription.name}, ");
             emit_string(subscription.binding, &out);
+            if subscription.guarded_alias {
+                append(&out, $", () => {subscription.binding}.value === {subscription.name}.value");
+            }
             append(&out, ");\n");
         }
         subscription_index = subscription_index + 1;

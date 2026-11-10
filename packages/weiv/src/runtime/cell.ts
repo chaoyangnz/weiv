@@ -108,10 +108,11 @@ export function createCellScope<Key>(update: (dirty: ReadonlySet<Key>) => void) 
   };
 
   return {
-    watch<T>(cell: Cell<T>, key: Key) {
+    watch<T>(cell: Cell<T>, key: Key, active?: () => boolean) {
       if (disposed) throw new Error("Cannot subscribe through a disposed Weiv cell scope");
       const unsubscribe = subscribe(cell, () => {
         if (disposed) return;
+        if (active && !active()) return;
         dirty.add(key);
         reactiveScheduler.queueJob(owner, run);
       });

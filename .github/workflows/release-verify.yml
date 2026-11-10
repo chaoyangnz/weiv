@@ -1,0 +1,70 @@
+name: Release verify
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version without v
+        required: true
+        type: string
+      platform:
+        description: Target platform
+        required: true
+        type: choice
+        options: [macos-arm64]
+      mode:
+        description: Gate mode
+        required: true
+        type: choice
+        options: [preflight, verify]
+permissions:
+  contents: read
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: oven-sh/setup-bun@v2
+      - name: Source preflight
+        env:
+          VERSION: ${{ inputs.version }}
+        run: node tools/release.mjs plan --version="$VERSION" --preflight-only
+  verify:
+    needs: preflight
+    if: inputs.mode == 'verify'
+    runs-on: macos-15-xlarge
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: oven-sh/setup-bun@v2
+      - name: Runner architecture preflight
+        run: |
+          test "$(uname -m)" = arm64 || { echo "macOS ARM64 runner required for this release target" >&2; exit 1; }
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Install pinned Cyna toolchain
+        env:
+          CYNA_INSTALL_ROOT: ${{ runner.temp }}/cyna
+        run: |
+          curl -fsSL https://cyna.dev/install.sh | sh -s -- 0.5.0 aarch64-apple-darwin
+          echo "$CYNA_INSTALL_ROOT/current/bin" >> "$GITHUB_PATH"
+      - name: Plan and verify
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          node tools/release.mjs plan --version="$VERSION"
+          node tools/release.mjs verify
+      - uses: actions/upload-artifact@v4
+        with:
+          name: weiv-verified-${{ inputs.version }}-macos-arm64
+          path: dist/release/artifacts/*
+          if-no-files-found: error
+          retention-days: 7
