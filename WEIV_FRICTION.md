@@ -127,7 +127,7 @@ This audit compares the local Atelier, Framecept, Lightcept, CC GUI, and Harngin
 ### Template global `String` in Quest 0.1.0
 
 - **Classification:** confirmed historical template-expression failure in published `weivjs@0.1.0`; current-source and 0.1.2 behavior not verified.
-- **Context:** Harngine Quest `apps/quest/src/ui/App.weiv`, macOS, Bun 1.2.16, TypeScript 5.9.3, Node 24.21.0. Source: `/Users/chao.yang/Private/harngine/apps/quest/WEIV_FRICTION.md`.
+- **Context:** Harngine Quest `apps/quest/src/ui/App.weiv`, macOS, Bun 1.2.16, TypeScript 5.9.3, Node 24.21.0. Source: `daydream/projects/harngine/docs/archive/implementation/2026-10-quest-weiv-friction.md`.
 - **Reproduction:** use `bind:value="String(item.id)"` inside a repeated template item and compile with the 0.1.0 CLI; mount and update the loop.
 - **Expected:** the global `String` call converts the item ID, or compilation identifies an unavailable template binding.
 - **Actual:** emitted client code calls `scope.String(item.id)` and update throws `TypeError: scope.String is not a function`.
@@ -3153,3 +3153,14 @@ referenced by:
 - **Actual:** deferred assignments inside the never-ending async poll did not refresh those template regions. The generated `App.mjs` for this Neiv bundle provides `weivUpdate` through `__weiv_runBoundary`.
 - **Workaround:** wrap the snapshot-driven assignments in `weivUpdate(() => { ... })`. The component builds with `node packages/neiv/bin/neiv.mjs build /Users/chao.yang/Private/harngine/apps/coding-desktop`. Runtime retest is pending.
 - **Runtime retest:** with `weivUpdate` around the polling assignments, the same pending Work displayed `Waiting for approval`, the file path, removed and added text, and Approve/Deny buttons after the app relaunched. Approval then advanced the Work. This confirms the workaround in the Neiv 0.1.3 / `weivjs` 0.1.2 bundle.
+
+## 2026-11-11: Type-only named import emits a runtime reference in a Neiv page
+
+- **Classification:** Confirmed Weiv compiler defect.
+- **Task/context:** Harngine coding desktop importing the reusable `neiv/http` client into `apps/coding/desktop/web/App.weiv`.
+- **Versions/environment:** Neiv 0.1.3 declares `weivjs` 0.1.2; local Weiv checkout at commit `8bad2ad`; macOS 26.6.2 arm64; Node.js 22.22.1; TypeScript 5.9.3.
+- **Reproduction:** In a `.weiv` script, write `import { localHttp, type LocalHttpEvent } from 'neiv/http';` and use `LocalHttpEvent` only in a TypeScript annotation. Build with `node packages/neiv/bin/neiv.mjs build <app>`. Inspect the emitted `App.mjs`.
+- **Expected:** The type-only import is erased. The runtime imports and tracks only `localHttp`.
+- **Actual:** The compiler emits `const LocalHttpEvent = __weiv_getTrackedRoot("LocalHttpEvent", __weiv_import_LocalHttpEvent);` but emits no definition or import for `__weiv_import_LocalHttpEvent`. The Neiv build succeeds, then the desktop page is blank at runtime. The build printed no error; a WebKit console error was not captured.
+- **Workaround:** Import only `localHttp` and declare the event shape as a local `type` alias in the `.weiv` script.
+- **Reproduction scope:** No credentials, tokens, or private workspace data are needed.
