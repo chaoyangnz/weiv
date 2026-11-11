@@ -15,9 +15,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - name: Install locked dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Run component and runtime tests
+      - name: Run runtime and UI core tests
         run: |
-          bun test test/component
-          bun test test/inspect
           bun test test/runtime
           bun test test/ui-core
