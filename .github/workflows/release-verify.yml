@@ -20,7 +20,7 @@ permissions:
   contents: read
 jobs:
   preflight:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,7 +36,7 @@ jobs:
   verify:
     needs: preflight
     if: inputs.mode == 'verify'
-    runs-on: macos-15-xlarge
+    runs-on: [self-hosted, macOS, ARM64]
     steps:
       - uses: actions/checkout@v4
         with:
