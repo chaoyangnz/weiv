@@ -22,6 +22,7 @@ function preflight() {
   for (const tool of ['git','node','npm','tar']) run('which',[tool]);
   const versions=files.map(f=>JSON.parse(readFileSync(join(root,f))).version);
   if(project==='weiv') {
+    versions.push(JSON.parse(readFileSync(join(root,'site/site.json'))).version);
     run('which',['bun']);
     if(!preflightOnly) {
       try { run('which',['cyna']); }
