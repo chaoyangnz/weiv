@@ -19,3 +19,26 @@ jobs:
         run: |
           bun test test/runtime
           bun test test/ui-core
+
+  component-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: oven-sh/setup-bun@v2
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Install pinned Cyna toolchain
+        env:
+          CYNA_INSTALL_ROOT: ${{ runner.temp }}/cyna
+        run: |
+          curl -fsSL https://cyna.dev/install.sh | sh -s -- 0.5.0
+          echo "$CYNA_INSTALL_ROOT/current/bin" >> "$GITHUB_PATH"
+      - name: Build Weiv compiler
+        run: npm run build:cyna
+      - name: Run component and inspect tests
+        run: |
+          bun test test/component
+          bun test test/inspect
