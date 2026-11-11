@@ -34,7 +34,7 @@ function preflight() {
     versions.push(p.optionalDependencies['@weivjs/weiv-darwin-arm64']);
     if(!existsSync(join(root,'packages/weiv-darwin-arm64/bin/weiv'))) throw Error('Missing committed platform binary: packages/weiv-darwin-arm64/bin/weiv');
     const kind=run('file',['packages/weiv-darwin-arm64/bin/weiv']);
-    if(!kind.includes('Mach-O 64-bit arm64')) throw Error('Committed platform binary is not Mach-O arm64');
+    if(!/Mach-O 64-bit (?:executable )?arm64/.test(kind)) throw Error('Committed platform binary is not Mach-O arm64');
   } else {
     if(!preflightOnly) run('which',['cyna']);
     const manifest=readFileSync(join(root,'cyna.toml'),'utf8').match(/^version = "([^"]+)"/m)?.[1];
