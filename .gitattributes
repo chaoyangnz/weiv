@@ -1,2 +1,4 @@
 apps/storybook/storybook-static/** linguist-generated=true
-*.cy linguist-language=Cyna
+# GitHub Linguist does not define Cyna and otherwise classifies .cy as Cycript.
+# Keep Cyna source out of language statistics until upstream support exists.
+*.cy linguist-language=Cyna -linguist-detectable
