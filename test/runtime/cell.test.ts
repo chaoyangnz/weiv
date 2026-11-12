@@ -1,31 +1,57 @@
 import { expect, test } from "bun:test";
-import { createCell, createCellScope, createModuleState, afterModuleWrite, assignmentTarget, cellAssignmentTarget } from "../../packages/weiv/src/runtime/cell";
+import {
+  createCell,
+  createCellScope,
+  createModuleState,
+  afterModuleWrite,
+  assignmentTarget,
+  cellAssignmentTarget,
+} from "../../packages/weiv/src/runtime/cell";
 import { observable, subscribe } from "../../packages/weiv/src/runtime/observable";
 
 const tick = () => new Promise<void>(resolve => queueMicrotask(resolve));
 
 test("assignment adapters defer reads until GetValue and writes until PutValue", () => {
-  const trace: string[]=[];
-  const cell=createCell(0);
-  const target=cellAssignmentTarget(()=>{trace.push('cell');return cell});
+  const trace: string[] = [];
+  const cell = createCell(0);
+  const target = cellAssignmentTarget(() => {
+    trace.push("cell");
+    return cell;
+  });
   expect(trace).toEqual([]);
-  const source={get count(){trace.push('get');return 2}};
-  ({count:target.value}=source);
-  expect(trace).toEqual(['get','cell']);expect(cell.value).toBe(2);
-  trace.length=0;
-  target.value+=(trace.push('rhs'),3);
-  expect(trace).toEqual(['cell','rhs','cell']);expect(cell.value).toBe(5);
-  const writeOnly=assignmentTarget(()=>{throw Error('read')},value=>{trace.push('write-'+value)});
-  expect(writeOnly.value=7).toBe(7);
-  expect(()=>writeOnly.value++).toThrow('read');
-  expect(trace.at(-1)).toBe('write-7');
+  const source = {
+    get count() {
+      trace.push("get");
+      return 2;
+    },
+  };
+  ({ count: target.value } = source);
+  expect(trace).toEqual(["get", "cell"]);
+  expect(cell.value).toBe(2);
+  trace.length = 0;
+  target.value += (trace.push("rhs"), 3);
+  expect(trace).toEqual(["cell", "rhs", "cell"]);
+  expect(cell.value).toBe(5);
+  const writeOnly = assignmentTarget(
+    () => {
+      throw Error("read");
+    },
+    value => {
+      trace.push("write-" + value);
+    },
+  );
+  expect((writeOnly.value = 7)).toBe(7);
+  expect(() => writeOnly.value++).toThrow("read");
+  expect(trace.at(-1)).toBe("write-7");
 });
 
 test("module publishers retain subscriptions established before initialization", async () => {
   const module = createModuleState();
   const first = module.getCell("state");
   let updates = 0;
-  const scope = createCellScope(() => { updates++; });
+  const scope = createCellScope(() => {
+    updates++;
+  });
   scope.watch(first, "state");
   const shared = observable({ count: 0 });
   module.publish("state", shared);
@@ -44,13 +70,26 @@ test("module publishers retain subscriptions established before initialization",
 
 test("successful module writes publish the current binding and retain expression results", async () => {
   const module = createModuleState();
-  let value = 0, lookups = 0;
+  let value = 0,
+    lookups = 0;
   module.publish("value", value);
-  const getModule = () => { lookups++; return module; };
+  const getModule = () => {
+    lookups++;
+    return module;
+  };
   expect(afterModuleWrite(getModule, "value", value++, () => value)).toBe(0);
   expect(module.getCell("value").value).toBe(1);
   expect(lookups).toBe(1);
-  expect(() => afterModuleWrite(getModule, "value", (() => { throw Error("rhs"); })(), () => value)).toThrow("rhs");
+  expect(() =>
+    afterModuleWrite(
+      getModule,
+      "value",
+      (() => {
+        throw Error("rhs");
+      })(),
+      () => value,
+    ),
+  ).toThrow("rhs");
   expect(lookups).toBe(1);
   await tick();
 });
@@ -61,18 +100,25 @@ test("scalar cells batch with object cells and shared observables in one scope",
   const shared = observable({ count: 0 });
   const imported = createCell(shared);
   const updates: string[][] = [];
-  const scope = createCellScope<string>(dirty => { updates.push([...dirty]); });
-  scope.watch(count, "count"); scope.watch(object, "object"); scope.watch(imported, "shared");
+  const scope = createCellScope<string>(dirty => {
+    updates.push([...dirty]);
+  });
+  scope.watch(count, "count");
+  scope.watch(object, "object");
+  scope.watch(imported, "shared");
   try {
     expect(imported.value).toBe(shared);
-    count.value++; count.value++;
+    count.value++;
+    count.value++;
     object.value.label = "second";
     shared.count++;
     await tick();
     expect(updates).toHaveLength(1);
     expect(new Set(updates[0])).toEqual(new Set(["count", "object", "shared"]));
     expect(count.value).toBe(2);
-  } finally { scope.dispose(); }
+  } finally {
+    scope.dispose();
+  }
 });
 
 test("object replacement normalizes new values and detaches old aliases", async () => {
@@ -80,7 +126,9 @@ test("object replacement normalizes new values and detaches old aliases", async 
   const old = cell.value;
   const oldNested = old.nested;
   let updates = 0;
-  const scope = createCellScope(() => { updates++; });
+  const scope = createCellScope(() => {
+    updates++;
+  });
   scope.watch(cell, "value");
   try {
     cell.value = { nested: { count: 10 } };
@@ -94,17 +142,29 @@ test("object replacement normalizes new values and detaches old aliases", async 
     await tick();
     expect(updates).toBe(2);
     expect(cell.value.nested.count).toBe(11);
-  } finally { scope.dispose(); }
+  } finally {
+    scope.dispose();
+  }
 });
 
 test("shared object identity and aliases survive independent cell lifetimes", async () => {
   const shared = observable({ count: 0 });
-  const a = createCell(shared), b = createCell(shared);
-  let updatesA = 0, updatesB = 0, sharedCalls = 0;
-  const scopeA = createCellScope(() => { updatesA++; });
-  const scopeB = createCellScope(() => { updatesB++; });
-  scopeA.watch(a, "a"); scopeB.watch(b, "b");
-  const off = subscribe(shared, () => { sharedCalls++; });
+  const a = createCell(shared),
+    b = createCell(shared);
+  let updatesA = 0,
+    updatesB = 0,
+    sharedCalls = 0;
+  const scopeA = createCellScope(() => {
+    updatesA++;
+  });
+  const scopeB = createCellScope(() => {
+    updatesB++;
+  });
+  scopeA.watch(a, "a");
+  scopeB.watch(b, "b");
+  const off = subscribe(shared, () => {
+    sharedCalls++;
+  });
   try {
     expect(a.value).toBe(shared);
     expect(b.value).toBe(shared);
@@ -114,26 +174,36 @@ test("shared object identity and aliases survive independent cell lifetimes", as
     expect(updatesA).toBe(0);
     expect(updatesB).toBe(1);
     expect(sharedCalls).toBe(1);
-  } finally { scopeA.dispose(); scopeB.dispose(); off(); }
+  } finally {
+    scopeA.dispose();
+    scopeB.dispose();
+    off();
+  }
 });
 
 test("shared changes notify a cell before its first consumer read", async () => {
   const shared = observable({ count: 0 });
   const cell = createCell(shared);
   let calls = 0;
-  const scope = createCellScope(() => { calls++; });
+  const scope = createCellScope(() => {
+    calls++;
+  });
   scope.watch(cell, "value");
   try {
     shared.count++;
     await tick();
     expect(calls).toBe(1);
-  } finally { scope.dispose(); }
+  } finally {
+    scope.dispose();
+  }
 });
 
 test("disposing after notification cancels a queued scope job", async () => {
   const cell = createCell(0);
   let calls = 0;
-  const scope = createCellScope(() => { calls++; });
+  const scope = createCellScope(() => {
+    calls++;
+  });
   scope.watch(cell, "value");
   const off = subscribe(cell, () => scope.dispose());
   try {
@@ -144,24 +214,34 @@ test("disposing after notification cancels a queued scope job", async () => {
     cell.value++;
     await tick();
     expect(calls).toBe(0);
-  } finally { off(); scope.dispose(); }
+  } finally {
+    off();
+    scope.dispose();
+  }
 });
 
 test("callback origin, await and detached Promise do not change cell notification", async () => {
   const cell = createCell(0);
   const seen: number[] = [];
-  const scope = createCellScope(() => { seen.push(cell.value); });
+  const scope = createCellScope(() => {
+    seen.push(cell.value);
+  });
   scope.watch(cell, "count");
   try {
-    const callback = () => { cell.value++; };
+    const callback = () => {
+      cell.value++;
+    };
     callback();
     await tick();
     callback();
     await tick();
     void Promise.resolve().then(callback);
-    await tick(); await tick();
+    await tick();
+    await tick();
     expect(seen).toEqual([1, 2, 3]);
-  } finally { scope.dispose(); }
+  } finally {
+    scope.dispose();
+  }
 });
 
 test("reentrant scope updates run in a later wave", async () => {
@@ -174,15 +254,20 @@ test("reentrant scope updates run in a later wave", async () => {
   scope.watch(cell, "value");
   try {
     cell.value = 1;
-    await tick(); await tick();
+    await tick();
+    await tick();
     expect(seen).toEqual([1, 2]);
-  } finally { scope.dispose(); }
+  } finally {
+    scope.dispose();
+  }
 });
 
 test("scalar equality, expression values and primitive replacements follow JavaScript", async () => {
   const cell = createCell<number | null>(NaN);
   let calls = 0;
-  const scope = createCellScope(() => { calls++; });
+  const scope = createCellScope(() => {
+    calls++;
+  });
   scope.watch(cell, "value");
   try {
     cell.value = NaN;
@@ -195,7 +280,9 @@ test("scalar equality, expression values and primitive replacements follow JavaS
     await tick();
     expect(calls).toBe(1);
     expect(cell.value).toBeNull();
-  } finally { scope.dispose(); }
+  } finally {
+    scope.dispose();
+  }
 });
 
 test("unsupported values fail before initial wrapping or replacement mutates state", async () => {
@@ -205,24 +292,39 @@ test("unsupported values fail before initial wrapping or replacement mutates sta
     expect(() => observable({ nested: value })).toThrow("Weiv observable state");
   }
   let getterCalls = 0;
-  expect(() => createCell({ get value() { getterCalls++; return 1; } })).toThrow("data properties");
+  expect(() =>
+    createCell({
+      get value() {
+        getterCalls++;
+        return 1;
+      },
+    }),
+  ).toThrow("data properties");
   expect(getterCalls).toBe(0);
   const cell = createCell<any>({ count: 0 });
   const old = cell.value;
   let calls = 0;
-  const scope = createCellScope(() => { calls++; });
+  const scope = createCellScope(() => {
+    calls++;
+  });
   scope.watch(cell, "value");
   try {
-    expect(() => { cell.value = new Map(); }).toThrow("plain objects");
+    expect(() => {
+      cell.value = new Map();
+    }).toThrow("plain objects");
     expect(cell.value).toBe(old);
     await tick();
     expect(calls).toBe(0);
     old.count++;
     await tick();
     expect(calls).toBe(1);
-    expect(() => { old.bad = new Date(); }).toThrow("plain objects");
+    expect(() => {
+      old.bad = new Date();
+    }).toThrow("plain objects");
     expect("bad" in old).toBe(false);
-  } finally { scope.dispose(); }
+  } finally {
+    scope.dispose();
+  }
 });
 
 test("cell construction supports cyclic records and arrays", async () => {
@@ -230,7 +332,9 @@ test("cell construction supports cyclic records and arrays", async () => {
   record.self = record;
   const cell = createCell(record);
   let calls = 0;
-  const scope = createCellScope(() => { calls++; });
+  const scope = createCellScope(() => {
+    calls++;
+  });
   scope.watch(cell, "value");
   try {
     expect(cell.value.self).toBe(cell.value);
@@ -240,7 +344,9 @@ test("cell construction supports cyclic records and arrays", async () => {
     cell.value.items[0].count++;
     await tick();
     expect(calls).toBe(2);
-  } finally { scope.dispose(); }
+  } finally {
+    scope.dispose();
+  }
 });
 
 test("shared values do not retain disposed component cells", () => {
@@ -275,7 +381,9 @@ test("explicit snapshots stay immutable and can be replaced in cells", async () 
   const captured = snapshot(source);
   const cell = createCell(captured);
   let calls = 0;
-  const scope = createCellScope(() => { calls++; });
+  const scope = createCellScope(() => {
+    calls++;
+  });
   scope.watch(cell, "value");
   try {
     expect(cell.value).toBe(captured);
@@ -290,5 +398,7 @@ test("explicit snapshots stay immutable and can be replaced in cells", async () 
     expect(cell.value.nested.count).toBe(2);
     expect(calls).toBe(1);
     expect(() => observable(captured)).toThrow("snapshot");
-  } finally { scope.dispose(); }
+  } finally {
+    scope.dispose();
+  }
 });

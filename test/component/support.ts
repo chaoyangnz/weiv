@@ -65,7 +65,7 @@ export class FakeDocumentFragment extends FakeNode {
   }
 
   get textContent(): string {
-    return this.childNodes.map((child) => getTextContent(child)).join("");
+    return this.childNodes.map(child => getTextContent(child)).join("");
   }
 }
 
@@ -158,7 +158,7 @@ export class FakeElement extends FakeNode {
   select() {}
 
   get textContent(): string {
-    return this.childNodes.map((child) => getTextContent(child)).join("");
+    return this.childNodes.map(child => getTextContent(child)).join("");
   }
 }
 
@@ -189,7 +189,7 @@ export class FakeDocument extends FakeNode {
   }
 
   getElementById(id: string): FakeElement | null {
-    return findElement(this.body, (element) => element.id === id);
+    return findElement(this.body, element => element.id === id);
   }
 
   addEventListener(name: string, handler: (event: any) => void) {
@@ -202,7 +202,7 @@ export class FakeDocument extends FakeNode {
     const handlers = this.listeners.get(name) ?? [];
     this.listeners.set(
       name,
-      handlers.filter((candidate) => candidate !== handler),
+      handlers.filter(candidate => candidate !== handler),
     );
   }
 
@@ -239,7 +239,11 @@ function appendChild(parent: FakeElement | FakeDocumentFragment, node: FakeNode)
   parent.childNodes.push(node);
 }
 
-function insertBeforeNode(parent: FakeElement | FakeDocumentFragment, node: FakeNode, reference: FakeNode | null) {
+function insertBeforeNode(
+  parent: FakeElement | FakeDocumentFragment,
+  node: FakeNode,
+  reference: FakeNode | null,
+) {
   if (reference === null) {
     appendChild(parent, node);
     return;
@@ -296,16 +300,22 @@ function getTextContent(node: FakeNode): string {
   return "";
 }
 
-export function findElement(node: FakeNode, predicate: (element: FakeElement) => boolean): FakeElement | null {
+export function findElement(
+  node: FakeNode,
+  predicate: (element: FakeElement) => boolean,
+): FakeElement | null {
   if (node instanceof FakeElement && predicate(node)) {
     return node;
   }
 
   const children =
-    node instanceof FakeElement ? node.childNodes :
-    node instanceof FakeDocumentFragment ? node.childNodes :
-    node instanceof FakeDocument ? node.body.childNodes :
-    [];
+    node instanceof FakeElement
+      ? node.childNodes
+      : node instanceof FakeDocumentFragment
+        ? node.childNodes
+        : node instanceof FakeDocument
+          ? node.body.childNodes
+          : [];
 
   for (const child of children) {
     const found = findElement(child, predicate);
@@ -315,16 +325,23 @@ export function findElement(node: FakeNode, predicate: (element: FakeElement) =>
   return null;
 }
 
-export function findElements(node: FakeNode, predicate: (element: FakeElement) => boolean, out: FakeElement[] = []): FakeElement[] {
+export function findElements(
+  node: FakeNode,
+  predicate: (element: FakeElement) => boolean,
+  out: FakeElement[] = [],
+): FakeElement[] {
   if (node instanceof FakeElement && predicate(node)) {
     out.push(node);
   }
 
   const children =
-    node instanceof FakeElement ? node.childNodes :
-    node instanceof FakeDocumentFragment ? node.childNodes :
-    node instanceof FakeDocument ? node.body.childNodes :
-    [];
+    node instanceof FakeElement
+      ? node.childNodes
+      : node instanceof FakeDocumentFragment
+        ? node.childNodes
+        : node instanceof FakeDocument
+          ? node.body.childNodes
+          : [];
 
   for (const child of children) {
     findElements(child, predicate, out);
@@ -389,7 +406,14 @@ export function emitApp(rootPath: string, outDir: string): void {
 export async function loadModules(files: Record<string, string>) {
   const dir = mkdtempSync(join(tmpdir(), "weiv-component-"));
   for (const [name, source] of Object.entries(files)) {
-    writeFileSync(join(dir, name), source.replaceAll('"weiv:cells"', JSON.stringify(new URL("../../packages/weiv/src/runtime/cell.ts", import.meta.url).href)), "utf8");
+    writeFileSync(
+      join(dir, name),
+      source.replaceAll(
+        '"weiv:cells"',
+        JSON.stringify(new URL("../../packages/weiv/src/runtime/cell.ts", import.meta.url).href),
+      ),
+      "utf8",
+    );
   }
 
   try {
@@ -411,9 +435,7 @@ export async function importModule(file: string) {
 
 export function assertEqual(actual: string, expected: string, label: string) {
   if (actual !== expected) {
-    throw new Error(
-      `${label} mismatch\nExpected:\n${expected}\n\nActual:\n${actual}\n`
-    );
+    throw new Error(`${label} mismatch\nExpected:\n${expected}\n\nActual:\n${actual}\n`);
   }
 }
 
@@ -470,7 +492,7 @@ export function installRouterWindow(pathname: string = "/") {
       const handlers = listeners.get(name) ?? [];
       listeners.set(
         name,
-        handlers.filter((candidate) => candidate !== handler),
+        handlers.filter(candidate => candidate !== handler),
       );
     },
     dispatchEvent(event: any) {

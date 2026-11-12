@@ -8,20 +8,31 @@ const compiler = process.env.CYNA || "cyna";
 const manifest = resolve(repoRoot, "cyna.release.toml");
 const output = resolve(repoRoot, "cyna-out", "bin", process.platform === "win32" ? "weiv.exe" : "weiv");
 const env = { ...process.env };
-const platformPackage = process.platform === "darwin" && process.arch === "arm64"
-  ? resolve(repoRoot, "packages", "weiv-darwin-arm64", "bin", "weiv")
-  : null;
+const platformPackage =
+  process.platform === "darwin" && process.arch === "arm64"
+    ? resolve(repoRoot, "packages", "weiv-darwin-arm64", "bin", "weiv")
+    : null;
 
 if (process.platform === "darwin" && !env.SDKROOT) {
   env.SDKROOT = execFileSync("xcrun", ["--show-sdk-path"], { encoding: "utf8" }).trim();
 }
 
 mkdirSync(dirname(output), { recursive: true });
-execFileSync("cargo", ["build", "--release", "--locked", "--manifest-path", resolve(repoRoot, "libs", "parser-backend", "Cargo.toml")], {
-  cwd: repoRoot,
-  env,
-  stdio: "inherit",
-});
+execFileSync(
+  "cargo",
+  [
+    "build",
+    "--release",
+    "--locked",
+    "--manifest-path",
+    resolve(repoRoot, "libs", "parser-backend", "Cargo.toml"),
+  ],
+  {
+    cwd: repoRoot,
+    env,
+    stdio: "inherit",
+  },
+);
 execFileSync(compiler, ["build", manifest, "--output", output], {
   cwd: repoRoot,
   env,

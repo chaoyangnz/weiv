@@ -14,7 +14,7 @@ const preview: Preview = {
     },
   },
   decorators: [
-    (story) => {
+    story => {
       const wrapper = document.createElement("div");
       wrapper.setAttribute("data-theme", "default");
       wrapper.style.minHeight = "100vh";

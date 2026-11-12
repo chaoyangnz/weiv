@@ -1,7 +1,4 @@
-import {
-  createDisclosureController,
-  createTabsController,
-} from "../../../../packages/ui-core/src/index.js";
+import { createDisclosureController, createTabsController } from "../../../../packages/ui-core/src/index.js";
 
 export default {
   title: "UI Core/Disclosure + Tabs",
@@ -81,7 +78,7 @@ export const TabsBasics = () => {
   panel.style.borderRadius = "var(--weiv-radius-md)";
   panel.style.padding = "14px";
 
-  const labels = tabs.tabs.map((tab) => tab.value);
+  const labels = tabs.tabs.map(tab => tab.value);
 
   for (const label of labels) {
     const button = document.createElement("button");
@@ -90,7 +87,7 @@ export const TabsBasics = () => {
     button.textContent = label;
 
     button.addEventListener("click", () => tabs.select(label));
-    button.addEventListener("keydown", (event) => {
+    button.addEventListener("keydown", event => {
       const handled = tabs.onTabKeydown(event);
       if (!handled) return;
 

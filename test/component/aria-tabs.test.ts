@@ -10,7 +10,10 @@ test("boolean ARIA bindings write true and false strings", async () => {
   document.body.append(target);
   modules["AriaTabs.mjs"].mount(target, {});
   const tabs = target.querySelectorAll('[role="tab"]');
-  if (tabs[0]?.getAttribute("aria-selected") !== "true" || tabs[1]?.getAttribute("aria-selected") !== "false") {
+  if (
+    tabs[0]?.getAttribute("aria-selected") !== "true" ||
+    tabs[1]?.getAttribute("aria-selected") !== "false"
+  ) {
     throw new Error(`Initial ARIA state is wrong: ${target.innerHTML}`);
   }
   tabs[1].dispatchEvent(new window.Event("click"));

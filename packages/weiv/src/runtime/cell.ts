@@ -14,8 +14,12 @@ const defineClassName = Object.defineProperty;
 // Run before user static initialization; never replace a user name method/getter.
 export function initializeClassName(value: Function, name: string): void {
   const descriptor = classNameDescriptor(value, "name");
-  if (descriptor?.value === "" && descriptor.configurable === true &&
-      descriptor.enumerable === false && descriptor.writable === false) {
+  if (
+    descriptor?.value === "" &&
+    descriptor.configurable === true &&
+    descriptor.enumerable === false &&
+    descriptor.writable === false
+  ) {
     defineClassName(value, "name", { value: name });
   }
 }
@@ -23,11 +27,23 @@ export function initializeClassName(value: Function, name: string): void {
 // Keep native assignment/destructuring in control of GetValue/PutValue timing.
 // Creating a target must not read a binding that may still be uninitialized.
 export function assignmentTarget<T>(read: () => T, write: (value: T) => unknown): Cell<T> {
-  return { get value() { return read(); }, set value(value: T) { write(value); } };
+  return {
+    get value() {
+      return read();
+    },
+    set value(value: T) {
+      write(value);
+    },
+  };
 }
 
 export function cellAssignmentTarget<T>(cell: () => Cell<T>): Cell<T> {
-  return assignmentTarget(() => cell().value, value => { cell().value = value; });
+  return assignmentTarget(
+    () => cell().value,
+    value => {
+      cell().value = value;
+    },
+  );
 }
 
 // Keep an identifier call's undefined receiver after lowering it to cell.value.
@@ -35,7 +51,8 @@ export function cellAssignmentTarget<T>(cell: () => Cell<T>): Cell<T> {
 // a non-callable value throws. Nullish values retain optional-call short circuiting.
 export function unbindCellValue<T>(value: T): T {
   if (value == null) return value;
-  return ((...args: unknown[]) => Reflect.apply(value as unknown as (...args: unknown[]) => unknown, undefined, args)) as unknown as T;
+  return ((...args: unknown[]) =>
+    Reflect.apply(value as unknown as (...args: unknown[]) => unknown, undefined, args)) as unknown as T;
 }
 
 export function createCell<T>(value: T): Cell<T> {
@@ -80,8 +97,10 @@ export function createModuleState() {
 }
 
 export function afterModuleWrite<T>(
-  module: () => ReturnType<typeof createModuleState>, name: string,
-  result: T, read: () => unknown,
+  module: () => ReturnType<typeof createModuleState>,
+  name: string,
+  result: T,
+  read: () => unknown,
 ): T {
   // Both lookups occur after the original write expression succeeds. In
   // particular, a throwing RHS must not read a binding or publish a change.
@@ -89,7 +108,11 @@ export function afterModuleWrite<T>(
   return result;
 }
 
-export function initialModuleValue<T>(module: ReturnType<typeof createModuleState>, name: string, value: T): T {
+export function initialModuleValue<T>(
+  module: ReturnType<typeof createModuleState>,
+  name: string,
+  value: T,
+): T {
   module.publish(name, value);
   return value;
 }

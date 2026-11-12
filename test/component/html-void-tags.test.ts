@@ -9,7 +9,8 @@ test("HTML void tags mount without explicit self closing syntax", async () => {
   const target = document.createElement("div");
   document.body.append(target);
   modules["HtmlVoidTags.mjs"].mount(target, {});
-  if (target.querySelector("label > input")?.getAttribute("name") !== "name") throw new Error("Nested input did not mount");
+  if (target.querySelector("label > input")?.getAttribute("name") !== "name")
+    throw new Error("Nested input did not mount");
   if (!target.querySelector("br") || target.querySelector("img")?.getAttribute("alt") !== "preview") {
     throw new Error("Sibling void tags did not mount");
   }

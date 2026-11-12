@@ -19,7 +19,10 @@ function runtimeDirectory() {
 }
 
 export function validateOptions(options) {
-  if (options.reactivity !== undefined) throw new TypeError('The reactivity option has been removed. Use the managed model and await the DOM batch after state writes.');
+  if (options.reactivity !== undefined)
+    throw new TypeError(
+      "The reactivity option has been removed. Use the managed model and await the DOM batch after state writes.",
+    );
 }
 
 export function canonical(path) {
@@ -34,37 +37,66 @@ export function inside(root, path) {
 
 function diagnostics(stderr) {
   if (!stderr?.trim()) return [];
-  try { return JSON.parse(stderr).diagnostics ?? []; } catch { return []; }
+  try {
+    return JSON.parse(stderr).diagnostics ?? [];
+  } catch {
+    return [];
+  }
 }
 
 function run(args) {
-  try { return execFileSync(resolveWeivBinaryPath(), args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }); }
-  catch (error) {
+  try {
+    return execFileSync(resolveWeivBinaryPath(), args, {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+  } catch (error) {
     const entries = diagnostics(String(error.stderr ?? ""));
     if (!entries.length) throw error;
-    throw new Error(entries.map(entry => `[${entry.code}] ${entry.sourcePath}${entry.location ? `:${entry.location.line}:${entry.location.column}` : ""}: ${entry.message}`).join("\n"), { cause: error });
+    throw new Error(
+      entries
+        .map(
+          entry =>
+            `[${entry.code}] ${entry.sourcePath}${entry.location ? `:${entry.location.line}:${entry.location.column}` : ""}: ${entry.message}`,
+        )
+        .join("\n"),
+      { cause: error },
+    );
   }
 }
 
 // One plan per bundler build. Resolve original consumers and component imports to
 // the same emitted module, instead of boxing each component's imports separately.
 export function createManagedProject(options = {}) {
-  let directory, prepared = false;
-  const sources = new Map(), generated = new Map(), watchFiles = new Set();
+  let directory,
+    prepared = false;
+  const sources = new Map(),
+    generated = new Map(),
+    watchFiles = new Set();
   return {
-    sources, generated, watchFiles,
-    get outputRoot() { return directory && join(directory, "output"); },
+    sources,
+    generated,
+    watchFiles,
+    get outputRoot() {
+      return directory && join(directory, "output");
+    },
     async prepare({ root, entries, resolveSpecifier, onDiagnostics }, force = false) {
       if (prepared && !force) return;
       root = canonical(options.root ? resolve(options.root) : root);
-      sources.clear();generated.clear();watchFiles.clear();
+      sources.clear();
+      generated.clear();
+      watchFiles.clear();
       const roots = new Set((options.components ?? []).map(path => canonical(resolve(root, path))));
       const visited = new Set();
       const visit = async path => {
         path = canonical(path);
         if (visited.has(path) || !existsSync(path)) return;
-        visited.add(path);watchFiles.add(path);
-        if (path.endsWith(".weiv")) { roots.add(path); return; }
+        visited.add(path);
+        watchFiles.add(path);
+        if (path.endsWith(".weiv")) {
+          roots.add(path);
+          return;
+        }
         if (!inside(root, path) || path.split(/[\\/]/).includes("node_modules")) return;
         const extension = extname(path);
         if (extension !== ".html" && !/\.[cm]?[jt]sx?$/.test(path)) return;
@@ -74,8 +106,14 @@ export function createManagedProject(options = {}) {
           for (const match of source.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)) {
             if (!/\btype\s*=\s*["']module["']/i.test(match[1])) continue;
             const src = /\bsrc\s*=\s*["']([^"']+)["']/i.exec(match[1]);
-            if (src) await visit(src[1].startsWith("/") ? resolve(root, `.${src[1]}`) : resolve(dirname(path), src[1]));
-            else if (match[2].trim()) throw new Error("Managed Weiv builds require module entry scripts in files; move this inline module to a script file or supply a file entry.");
+            if (src)
+              await visit(
+                src[1].startsWith("/") ? resolve(root, `.${src[1]}`) : resolve(dirname(path), src[1]),
+              );
+            else if (match[2].trim())
+              throw new Error(
+                "Managed Weiv builds require module entry scripts in files; move this inline module to a script file or supply a file entry.",
+              );
           }
           return;
         }
@@ -92,19 +130,43 @@ export function createManagedProject(options = {}) {
       for (const component of roots) watchFiles.add(component);
       if (roots.size) {
         directory ??= mkdtempSync(join(tmpdir(), "weiv-managed-"));
-        const input = join(directory, "input.json"), output = join(directory, "output");
+        const input = join(directory, "input.json"),
+          output = join(directory, "output");
         writeFileSync(input, JSON.stringify({ root, components: [...roots].sort() }));
-        const result = spawnSync(resolveWeivBinaryPath(), ["--runtime-dir", runtimeDirectory(), "--json-diagnostics", "emit", "managed-project", input, output], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+        const result = spawnSync(
+          resolveWeivBinaryPath(),
+          [
+            "--runtime-dir",
+            runtimeDirectory(),
+            "--json-diagnostics",
+            "emit",
+            "managed-project",
+            input,
+            output,
+          ],
+          { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
+        );
         if (result.error) throw result.error;
         const entries = diagnostics(result.stderr);
         if (result.status !== 0) {
-          throw new Error(entries.length ? entries.map(entry => `[${entry.code}] ${entry.sourcePath}${entry.location ? `:${entry.location.line}:${entry.location.column}` : ""}: ${entry.message}`).join("\n") : result.stderr || "Weiv managed build failed");
+          throw new Error(
+            entries.length
+              ? entries
+                  .map(
+                    entry =>
+                      `[${entry.code}] ${entry.sourcePath}${entry.location ? `:${entry.location.line}:${entry.location.column}` : ""}: ${entry.message}`,
+                  )
+                  .join("\n")
+              : result.stderr || "Weiv managed build failed",
+          );
         }
         const manifest = JSON.parse(readFileSync(join(output, "manifest.json"), "utf8"));
         for (const item of manifest.modules) {
           const emitted = canonical(resolve(output, item.output));
           const record = { ...item, output: emitted };
-          sources.set(canonical(item.source), record);generated.set(emitted, record);watchFiles.add(item.source);
+          sources.set(canonical(item.source), record);
+          generated.set(emitted, record);
+          watchFiles.add(item.source);
         }
         onDiagnostics?.(entries);
       }
@@ -112,12 +174,19 @@ export function createManagedProject(options = {}) {
     },
     component(path) {
       const record = sources.get(canonical(path));
-      if (!record?.component) throw new Error(`Weiv component is outside the discovered entry graph: ${path}. Add it to the plugin's components option or include its static import in an entry.`);
+      if (!record?.component)
+        throw new Error(
+          `Weiv component is outside the discovered entry graph: ${path}. Add it to the plugin's components option or include its static import in an entry.`,
+        );
       return record;
     },
     dispose() {
       if (directory) rmSync(directory, { recursive: true, force: true });
-      directory = undefined;prepared = false;sources.clear();generated.clear();watchFiles.clear();
+      directory = undefined;
+      prepared = false;
+      sources.clear();
+      generated.clear();
+      watchFiles.clear();
     },
   };
 }

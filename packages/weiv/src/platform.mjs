@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const require = createRequire(import.meta.url);
 
 const PLATFORM_PACKAGES = {
-  "darwin-arm64": "@weivjs/weiv-darwin-arm64"
+  "darwin-arm64": "@weivjs/weiv-darwin-arm64",
 };
 
 export function resolveWeivBinaryPath() {
@@ -21,9 +21,7 @@ export function resolveWeivBinaryPath() {
   const key = `${process.platform}-${process.arch}`;
   const packageName = PLATFORM_PACKAGES[key];
   if (!packageName) {
-    throw new Error(
-      `Unsupported platform for weiv binary: ${key}. Set WEIV_BINARY_PATH to continue.`
-    );
+    throw new Error(`Unsupported platform for weiv binary: ${key}. Set WEIV_BINARY_PATH to continue.`);
   }
 
   try {
@@ -38,8 +36,8 @@ export function resolveWeivBinaryPath() {
         `Could not resolve weiv binary for ${key}.`,
         `Expected optional dependency: ${packageName}.`,
         `Try reinstalling without --omit=optional, or set WEIV_BINARY_PATH.`,
-        `Original error: ${error instanceof Error ? error.message : String(error)}`
-      ].join("\n")
+        `Original error: ${error instanceof Error ? error.message : String(error)}`,
+      ].join("\n"),
     );
   }
 }

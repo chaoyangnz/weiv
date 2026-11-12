@@ -1,2 +1,4 @@
 export let count = 0;
-export function incLeft() { count++; }
+export function incLeft() {
+  count++;
+}

@@ -1,4 +1,4 @@
-import { isObservable } from 'weiv:observable';
+import { isObservable } from "weiv:observable";
 import { value } from "../nested.mjs";
 import { typed } from "./typed.mts";
 export const marker = value;

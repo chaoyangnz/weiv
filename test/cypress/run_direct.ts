@@ -18,7 +18,7 @@ async function findFreePort(): Promise<number> {
         return;
       }
       const { port } = address;
-      server.close((error) => {
+      server.close(error => {
         if (error) {
           reject(error);
           return;

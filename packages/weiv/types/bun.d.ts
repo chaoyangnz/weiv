@@ -2,8 +2,20 @@ export type BunPluginBuild = {
   config: { entrypoints: Array<string | { in: string }>; root?: string };
   onStart(callback: () => void | Promise<void>): void;
   onDispose(callback: () => void): void;
-  onResolve(args: { filter: RegExp }, callback: (args: { path: string; importer?: string; resolveDir?: string }) => void | { path: string; namespace?: string } | Promise<void | { path: string; namespace?: string }>): void;
-  onLoad(args: { filter: RegExp; namespace?: string }, callback: (args: { path: string }) => { contents: string; loader: "js" } | Promise<{ contents: string; loader: "js" }>): void;
+  onResolve(
+    args: { filter: RegExp },
+    callback: (args: {
+      path: string;
+      importer?: string;
+      resolveDir?: string;
+    }) => void | { path: string; namespace?: string } | Promise<void | { path: string; namespace?: string }>,
+  ): void;
+  onLoad(
+    args: { filter: RegExp; namespace?: string },
+    callback: (args: {
+      path: string;
+    }) => { contents: string; loader: "js" } | Promise<{ contents: string; loader: "js" }>,
+  ): void;
 };
 
 export type WeivBunPlugin = {

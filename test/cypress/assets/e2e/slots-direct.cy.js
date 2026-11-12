@@ -14,17 +14,21 @@ describe("Slot composition direct bundle (reactive)", () => {
   });
 
   it("updates projected slot interpolations when parent state changes", () => {
-    cy.get("@scope").find('[data-test="header-title"]').then(($el) => {
-      const before = $el[0];
-      cy.get("@scope").find('[data-test="bump"]').click();
-      cy.get("@scope").find('[data-test="header-title"]').should("have.text", "Bumped 1");
-      cy.get("@scope").find('[data-test="header-title"]').then(($after) => {
-        // Same element node — proves no remount
-        expect($after[0]).to.equal(before);
+    cy.get("@scope")
+      .find('[data-test="header-title"]')
+      .then($el => {
+        const before = $el[0];
+        cy.get("@scope").find('[data-test="bump"]').click();
+        cy.get("@scope").find('[data-test="header-title"]').should("have.text", "Bumped 1");
+        cy.get("@scope")
+          .find('[data-test="header-title"]')
+          .then($after => {
+            // Same element node — proves no remount
+            expect($after[0]).to.equal(before);
+          });
+        cy.get("@scope").find('[data-test="body"]').should("have.text", "Body 1");
+        cy.get("@scope").find('[data-test="header-eyebrow"]').should("contain.text", "Updated 1");
       });
-      cy.get("@scope").find('[data-test="body"]').should("have.text", "Body 1");
-      cy.get("@scope").find('[data-test="header-eyebrow"]').should("contain.text", "Updated 1");
-    });
   });
 
   it("updates non-slot interpolations in step with slot interpolations", () => {

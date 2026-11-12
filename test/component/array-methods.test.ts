@@ -10,7 +10,10 @@ test("tracked prop arrays support native map and filter", async () => {
   document.body.append(target);
   installDocument(document);
   modules["ArrayMethods.mjs"].mount(target, {
-    items: [{ name: "first", active: true }, { name: "second", active: false }],
+    items: [
+      { name: "first", active: true },
+      { name: "second", active: false },
+    ],
   });
   if (!target.textContent.includes("first-second") || !target.textContent.includes("1")) {
     throw new Error(`Array methods returned unexpected content: ${target.textContent}`);

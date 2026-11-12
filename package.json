@@ -10,6 +10,8 @@
   ],
   "scripts": {
     "weiv": "node ./packages/weiv/bin/weiv.mjs",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
     "build:cyna": "node ./tools/build-cyna-release.mjs",
     "test:cyna": "cyna test .",
     "test:component": "bun test test/component",
@@ -35,6 +37,7 @@
     "storybook:build": "bun run --cwd ./apps/storybook build"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.6.7",
     "cypress": "^14.5.0",
     "jsdom": "^29.1.1",
     "vite": "^7.3.8"

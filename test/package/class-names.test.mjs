@@ -51,22 +51,65 @@ try {
   assert.equal(expected.results[5].before, "count");
   assert.equal(expected.results[8].name, "__proto__");
   const modulePath = join(temp, "managed.mjs");
-  writeFileSync(modulePath, execFileSync(binary, ["emit", "module-cells", nativePath, "./publisher.mjs", JSON.stringify(["count", "__proto__", "decl", "initial"])], { cwd: root }));
-  writeFileSync(join(temp, "publisher.mjs"), "import {createModuleState} from 'weiv:cells';export const moduleState=createModuleState();");
+  writeFileSync(
+    modulePath,
+    execFileSync(
+      binary,
+      [
+        "emit",
+        "module-cells",
+        nativePath,
+        "./publisher.mjs",
+        JSON.stringify(["count", "__proto__", "decl", "initial"]),
+      ],
+      { cwd: root },
+    ),
+  );
+  writeFileSync(
+    join(temp, "publisher.mjs"),
+    "import {createModuleState} from 'weiv:cells';export const moduleState=createModuleState();",
+  );
   const componentPath = join(temp, "Names.weiv");
-  writeFileSync(componentPath, '<template><p>{{ typeof count }} / {{ decl.name }} / {{ typeof __proto__ }} / {{ initial.name }}</p><button @click="count=class {static label=this.name;static previous=count}">inline</button></template><script lang="ts">' + script + "\nwindow.addEventListener('names',event=>event.detail.result=run());window.addEventListener('names-read',event=>event.detail.result={name:count.name,label:count.label,previous:count.previous.name});</script>");
-  writeFileSync(join(temp, "component.mjs"), execFileSync(binary, ["emit", "js", componentPath], { cwd: root, stdio: ["ignore", "pipe", "pipe"] }));
+  writeFileSync(
+    componentPath,
+    '<template><p>{{ typeof count }} / {{ decl.name }} / {{ typeof __proto__ }} / {{ initial.name }}</p><button @click="count=class {static label=this.name;static previous=count}">inline</button></template><script lang="ts">' +
+      script +
+      "\nwindow.addEventListener('names',event=>event.detail.result=run());window.addEventListener('names-read',event=>event.detail.result={name:count.name,label:count.label,previous:count.previous.name});</script>",
+  );
+  writeFileSync(
+    join(temp, "component.mjs"),
+    execFileSync(binary, ["emit", "js", componentPath], { cwd: root, stdio: ["ignore", "pipe", "pipe"] }),
+  );
   const entry = join(temp, "entry.mjs");
   writeFileSync(entry, "export {run} from './managed.mjs';export {mount} from './component.mjs';");
-  await build({ configFile: false, root: temp, logLevel: "silent", plugins: [weiv()], build: { target: "esnext", minify: false, outDir: join(temp, "vite"), lib: { entry, formats: ["es"], fileName: () => "names.mjs" } } });
+  await build({
+    configFile: false,
+    root: temp,
+    logLevel: "silent",
+    plugins: [weiv()],
+    build: {
+      target: "esnext",
+      minify: false,
+      outDir: join(temp, "vite"),
+      lib: { entry, formats: ["es"], fileName: () => "names.mjs" },
+    },
+  });
   const builder = join(temp, "build.mjs");
-  writeFileSync(builder, `import {weiv} from ${JSON.stringify(pathToFileURL(join(root, "packages/weiv/dist/bun.mjs")).href)};
+  writeFileSync(
+    builder,
+    `import {weiv} from ${JSON.stringify(pathToFileURL(join(root, "packages/weiv/dist/bun.mjs")).href)};
     const result=await Bun.build({entrypoints:[${JSON.stringify(entry)}],outdir:${JSON.stringify(temp)},naming:'bun.mjs',plugins:[weiv()],target:'browser'});
-    if(!result.success)throw new AggregateError(result.logs,'Class-name bundle failed');`);
+    if(!result.success)throw new AggregateError(result.logs,'Class-name bundle failed');`,
+  );
   execFileSync("bun", [builder], { cwd: root, stdio: "pipe" });
-  for (const [runner, output] of [["node", join(temp, "vite/names.mjs")], ["bun", join(temp, "bun.mjs")]]) {
+  for (const [runner, output] of [
+    ["node", join(temp, "vite/names.mjs")],
+    ["bun", join(temp, "bun.mjs")],
+  ]) {
     const check = join(temp, `check-${runner}.mjs`);
-    writeFileSync(check, `import assert from 'node:assert/strict';
+    writeFileSync(
+      check,
+      `import assert from 'node:assert/strict';
       import {JSDOM} from ${JSON.stringify(import.meta.resolve("jsdom"))};
       import {run,mount} from ${JSON.stringify(pathToFileURL(output).href)};
       const expected=${JSON.stringify(expected)};
@@ -78,10 +121,13 @@ try {
       assert.deepEqual(JSON.parse(JSON.stringify(detail.result)),expected);assert.equal(target.querySelector('p').textContent,'function / decl / function / initial');
       target.querySelector('button').dispatchEvent(new window.Event('click'));await new Promise(resolve=>queueMicrotask(resolve));
       const read={};window.dispatchEvent(new window.CustomEvent('names-read',{detail:read}));assert.deepEqual(read.result,{name:'count',label:'count',previous:'user'});
-      handle.destroy();dom.window.close();`);
+      handle.destroy();dom.window.close();`,
+    );
     execFileSync(runner, [check], { cwd: root, stdio: "pipe" });
   }
-  console.log("Class named evaluation, descriptors, static order and outer references match Node's oracle in mounted and shared Vite/Bun output");
+  console.log(
+    "Class named evaluation, descriptors, static order and outer references match Node's oracle in mounted and shared Vite/Bun output",
+  );
 } finally {
   rmSync(temp, { recursive: true, force: true });
 }

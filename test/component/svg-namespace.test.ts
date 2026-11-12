@@ -14,10 +14,13 @@ test("inline SVG uses SVG namespace and preserves viewBox", async () => {
   const circle = target.querySelector("circle");
   const rects = target.querySelectorAll("rect");
   const htmlChild = target.querySelector("foreignObject div");
-  if (!svg || !path || !circle || !htmlChild || rects.length !== 2) throw new Error("SVG fixture did not mount all children");
+  if (!svg || !path || !circle || !htmlChild || rects.length !== 2)
+    throw new Error("SVG fixture did not mount all children");
   for (const node of [svg, path, circle, ...rects]) {
-    if (node.namespaceURI !== "http://www.w3.org/2000/svg") throw new Error(`${node.localName} has wrong namespace`);
+    if (node.namespaceURI !== "http://www.w3.org/2000/svg")
+      throw new Error(`${node.localName} has wrong namespace`);
   }
   if (svg.getAttribute("viewBox") !== "0 0 10 10") throw new Error("SVG viewBox was not preserved");
-  if (htmlChild.namespaceURI !== "http://www.w3.org/1999/xhtml") throw new Error("foreignObject child has wrong namespace");
+  if (htmlChild.namespaceURI !== "http://www.w3.org/1999/xhtml")
+    throw new Error("foreignObject child has wrong namespace");
 });

@@ -14,9 +14,14 @@ const temp = mkdtempSync(join(tmpdir(), "weiv-core-package-"));
 try {
   const entry = join(temp, "entry.js");
   const binary = process.env.WEIV_BINARY_PATH || join(repoRoot, "cyna-out/bin/weiv");
-  const compiled = execFileSync(binary, ["emit", "js", "test/examples/basic/compiler-cells.weiv"], { cwd: repoRoot, encoding: "utf8" });
+  const compiled = execFileSync(binary, ["emit", "js", "test/examples/basic/compiler-cells.weiv"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+  });
   writeFileSync(join(temp, "Compiled.mjs"), compiled);
-  writeFileSync(entry, `
+  writeFileSync(
+    entry,
+    `
     export { mount as mountCells } from "./Compiled.mjs";
     import { observable, subscribe, snapshot } from "weiv:observable";
     import { createCell, createCellScope } from "weiv:cells";
@@ -50,11 +55,16 @@ try {
       offA(); offB();
       return values;
     }
-  `);
+  `,
+  );
   await build({
-    configFile: false, root: temp, logLevel: "silent", plugins: [weiv()],
+    configFile: false,
+    root: temp,
+    logLevel: "silent",
+    plugins: [weiv()],
     build: {
-      outDir: join(temp, "vite"), minify: false,
+      outDir: join(temp, "vite"),
+      minify: false,
       lib: { entry, formats: ["es"], fileName: () => "core.mjs" },
     },
   });
@@ -67,12 +77,15 @@ try {
   const bunOutput = join(temp, "bun-core.mjs");
   const bunPlugin = pathToFileURL(join(repoRoot, "packages/weiv/dist/bun.mjs")).href;
   const runner = join(temp, "build.mjs");
-  writeFileSync(runner, `
+  writeFileSync(
+    runner,
+    `
     import { weiv } from ${JSON.stringify(bunPlugin)};
     const result = await Bun.build({ entrypoints: [${JSON.stringify(entry)}],
       outdir: ${JSON.stringify(temp)}, naming: "bun-core.mjs", plugins: [weiv()], target: "browser" });
     if (!result.success) throw new AggregateError(result.logs, "Bun runtime bundle failed");
-  `);
+  `,
+  );
   execFileSync("bun", [runner], { cwd: repoRoot, stdio: "pipe" });
   const bunModule = await import(pathToFileURL(bunOutput).href);
   assert.deepEqual(await bunModule.check(), [1, 2]);
@@ -85,7 +98,8 @@ try {
 }
 
 async function checkCompiled(module) {
-  const previousWindow = globalThis.window, previousDocument = globalThis.document;
+  const previousWindow = globalThis.window,
+    previousDocument = globalThis.document;
   const dom = new JSDOM("<main></main>");
   globalThis.window = dom.window;
   globalThis.document = dom.window.document;

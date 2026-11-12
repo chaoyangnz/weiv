@@ -43,14 +43,22 @@ try {
     count += 1;
   }
 </script>
-`
+`,
   );
 
   run("npx", ["weiv", "--help"], tmpRoot);
   run("npx", ["weiv", "compile", "emit", "app", "App.weiv", "./dist"], tmpRoot);
 
-  run("node", ["--input-type=module", "-e", "import('weivjs/vite').then(()=>console.log('vite export ok'))"], tmpRoot);
-  run("node", ["--input-type=module", "-e", "import('weivjs/bun').then(()=>console.log('bun export ok'))"], tmpRoot);
+  run(
+    "node",
+    ["--input-type=module", "-e", "import('weivjs/vite').then(()=>console.log('vite export ok'))"],
+    tmpRoot,
+  );
+  run(
+    "node",
+    ["--input-type=module", "-e", "import('weivjs/bun').then(()=>console.log('bun export ok'))"],
+    tmpRoot,
+  );
 
   assertExists(join(tmpRoot, "dist", "App.mjs"));
   assertExists(join(tmpRoot, "dist", "bundle.mjs"));

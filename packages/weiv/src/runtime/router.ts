@@ -85,7 +85,7 @@ function parsePattern(pattern: string): RouteSegment[] {
 }
 
 function compileRoutes(defs: RouteDefinition[], parentPath: string = ""): CompiledRoute[] {
-  return defs.map((def) => {
+  return defs.map(def => {
     const fullPath = parentPath + def.path;
     return {
       definition: def,
@@ -99,7 +99,7 @@ function compileRoutes(defs: RouteDefinition[], parentPath: string = ""): Compil
 function matchSegments(
   segments: RouteSegment[],
   pathParts: string[],
-  startIndex: number
+  startIndex: number,
 ): { params: RouteParams; consumed: number } | null {
   const params: RouteParams = {};
   let pi = startIndex;
@@ -122,10 +122,7 @@ function matchSegments(
   return { params, consumed: pi - startIndex };
 }
 
-function matchRoute(
-  compiled: CompiledRoute[],
-  pathParts: string[]
-): MatchResult | null {
+function matchRoute(compiled: CompiledRoute[], pathParts: string[]): MatchResult | null {
   for (const entry of compiled) {
     const result = matchSegments(entry.segments, pathParts, 0);
     if (result === null) continue;
@@ -150,7 +147,7 @@ function matchRoute(
 function matchChildRoutes(
   children: CompiledRoute[],
   pathParts: string[],
-  parentConsumed: number
+  parentConsumed: number,
 ): { chain: CompiledRoute[]; params: RouteParams } | null {
   const remaining = pathParts.slice(parentConsumed);
   for (const child of children) {
@@ -186,8 +183,7 @@ function parseQuery(search: string): QueryParams {
     if (eq === -1) {
       params[decodeURIComponent(pair)] = "";
     } else {
-      params[decodeURIComponent(pair.slice(0, eq))] =
-        decodeURIComponent(pair.slice(eq + 1));
+      params[decodeURIComponent(pair.slice(0, eq))] = decodeURIComponent(pair.slice(eq + 1));
     }
   }
   return params;
@@ -320,7 +316,7 @@ export function createRouter(options: RouterOptions) {
 
   function applyScroll(from: RouteState, to: RouteState, savedKey: string | null) {
     if (!scrollBehavior) return;
-    const saved = savedKey ? scrollPositions.get(savedKey) ?? null : null;
+    const saved = savedKey ? (scrollPositions.get(savedKey) ?? null) : null;
     const result = scrollBehavior({ from, to }, saved);
     if (!result) return;
 
@@ -334,7 +330,11 @@ export function createRouter(options: RouterOptions) {
     window.scrollTo(result.x ?? 0, result.y ?? 0);
   }
 
-  async function navigateTo(pathOnly: string, search: string, options?: { isPopState?: boolean; historyKey?: string }) {
+  async function navigateTo(
+    pathOnly: string,
+    search: string,
+    options?: { isPopState?: boolean; historyKey?: string },
+  ) {
     if (destroyed) return;
 
     const result = resolve(pathOnly);
@@ -361,88 +361,84 @@ export function createRouter(options: RouterOptions) {
       return;
     }
 
-      if (scrollBehavior) {
-        saveScrollPosition();
-      }
+    if (scrollBehavior) {
+      saveScrollPosition();
+    }
 
-      route.path = pendingTo.path;
-      route.params = pendingTo.params;
-      route.query = pendingTo.query;
-      route.matched = pendingTo.matched;
+    route.path = pendingTo.path;
+    route.params = pendingTo.params;
+    route.query = pendingTo.query;
+    route.matched = pendingTo.matched;
 
-      if (!result) {
-        for (let i = outlets.length - 1; i >= 0; i--) {
-          if (outlets[i]?.mount) {
-            outlets[i].mount!.destroy();
-            outlets[i].mount = null;
-            outlets[i].pattern = null;
-          }
-        }
-        currentChain = [];
-        return;
-      }
-
-      const newChain = result.chain;
-      let reuseDepth = 0;
-      while (
-        reuseDepth < currentChain.length &&
-        reuseDepth < newChain.length &&
-        currentChain[reuseDepth].fullPath === newChain[reuseDepth].fullPath
-      ) {
-        reuseDepth++;
-      }
-
-      for (let i = outlets.length - 1; i >= reuseDepth; i--) {
+    if (!result) {
+      for (let i = outlets.length - 1; i >= 0; i--) {
         if (outlets[i]?.mount) {
           outlets[i].mount!.destroy();
           outlets[i].mount = null;
           outlets[i].pattern = null;
         }
       }
-      outlets.length = Math.max(reuseDepth, newChain.length);
+      currentChain = [];
+      return;
+    }
 
-      for (let depth = 0; depth < newChain.length; depth++) {
-        const entry = newChain[depth];
-        const def = entry.definition;
-        const props = def.props ? def.props(route) : {};
-        const outlet = ensureOutlet(depth);
+    const newChain = result.chain;
+    let reuseDepth = 0;
+    while (
+      reuseDepth < currentChain.length &&
+      reuseDepth < newChain.length &&
+      currentChain[reuseDepth].fullPath === newChain[reuseDepth].fullPath
+    ) {
+      reuseDepth++;
+    }
 
-        if (depth < reuseDepth && outlet.mount) {
-          outlet.mount.setProps(props);
-          outlet.mount.update();
-          continue;
-        }
+    for (let i = outlets.length - 1; i >= reuseDepth; i--) {
+      if (outlets[i]?.mount) {
+        outlets[i].mount!.destroy();
+        outlets[i].mount = null;
+        outlets[i].pattern = null;
+      }
+    }
+    outlets.length = Math.max(reuseDepth, newChain.length);
 
-        let mod = def.component();
-        if (mod instanceof Promise) {
-          mod = await mod;
-        }
-        const mountFn =
-          typeof mod.mountIntoBoundary === "function"
-            ? mod.mountIntoBoundary
-            : mod.default?.mountIntoBoundary;
+    for (let depth = 0; depth < newChain.length; depth++) {
+      const entry = newChain[depth];
+      const def = entry.definition;
+      const props = def.props ? def.props(route) : {};
+      const outlet = ensureOutlet(depth);
 
-        if (!mountFn) {
-          throw new Error(
-            `Route component for "${def.path}" does not export mountIntoBoundary`
-          );
-        }
-
-        outlet.mount = mountFn(outlet.start, outlet.end, props);
-        outlet.pattern = entry.fullPath;
+      if (depth < reuseDepth && outlet.mount) {
+        outlet.mount.setProps(props);
+        outlet.mount.update();
+        continue;
       }
 
-      currentChain = newChain;
-
-      const savedKey = options?.historyKey ?? null;
-      if (options?.isPopState && savedKey) {
-        currentHistoryKey = savedKey;
+      let mod = def.component();
+      if (mod instanceof Promise) {
+        mod = await mod;
       }
-      applyScroll(fromSnapshot, pendingTo, options?.isPopState ? savedKey : null);
+      const mountFn =
+        typeof mod.mountIntoBoundary === "function" ? mod.mountIntoBoundary : mod.default?.mountIntoBoundary;
 
-      for (const hook of afterEachHooks) {
-        hook({ from: fromSnapshot, to: pendingTo });
+      if (!mountFn) {
+        throw new Error(`Route component for "${def.path}" does not export mountIntoBoundary`);
       }
+
+      outlet.mount = mountFn(outlet.start, outlet.end, props);
+      outlet.pattern = entry.fullPath;
+    }
+
+    currentChain = newChain;
+
+    const savedKey = options?.historyKey ?? null;
+    if (options?.isPopState && savedKey) {
+      currentHistoryKey = savedKey;
+    }
+    applyScroll(fromSnapshot, pendingTo, options?.isPopState ? savedKey : null);
+
+    for (const hook of afterEachHooks) {
+      hook({ from: fromSnapshot, to: pendingTo });
+    }
   }
 
   function onPopState(event: PopStateEvent) {
@@ -480,9 +476,11 @@ export function createRouter(options: RouterOptions) {
 
       event.preventDefault();
 
-      const path = mode === "hash"
-        ? url.hash.slice(1) || "/"
-        : (base && url.pathname.startsWith(base) ? url.pathname.slice(base.length) : url.pathname) + url.search;
+      const path =
+        mode === "hash"
+          ? url.hash.slice(1) || "/"
+          : (base && url.pathname.startsWith(base) ? url.pathname.slice(base.length) : url.pathname) +
+            url.search;
 
       push(path);
     } catch {

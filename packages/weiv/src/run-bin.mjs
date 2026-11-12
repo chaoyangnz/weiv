@@ -6,7 +6,7 @@ export function runWeivCli(args) {
   const bin = resolveWeivBinaryPath();
   const child = spawn(bin, ["--runtime-dir", fileURLToPath(new URL("./runtime", import.meta.url)), ...args], {
     stdio: "inherit",
-    env: process.env
+    env: process.env,
   });
 
   child.on("exit", (code, signal) => {

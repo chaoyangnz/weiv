@@ -24,8 +24,10 @@ import {
 
 function managedModules(directory: string) {
   const modules = join(directory, "__weiv_modules");
-  return readdirSync(modules).filter(name => name.endsWith(".mjs") && !name.endsWith(".publisher.mjs"))
-    .map(name => readFileSync(join(modules, name), "utf8")).join("\n");
+  return readdirSync(modules)
+    .filter(name => name.endsWith(".mjs") && !name.endsWith(".publisher.mjs"))
+    .map(name => readFileSync(join(modules, name), "utf8"))
+    .join("\n");
 }
 
 test("classic app emits and helper-copy flows stay healthy", async () => {
@@ -40,31 +42,46 @@ test("classic app emits and helper-copy flows stay healthy", async () => {
     if (!indexHtml.includes('<script type="module" src="/main.mjs"></script>')) {
       throw new Error("Bundled index.html missing browser module entry");
     }
-    if (!browserEntry.includes('import { props as previewProps } from "./props.mjs";') ||
-        !browserEntry.includes("const props = globalThis.__WEIV_PROPS__ ?? previewProps;") ||
-        !browserEntry.includes("WeivApp.mount(target, props);")) {
+    if (
+      !browserEntry.includes('import { props as previewProps } from "./props.mjs";') ||
+      !browserEntry.includes("const props = globalThis.__WEIV_PROPS__ ?? previewProps;") ||
+      !browserEntry.includes("WeivApp.mount(target, props);")
+    ) {
       throw new Error("Bundled main.mjs missing browser render bootstrap");
     }
     if (!propsModule.includes('export const props = { title: "Preview" };')) {
       throw new Error("Bundled props.mjs missing preview props");
     }
-    if (!packageJson.includes('"dev": "bun --hot server.ts"') || !packageJson.includes('"start": "bun server.ts"')) {
+    if (
+      !packageJson.includes('"dev": "bun --hot server.ts"') ||
+      !packageJson.includes('"start": "bun server.ts"')
+    ) {
       throw new Error("Bundled package.json missing Bun preview scripts");
     }
-    if (!devServer.includes("const server = Bun.serve({") ||
-        !devServer.includes('pathname === "/" ? "/index.html"') ||
-        !devServer.includes('new URL("./index.html", import.meta.url)')) {
+    if (
+      !devServer.includes("const server = Bun.serve({") ||
+      !devServer.includes('pathname === "/" ? "/index.html"') ||
+      !devServer.includes('new URL("./index.html", import.meta.url)')
+    ) {
       throw new Error("Bundled server.ts missing static Bun server bootstrap");
     }
     const bundleModule = await importModule(join(bundleDir, "bundle.mjs"));
     const bundledStyles = readFileSync(join(bundleDir, "styles.css"), "utf8");
-    if (!bundledStyles.includes(".todo-app") || !bundledStyles.includes(".todo-list") || !bundledStyles.includes(".todo-item")) {
+    if (
+      !bundledStyles.includes(".todo-app") ||
+      !bundledStyles.includes(".todo-list") ||
+      !bundledStyles.includes(".todo-item")
+    ) {
       throw new Error("Bundled styles missing expected selectors");
     }
     if (typeof bundleModule.mount !== "function") {
       throw new Error("Classic todo bundle missing mount export");
     }
-    if (!bundleModule.root?.scopeId || !bundleModule.components?.TodoList?.scopeId || !bundleModule.components?.TodoItem?.scopeId) {
+    if (
+      !bundleModule.root?.scopeId ||
+      !bundleModule.components?.TodoList?.scopeId ||
+      !bundleModule.components?.TodoItem?.scopeId
+    ) {
       throw new Error("Classic todo bundle missing scoped component metadata");
     }
   } finally {
@@ -95,10 +112,12 @@ test("classic app emits and helper-copy flows stay healthy", async () => {
     if (!helperModule.includes('import { suffix } from "./')) {
       throw new Error("Imported helper bundle missing transitive helper import");
     }
-    if (!punctuationModule.includes('export const suffix =')) {
+    if (!punctuationModule.includes("export const suffix =")) {
       throw new Error("Imported helper bundle missing copied punctuation.js");
     }
-    if (!helperAppModule.includes('import { formatTitle as __weiv_import_formatTitle } from "./__weiv_modules/')) {
+    if (
+      !helperAppModule.includes('import { formatTitle as __weiv_import_formatTitle } from "./__weiv_modules/')
+    ) {
       throw new Error("Imported helper bundle missing preserved runtime import");
     }
     if (!helperProps.includes('title: "Preview"') || !helperProps.includes("count: 0")) {
@@ -123,10 +142,14 @@ test("classic app emits and helper-copy flows stay healthy", async () => {
     if (!tsHelperModule.includes('import { suffix } from "./')) {
       throw new Error("Imported TS helper bundle missing rewritten transitive helper import");
     }
-    if (!tsPunctuationModule.includes('export const suffix =')) {
+    if (!tsPunctuationModule.includes("export const suffix =")) {
       throw new Error("Imported TS helper bundle missing transpiled punctuation.js");
     }
-    if (!tsHelperAppModule.includes('import { formatTitle as __weiv_import_formatTitle } from "./__weiv_modules/')) {
+    if (
+      !tsHelperAppModule.includes(
+        'import { formatTitle as __weiv_import_formatTitle } from "./__weiv_modules/',
+      )
+    ) {
       throw new Error("Imported TS helper bundle missing rewritten app import");
     }
     if (!tsHelperProps.includes('title: "Preview"') || !tsHelperProps.includes("count: 0")) {
@@ -222,14 +245,24 @@ export function appendShared() {
     let labelReads = 0;
     let labelData = labelText.data;
     Object.defineProperty(labelText, "data", {
-      get() { labelReads += 1; return labelData; },
-      set(value: string) { labelData = value; },
+      get() {
+        labelReads += 1;
+        return labelData;
+      },
+      set(value: string) {
+        labelData = value;
+      },
     });
     let unrelatedReads = 0;
     let unrelatedData = unrelatedText.data;
     Object.defineProperty(unrelatedText, "data", {
-      get() { unrelatedReads += 1; return unrelatedData; },
-      set(value: string) { unrelatedData = value; },
+      get() {
+        unrelatedReads += 1;
+        return unrelatedData;
+      },
+      set(value: string) {
+        unrelatedData = value;
+      },
     });
 
     const incrementButton = findElement(fakeDocument.body, byClass("increment"));
@@ -238,20 +271,26 @@ export function appendShared() {
     }
 
     click(incrementButton);
-  await new Promise<void>(resolve => queueMicrotask(resolve));
-    await new Promise<void>((resolve) => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
 
     if (count.textContent.trim() !== "2") {
-      throw new Error(`Observable app did not refresh after shared mutation, found ${count.textContent.trim()}`);
+      throw new Error(
+        `Observable app did not refresh after shared mutation, found ${count.textContent.trim()}`,
+      );
     }
     if (aliasCount.textContent.trim() !== "2") {
-      throw new Error(`Observable alias did not refresh after shared mutation, found ${aliasCount.textContent.trim()}`);
+      throw new Error(
+        `Observable alias did not refresh after shared mutation, found ${aliasCount.textContent.trim()}`,
+      );
     }
     if (unrelatedReads !== 0) {
       throw new Error(`Shared mutation revisited an unrelated binding ${unrelatedReads} times`);
     }
     if (labelReads !== 1) {
-      throw new Error(`Shared count mutation should revisit the subscribed binding once; read its sibling property ${labelReads} times`);
+      throw new Error(
+        `Shared count mutation should revisit the subscribed binding once; read its sibling property ${labelReads} times`,
+      );
     }
     const appendButton = findElement(fakeDocument.body, byClass("append"));
     const itemCount = findElement(fakeDocument.body, byClass("item-count"));
@@ -259,10 +298,12 @@ export function appendShared() {
       throw new Error("Observable app did not render the array length");
     }
     click(appendButton);
-  await new Promise<void>(resolve => queueMicrotask(resolve));
-    await new Promise<void>((resolve) => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
     if (itemCount.textContent.trim() !== "2") {
-      throw new Error(`Array index write did not update direct length binding: ${itemCount.textContent.trim()}`);
+      throw new Error(
+        `Array index write did not update direct length binding: ${itemCount.textContent.trim()}`,
+      );
     }
     if (appTarget.replaceChildrenCalls !== 1) {
       throw new Error("Observable app rerendered the root instead of patching in place");
@@ -289,10 +330,14 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
   const classicTodoItemModule = modules["ClassicTodoItem.mjs"];
   const classicTodoListModule = modules["ClassicTodoList.mjs"];
 
-  if (!classicTodoItemModule.css.includes(`[data-weiv-scope="${classicTodoItemModule.scopeId}"] .todo-item`)) {
+  if (
+    !classicTodoItemModule.css.includes(`[data-weiv-scope="${classicTodoItemModule.scopeId}"] .todo-item`)
+  ) {
     throw new Error("TodoItem CSS scope mismatch");
   }
-  if (!classicTodoListModule.css.includes(`[data-weiv-scope="${classicTodoListModule.scopeId}"] .todo-list`)) {
+  if (
+    !classicTodoListModule.css.includes(`[data-weiv-scope="${classicTodoListModule.scopeId}"] .todo-list`)
+  ) {
     throw new Error("TodoList CSS scope mismatch");
   }
 
@@ -303,10 +348,14 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
 
   todomvcDirectAppModule.mount(todomvcDirectTarget, { title: "todos" });
   if (todomvcDirectTarget.replaceChildrenCalls !== 1) {
-    throw new Error(`TodoMVC direct mount expected 1 root replaceChildren call, found ${todomvcDirectTarget.replaceChildrenCalls}`);
+    throw new Error(
+      `TodoMVC direct mount expected 1 root replaceChildren call, found ${todomvcDirectTarget.replaceChildrenCalls}`,
+    );
   }
 
-  let directLabels = findElements(todomvcDirectDocument.body, byTag("label")).map((element) => element.textContent.trim());
+  let directLabels = findElements(todomvcDirectDocument.body, byTag("label")).map(element =>
+    element.textContent.trim(),
+  );
   if (directLabels.length !== 5) {
     throw new Error(`TodoMVC direct mount expected 5 labels, found ${directLabels.length}`);
   }
@@ -320,15 +369,17 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
   if (todomvcDirectTarget.replaceChildrenCalls !== 1) {
     throw new Error("TodoMVC direct create flow rerendered the root");
   }
-  directLabels = findElements(todomvcDirectDocument.body, byTag("label")).map((element) => element.textContent.trim());
+  directLabels = findElements(todomvcDirectDocument.body, byTag("label")).map(element =>
+    element.textContent.trim(),
+  );
   if (directLabels[0] !== "Direct DOM codegen path") {
     throw new Error("TodoMVC direct create flow did not prepend the new todo");
   }
 
-  let directFilterButtons = findElements(todomvcDirectDocument.body, byTag("button")).filter((element) =>
-    ["All", "Active", "Completed"].includes(element.textContent.trim())
+  let directFilterButtons = findElements(todomvcDirectDocument.body, byTag("button")).filter(element =>
+    ["All", "Active", "Completed"].includes(element.textContent.trim()),
   );
-  const directActiveButton = directFilterButtons.find((element) => element.textContent.trim() === "Active");
+  const directActiveButton = directFilterButtons.find(element => element.textContent.trim() === "Active");
   if (!directActiveButton) throw new Error("TodoMVC direct active filter button missing");
   click(directActiveButton);
   await new Promise<void>(resolve => queueMicrotask(resolve));
@@ -336,13 +387,15 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
   if (todomvcDirectTarget.replaceChildrenCalls !== 1) {
     throw new Error("TodoMVC direct filter change rerendered the root");
   }
-  directLabels = findElements(todomvcDirectDocument.body, byTag("label")).map((element) => element.textContent.trim());
-  if (directLabels.some((text) => text.includes("Port TodoMVC into the verification suite"))) {
+  directLabels = findElements(todomvcDirectDocument.body, byTag("label")).map(element =>
+    element.textContent.trim(),
+  );
+  if (directLabels.some(text => text.includes("Port TodoMVC into the verification suite"))) {
     throw new Error("TodoMVC direct active filter still shows completed items");
   }
 
-  const directEditLabel = findElements(todomvcDirectDocument.body, byTag("label")).find((element) =>
-    element.textContent.includes("Exercise edit, filter, and clear-completed flows")
+  const directEditLabel = findElements(todomvcDirectDocument.body, byTag("label")).find(element =>
+    element.textContent.includes("Exercise edit, filter, and clear-completed flows"),
   );
   if (!directEditLabel) throw new Error("TodoMVC direct edit target label missing");
   dblclick(directEditLabel);
@@ -357,7 +410,9 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
   keydown(directEditInput, "Enter");
   await new Promise<void>(resolve => queueMicrotask(resolve));
 
-  directLabels = findElements(todomvcDirectDocument.body, byTag("label")).map((element) => element.textContent.trim());
+  directLabels = findElements(todomvcDirectDocument.body, byTag("label")).map(element =>
+    element.textContent.trim(),
+  );
   if (!directLabels.includes("Direct path edit flow")) {
     throw new Error("TodoMVC direct edit flow did not persist the updated text");
   }
@@ -372,7 +427,9 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
   if (todomvcDirectTarget.replaceChildrenCalls !== 1) {
     throw new Error("TodoMVC direct toggle flow rerendered the root");
   }
-  directLabels = findElements(todomvcDirectDocument.body, byTag("label")).map((element) => element.textContent.trim());
+  directLabels = findElements(todomvcDirectDocument.body, byTag("label")).map(element =>
+    element.textContent.trim(),
+  );
   if (directLabels.includes("Direct DOM codegen path")) {
     throw new Error("TodoMVC direct active filter did not drop toggled completed item");
   }
@@ -382,10 +439,12 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
     emitApp("test/examples/todomvc/App.weiv", todomvcBundleDir);
     const todomvcBundle = await importModule(join(todomvcBundleDir, "bundle.mjs"));
     const todomvcStyles = readFileSync(join(todomvcBundleDir, "styles.css"), "utf8");
-    if (!todomvcStyles.includes(".todo-header") ||
-        !todomvcStyles.includes(".todo-footer") ||
-        !todomvcStyles.includes(".toggle-all") ||
-        !todomvcStyles.includes(".newtodo")) {
+    if (
+      !todomvcStyles.includes(".todo-header") ||
+      !todomvcStyles.includes(".todo-footer") ||
+      !todomvcStyles.includes(".toggle-all") ||
+      !todomvcStyles.includes(".newtodo")
+    ) {
       throw new Error("TodoMVC bundle missing expected selectors");
     }
     if (typeof todomvcBundle.mount !== "function") {
@@ -400,10 +459,12 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
 
     todomvcBundle.mount(appTarget, { title: "todos" });
     if (appTarget.replaceChildrenCalls !== 1) {
-      throw new Error(`TodoMVC mount expected 1 root replaceChildren call, found ${appTarget.replaceChildrenCalls}`);
+      throw new Error(
+        `TodoMVC mount expected 1 root replaceChildren call, found ${appTarget.replaceChildrenCalls}`,
+      );
     }
 
-    let labels = findElements(fakeDocument.body, byTag("label")).map((element) => element.textContent.trim());
+    let labels = findElements(fakeDocument.body, byTag("label")).map(element => element.textContent.trim());
     if (labels.length !== 5) {
       throw new Error(`TodoMVC mount expected 5 labels, found ${labels.length}`);
     }
@@ -412,32 +473,34 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
     if (!newTodoInput) throw new Error("TodoMVC mount missing newtodo input");
     newTodoInput.value = "Verify browser interaction checks";
     keydown(newTodoInput, "Enter");
-  await new Promise<void>(resolve => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
 
-    labels = findElements(fakeDocument.body, byTag("label")).map((element) => element.textContent.trim());
+    labels = findElements(fakeDocument.body, byTag("label")).map(element => element.textContent.trim());
     if (labels[0] !== "Verify browser interaction checks") {
       throw new Error("TodoMVC create flow did not prepend the new todo");
     }
 
-    let filterButtons = findElements(fakeDocument.body, byTag("button")).filter((element) =>
-      ["All", "Active", "Completed"].includes(element.textContent.trim())
+    let filterButtons = findElements(fakeDocument.body, byTag("button")).filter(element =>
+      ["All", "Active", "Completed"].includes(element.textContent.trim()),
     );
-    let activeButton = filterButtons.find((element) => element.textContent.trim() === "Active");
+    let activeButton = filterButtons.find(element => element.textContent.trim() === "Active");
     if (!activeButton) throw new Error("TodoMVC active filter button missing");
     click(activeButton);
-  await new Promise<void>(resolve => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
 
-    labels = findElements(fakeDocument.body, byTag("label")).map((element) => element.textContent.trim());
-    if (labels.some((text) => text.includes("Port TodoMVC into the verification suite"))) {
+    labels = findElements(fakeDocument.body, byTag("label")).map(element => element.textContent.trim());
+    if (labels.some(text => text.includes("Port TodoMVC into the verification suite"))) {
       throw new Error("TodoMVC active filter still shows completed items");
     }
 
     const activeLabels = findElements(fakeDocument.body, byTag("label"));
-    const editLabel = activeLabels.find((element) => element.textContent.includes("Exercise edit, filter, and clear-completed flows"));
+    const editLabel = activeLabels.find(element =>
+      element.textContent.includes("Exercise edit, filter, and clear-completed flows"),
+    );
     if (!editLabel) throw new Error("TodoMVC edit target label missing");
     const replaceChildrenCallsBeforeEdit = appTarget.replaceChildrenCalls;
     dblclick(editLabel);
-  await new Promise<void>(resolve => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
     if (appTarget.replaceChildrenCalls !== replaceChildrenCallsBeforeEdit) {
       throw new Error("TodoMVC edit-mode entry rerendered the app root instead of the item boundary");
     }
@@ -446,9 +509,9 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
     if (!editInput) throw new Error("TodoMVC edit flow did not open edit input");
     editInput.value = "Exercise edit, filter, clear-completed, and dev flows";
     keydown(editInput, "Enter");
-  await new Promise<void>(resolve => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
 
-    labels = findElements(fakeDocument.body, byTag("label")).map((element) => element.textContent.trim());
+    labels = findElements(fakeDocument.body, byTag("label")).map(element => element.textContent.trim());
     if (!labels.includes("Exercise edit, filter, clear-completed, and dev flows")) {
       throw new Error("TodoMVC edit flow did not persist the updated text");
     }
@@ -458,30 +521,35 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
     if (!createdToggle) throw new Error("TodoMVC toggle flow missing active toggle");
     createdToggle.checked = true;
     change(createdToggle);
-  await new Promise<void>(resolve => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
 
-    labels = findElements(fakeDocument.body, byTag("label")).map((element) => element.textContent.trim());
+    labels = findElements(fakeDocument.body, byTag("label")).map(element => element.textContent.trim());
     if (labels.includes("Verify browser interaction checks")) {
       throw new Error("TodoMVC active filter did not drop toggled completed item");
     }
 
-    filterButtons = findElements(fakeDocument.body, byTag("button")).filter((element) =>
-      ["All", "Active", "Completed"].includes(element.textContent.trim())
+    filterButtons = findElements(fakeDocument.body, byTag("button")).filter(element =>
+      ["All", "Active", "Completed"].includes(element.textContent.trim()),
     );
-    const allButton = filterButtons.find((element) => element.textContent.trim() === "All");
+    const allButton = filterButtons.find(element => element.textContent.trim() === "All");
     if (!allButton) throw new Error("TodoMVC all filter button missing");
     click(allButton);
-  await new Promise<void>(resolve => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
 
-    const clearCompletedButton = findElements(fakeDocument.body, byTagAndClass("button", "clear-completed"))[0];
+    const clearCompletedButton = findElements(
+      fakeDocument.body,
+      byTagAndClass("button", "clear-completed"),
+    )[0];
     if (!clearCompletedButton) throw new Error("TodoMVC clear completed button missing");
     click(clearCompletedButton);
-  await new Promise<void>(resolve => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
 
-    labels = findElements(fakeDocument.body, byTag("label")).map((element) => element.textContent.trim());
-    if (labels.includes("Port TodoMVC into the verification suite") ||
-        labels.includes("Expose the polished preview on the LAN server") ||
-        labels.includes("Verify browser interaction checks")) {
+    labels = findElements(fakeDocument.body, byTag("label")).map(element => element.textContent.trim());
+    if (
+      labels.includes("Port TodoMVC into the verification suite") ||
+      labels.includes("Expose the polished preview on the LAN server") ||
+      labels.includes("Verify browser interaction checks")
+    ) {
       throw new Error("TodoMVC clear completed flow did not remove completed items");
     }
   } finally {
@@ -504,16 +572,20 @@ test("TodoMVC direct modules and app emit behave correctly", async () => {
 
     directBundleModule.mount(directBundleTarget, { title: "todos" });
     if (directBundleTarget.replaceChildrenCalls !== 1) {
-      throw new Error(`TodoMVC direct bundle mount expected 1 root replaceChildren call, found ${directBundleTarget.replaceChildrenCalls}`);
+      throw new Error(
+        `TodoMVC direct bundle mount expected 1 root replaceChildren call, found ${directBundleTarget.replaceChildrenCalls}`,
+      );
     }
 
     const bundledDirectNewTodoInput = findElement(directBundleDocument.body, byClass("newtodo"));
     if (!bundledDirectNewTodoInput) throw new Error("TodoMVC direct bundle missing newtodo input");
     bundledDirectNewTodoInput.value = "Direct app emit path";
     keydown(bundledDirectNewTodoInput, "Enter");
-  await new Promise<void>(resolve => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
 
-    const bundledDirectLabels = findElements(directBundleDocument.body, byTag("label")).map((element) => element.textContent.trim());
+    const bundledDirectLabels = findElements(directBundleDocument.body, byTag("label")).map(element =>
+      element.textContent.trim(),
+    );
     if (bundledDirectLabels[0] !== "Direct app emit path") {
       throw new Error("TodoMVC direct bundle create flow did not prepend the new todo");
     }
@@ -543,7 +615,10 @@ test("kanib app emit mounts and navigates through routed product flows", async (
     if (!runtimeIndex.includes('export { createRouter } from "./router.js";')) {
       throw new Error("Kanib bundle did not include the router runtime entry");
     }
-    const observableLeafModule = readFileSync(join(kanibBundleDir, "__weiv_runtime", "observable.js"), "utf8");
+    const observableLeafModule = readFileSync(
+      join(kanibBundleDir, "__weiv_runtime", "observable.js"),
+      "utf8",
+    );
     if (!observableLeafModule.includes('const WEIV_OBSERVABLE = Symbol.for("weiv.observable");')) {
       throw new Error("Kanib bundle did not include the observable runtime module");
     }
@@ -556,10 +631,12 @@ test("kanib app emit mounts and navigates through routed product flows", async (
     installRouterWindow("/");
 
     kanibBundle.mount(appTarget, {});
-    await new Promise((resolve) => queueMicrotask(resolve));
+    await new Promise(resolve => queueMicrotask(resolve));
 
     if (appTarget.replaceChildrenCalls !== 1) {
-      throw new Error(`Kanib mount expected 1 root replaceChildren call, found ${appTarget.replaceChildrenCalls}`);
+      throw new Error(
+        `Kanib mount expected 1 root replaceChildren call, found ${appTarget.replaceChildrenCalls}`,
+      );
     }
     if (!appTarget.textContent.includes("Compiler Lab")) {
       throw new Error("Kanib did not render header content");
@@ -571,13 +648,13 @@ test("kanib app emit mounts and navigates through routed product flows", async (
       throw new Error("Kanib did not render initial notification count");
     }
 
-    const openNotificationsButton = findElements(fakeDocument.body, byTag("button")).find((element) =>
-      element.textContent.includes("Open notifications")
+    const openNotificationsButton = findElements(fakeDocument.body, byTag("button")).find(element =>
+      element.textContent.includes("Open notifications"),
     );
     if (!openNotificationsButton) throw new Error("Kanib is missing open notifications header action");
     click(openNotificationsButton);
-  await new Promise<void>(resolve => queueMicrotask(resolve));
-    await new Promise((resolve) => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
+    await new Promise(resolve => queueMicrotask(resolve));
 
     if (!appTarget.textContent.includes("Notifications")) {
       throw new Error("Kanib did not navigate to the notifications route");
@@ -586,13 +663,13 @@ test("kanib app emit mounts and navigates through routed product flows", async (
       throw new Error("Kanib notifications route did not render unread summary");
     }
 
-    const designSystemsButton = findElements(fakeDocument.body, byTag("button")).find((element) =>
-      element.textContent.includes("Design Systems")
+    const designSystemsButton = findElements(fakeDocument.body, byTag("button")).find(element =>
+      element.textContent.includes("Design Systems"),
     );
     if (!designSystemsButton) throw new Error("Kanib is missing Design Systems workspace switch action");
     click(designSystemsButton);
-  await new Promise<void>(resolve => queueMicrotask(resolve));
-    await new Promise((resolve) => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
+    await new Promise(resolve => queueMicrotask(resolve));
 
     if (!appTarget.textContent.includes("Design Systems overview")) {
       throw new Error("Kanib did not switch to the Design Systems workspace");
@@ -601,25 +678,25 @@ test("kanib app emit mounts and navigates through routed product flows", async (
       throw new Error("Kanib right panel did not update to the selected Design Systems issue");
     }
 
-    const themeEngineProjectButton = findElements(fakeDocument.body, byTag("button")).find((element) =>
-      element.textContent.includes("Theme Engine")
+    const themeEngineProjectButton = findElements(fakeDocument.body, byTag("button")).find(element =>
+      element.textContent.includes("Theme Engine"),
     );
     if (!themeEngineProjectButton) throw new Error("Kanib is missing Theme Engine project switch action");
     click(themeEngineProjectButton);
-  await new Promise<void>(resolve => queueMicrotask(resolve));
-    await new Promise((resolve) => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
+    await new Promise(resolve => queueMicrotask(resolve));
 
     if (!appTarget.textContent.includes("Theme empty states for light + high-contrast")) {
       throw new Error("Kanib did not switch right panel selection after changing project");
     }
 
-    const issuesButton = findElements(fakeDocument.body, byTag("button")).find((element) =>
-      element.textContent.includes("Issues")
+    const issuesButton = findElements(fakeDocument.body, byTag("button")).find(element =>
+      element.textContent.includes("Issues"),
     );
     if (!issuesButton) throw new Error("Kanib is missing issues navigation");
     click(issuesButton);
-  await new Promise<void>(resolve => queueMicrotask(resolve));
-    await new Promise((resolve) => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
+    await new Promise(resolve => queueMicrotask(resolve));
 
     if (!appTarget.textContent.includes("Issue list")) {
       throw new Error("Kanib did not navigate to the issue list route");
@@ -628,20 +705,20 @@ test("kanib app emit mounts and navigates through routed product flows", async (
       throw new Error("Kanib issue list did not scope to the active Design Systems project");
     }
 
-    const openButtons = findElements(fakeDocument.body, byTag("button")).filter((element) =>
-      element.textContent.trim() === "Open"
+    const openButtons = findElements(fakeDocument.body, byTag("button")).filter(
+      element => element.textContent.trim() === "Open",
     );
     if (openButtons.length === 0) {
       throw new Error("Kanib issue list is missing open buttons");
     }
 
-    const boardButton = findElements(fakeDocument.body, byTag("button")).find((element) =>
-      element.textContent.includes("Board")
+    const boardButton = findElements(fakeDocument.body, byTag("button")).find(element =>
+      element.textContent.includes("Board"),
     );
     if (!boardButton) throw new Error("Kanib is missing board navigation");
     click(boardButton);
-  await new Promise<void>(resolve => queueMicrotask(resolve));
-    await new Promise((resolve) => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
+    await new Promise(resolve => queueMicrotask(resolve));
 
     if (!appTarget.textContent.includes("Backlog")) {
       throw new Error("Kanib did not navigate to the board route");
@@ -650,26 +727,26 @@ test("kanib app emit mounts and navigates through routed product flows", async (
       throw new Error("Kanib board did not render the expected initial column counts");
     }
 
-    const advanceButtons = findElements(fakeDocument.body, byTag("button")).filter((element) =>
-      element.textContent.trim() === "Advance"
+    const advanceButtons = findElements(fakeDocument.body, byTag("button")).filter(
+      element => element.textContent.trim() === "Advance",
     );
     if (advanceButtons.length === 0) {
       throw new Error("Kanib board is missing advance actions");
     }
     click(advanceButtons[0]);
-  await new Promise<void>(resolve => queueMicrotask(resolve));
-    await new Promise((resolve) => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
+    await new Promise(resolve => queueMicrotask(resolve));
 
     if (!appTarget.textContent.includes("0 issues")) {
       throw new Error("Kanib board advance action did not refresh grouped counts");
     }
 
     click(issuesButton);
-  await new Promise<void>(resolve => queueMicrotask(resolve));
-    await new Promise((resolve) => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
+    await new Promise(resolve => queueMicrotask(resolve));
     click(openButtons[0]);
-  await new Promise<void>(resolve => queueMicrotask(resolve));
-    await new Promise((resolve) => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
+    await new Promise(resolve => queueMicrotask(resolve));
 
     if (!appTarget.textContent.includes("Implementation notes")) {
       throw new Error("Kanib did not navigate into issue detail");
@@ -679,39 +756,39 @@ test("kanib app emit mounts and navigates through routed product flows", async (
     if (!noteInput) throw new Error("Kanib detail route is missing the comment composer input");
     noteInput.value = "Comment from routed test";
     change(noteInput);
-  await new Promise<void>(resolve => queueMicrotask(resolve));
-    const postButton = findElements(fakeDocument.body, byTag("button")).find((element) =>
-      element.textContent.trim() === "Post"
+    await new Promise<void>(resolve => queueMicrotask(resolve));
+    const postButton = findElements(fakeDocument.body, byTag("button")).find(
+      element => element.textContent.trim() === "Post",
     );
     if (!postButton) throw new Error("Kanib detail route is missing comment post action");
     click(postButton);
-  await new Promise<void>(resolve => queueMicrotask(resolve));
-    await new Promise((resolve) => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
+    await new Promise(resolve => queueMicrotask(resolve));
 
     if (!appTarget.textContent.includes("You · 0m · Comment from routed test")) {
       throw new Error("Kanib detail comment post did not append to recent activity");
     }
 
-    const saveButton = findElements(fakeDocument.body, byTag("button")).find((element) =>
-      element.textContent.trim() === "Advance status and save"
+    const saveButton = findElements(fakeDocument.body, byTag("button")).find(
+      element => element.textContent.trim() === "Advance status and save",
     );
     if (!saveButton) throw new Error("Kanib detail route is missing the save action");
     click(saveButton);
-  await new Promise<void>(resolve => queueMicrotask(resolve));
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    await new Promise((resolve) => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
+    await new Promise(resolve => setTimeout(resolve, 0));
+    await new Promise(resolve => queueMicrotask(resolve));
 
     if (!appTarget.textContent.includes("3 notifications")) {
       throw new Error("Kanib detail save did not update shared notification count");
     }
 
-    const clearNotificationsButton = findElements(fakeDocument.body, byTag("button")).find((element) =>
-      element.textContent.includes("Clear notifications")
+    const clearNotificationsButton = findElements(fakeDocument.body, byTag("button")).find(element =>
+      element.textContent.includes("Clear notifications"),
     );
     if (!clearNotificationsButton) throw new Error("Kanib is missing the clear notifications button");
     click(clearNotificationsButton);
-  await new Promise<void>(resolve => queueMicrotask(resolve));
-    await new Promise((resolve) => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
+    await new Promise(resolve => queueMicrotask(resolve));
 
     if (!appTarget.textContent.includes("0 notifications")) {
       throw new Error("Kanib clear notifications did not patch the shared notification count");

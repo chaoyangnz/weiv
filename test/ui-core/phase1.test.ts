@@ -157,11 +157,7 @@ test("tabs manual mode only selects on Enter/Space", () => {
 
 test("tabs skip disabled entries while navigating", () => {
   const tabs = createTabsController({
-    tabs: [
-      { value: "overview" },
-      { value: "activity", disabled: true },
-      { value: "settings" },
-    ],
+    tabs: [{ value: "overview" }, { value: "activity", disabled: true }, { value: "settings" }],
     initialValue: "overview",
   });
 

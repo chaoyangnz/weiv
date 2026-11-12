@@ -11,7 +11,7 @@ function compileWeiv(id, format) {
   const bin = resolveWeivBinaryPath();
   return execFileSync(bin, ["compile", "emit", format, id], {
     encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"]
+    stdio: ["ignore", "pipe", "pipe"],
   });
 }
 
@@ -19,7 +19,7 @@ function analyzeWeiv(id) {
   const bin = resolveWeivBinaryPath();
   const output = execFileSync(bin, ["analyze", "component", id, "--json"], {
     encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"]
+    stdio: ["ignore", "pipe", "pipe"],
   });
   return JSON.parse(output).diagnostics ?? [];
 }
@@ -27,23 +27,54 @@ function analyzeWeiv(id) {
 export function weiv(options = {}) {
   validateOptions(options);
   const project = createManagedProject(options);
-  let config, server, planning = false;
-  const values = input => typeof input === "string" ? [input] : Array.isArray(input) ? input : Object.values(input ?? {});
+  let config,
+    server,
+    planning = false;
+  const values = input =>
+    typeof input === "string" ? [input] : Array.isArray(input) ? input : Object.values(input ?? {});
   async function prepare(context, force = false) {
     planning = true;
     try {
-      const input = config.build.lib?.entry ?? config.build.rollupOptions.input ?? resolve(config.root, "index.html");
-      await project.prepare({ root: config.root, entries: values(input).map(path => resolve(config.root, path)),
-        resolveSpecifier: async (id, importer) => {
-          const found = await context.resolve(id, importer, { skipSelf: true });
-          return found && !found.external && !found.id.startsWith("\0") && existsSync(found.id.split("?")[0]) ? found.id : null;
+      const input =
+        config.build.lib?.entry ?? config.build.rollupOptions.input ?? resolve(config.root, "index.html");
+      await project.prepare(
+        {
+          root: config.root,
+          entries: values(input).map(path => resolve(config.root, path)),
+          resolveSpecifier: async (id, importer) => {
+            const found = await context.resolve(id, importer, { skipSelf: true });
+            return found &&
+              !found.external &&
+              !found.id.startsWith("\0") &&
+              existsSync(found.id.split("?")[0])
+              ? found.id
+              : null;
+          },
+          onDiagnostics: entries => {
+            for (const entry of entries)
+              context.warn({
+                message: `[${entry.code}] ${entry.message}`,
+                id: entry.sourcePath,
+                ...(entry.location
+                  ? {
+                      loc: {
+                        file: entry.sourcePath,
+                        line: entry.location.line,
+                        column: Math.max(0, entry.location.column - 1),
+                      },
+                    }
+                  : {}),
+              });
+          },
         },
-        onDiagnostics: entries => { for (const entry of entries) context.warn({ message: `[${entry.code}] ${entry.message}`, id: entry.sourcePath,
-          ...(entry.location ? { loc: { file: entry.sourcePath, line: entry.location.line, column: Math.max(0, entry.location.column - 1) } } : {}) }); },
-      }, force);
-      if (server && project.outputRoot && !server.config.server.fs.allow.includes(project.outputRoot)) server.config.server.fs.allow.push(project.outputRoot);
+        force,
+      );
+      if (server && project.outputRoot && !server.config.server.fs.allow.includes(project.outputRoot))
+        server.config.server.fs.allow.push(project.outputRoot);
       for (const path of project.watchFiles) context.addWatchFile(path);
-    } finally { planning = false; }
+    } finally {
+      planning = false;
+    }
   }
   const cellRuntimePath = fileURLToPath(new URL("./runtime/cell.js", import.meta.url));
   const observableRuntimePath = fileURLToPath(new URL("./runtime/observable.js", import.meta.url));
@@ -52,22 +83,31 @@ export function weiv(options = {}) {
   return {
     name: "weiv",
     enforce: "pre",
-    configResolved(value) { config = value; },
+    configResolved(value) {
+      config = value;
+    },
     configureServer(value) {
       server = value;
       const root = canonical(config.root);
       if (!server.config.server.fs.allow.includes(root)) server.config.server.fs.allow.push(root);
     },
-    async buildStart() { await prepare(this); },
-    closeBundle() { project.dispose(); },
+    async buildStart() {
+      await prepare(this);
+    },
+    closeBundle() {
+      project.dispose();
+    },
     async handleHotUpdate(context) {
       if (!project.watchFiles.has(canonical(context.file))) return;
       // Vite-specific hot-update hooks do not receive Rollup's plugin context.
-      await prepare({
-        resolve: (...args) => context.server.pluginContainer.resolveId(...args),
-        addWatchFile: path => context.server.watcher.add(path),
-        warn: entry => context.server.config.logger.warn(`[weiv] ${entry.id}: ${entry.message}`),
-      }, true);
+      await prepare(
+        {
+          resolve: (...args) => context.server.pluginContainer.resolveId(...args),
+          addWatchFile: path => context.server.watcher.add(path),
+          warn: entry => context.server.config.logger.warn(`[weiv] ${entry.id}: ${entry.message}`),
+        },
+        true,
+      );
       context.server.moduleGraph.invalidateAll();
       context.server.ws.send({ type: "full-reload", path: "*" });
       return [];
@@ -78,7 +118,11 @@ export function weiv(options = {}) {
       }
       if (id.startsWith("/__weiv_packages/")) {
         const origin = importer && project.generated.get(canonical(importer))?.source;
-        return this.resolve(id.slice("/__weiv_packages/".length), origin ?? resolve(config.root, "__weiv_entry__.js"), { skipSelf: true });
+        return this.resolve(
+          id.slice("/__weiv_packages/".length),
+          origin ?? resolve(config.root, "__weiv_entry__.js"),
+          { skipSelf: true },
+        );
       }
       if (importer?.split("?")[0].endsWith(".weiv") && id.startsWith(".") && id.endsWith(".mjs")) {
         const source = resolve(dirname(importer.split("?")[0]), `${id.slice(0, -4)}.weiv`);
@@ -128,18 +172,18 @@ export function weiv(options = {}) {
         if (diagnostic.severity !== "warning") continue;
         const warning = {
           message: `[${diagnostic.code}] ${diagnostic.message}`,
-          id
+          id,
         };
         if (diagnostic.location) {
           warning.loc = {
             file: id,
             line: diagnostic.location.line,
-            column: Math.max(0, diagnostic.location.column - 1)
+            column: Math.max(0, diagnostic.location.column - 1),
           };
         }
         this.warn(warning);
       }
       return { code: `export * from ${JSON.stringify(project.component(id).output)};\n`, map: null };
-    }
+    },
   };
 }

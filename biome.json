@@ -1,0 +1,38 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.6.7/schema.json",
+  "files": {
+    "includes": [
+      "package.json",
+      "apps/storybook/.storybook/**/*.{ts,tsx,js,mjs,cjs,json,css}",
+      "apps/storybook/stories/**/*.{ts,tsx,js,mjs,cjs,json,css}",
+      "apps/storybook/package.json",
+      "packages/**/*.{ts,tsx,js,mjs,cjs,json,css}",
+      "test/**/*.{ts,tsx,js,mjs,cjs,json,css}",
+      "tools/**/*.{ts,tsx,js,mjs,cjs,json,css}",
+      "site/site.json",
+      "!test/fixtures/expected/**",
+      "!apps/storybook/storybook-static/**",
+      "!**/dist/**",
+      "!**/target/**",
+      "!**/node_modules/**"
+    ]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 110
+  },
+  "javascript": {
+    "formatter": {
+      "arrowParentheses": "asNeeded",
+      "quoteStyle": "double",
+      "semicolons": "always"
+    }
+  },
+  "json": {
+    "formatter": {
+      "trailingCommas": "none"
+    }
+  }
+}

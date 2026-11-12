@@ -9,7 +9,9 @@ test("compound expressions resolve loop items and component bindings", async () 
   const target = document.createElement("div");
   document.body.append(target);
   modules["CompoundScope.mjs"].mount(target, {
-    view: { locked: "" }, actions: { text: (id: string) => `label:${id}` },
+    view: { locked: "" },
+    actions: { text: (id: string) => `label:${id}` },
   });
-  if (!target.textContent?.includes("label:first")) throw new Error(`Compound scope failed: ${target.innerHTML}`);
+  if (!target.textContent?.includes("label:first"))
+    throw new Error(`Compound scope failed: ${target.innerHTML}`);
 });

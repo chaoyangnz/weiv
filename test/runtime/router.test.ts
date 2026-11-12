@@ -14,11 +14,7 @@ function setupDom() {
 
 function fakeComponent(name: string) {
   return {
-    mountIntoBoundary(
-      start: Comment,
-      end: Comment,
-      props: Record<string, any> = {}
-    ) {
+    mountIntoBoundary(start: Comment, end: Comment, props: Record<string, any> = {}) {
       const el = document.createElement("div");
       el.setAttribute("data-component", name);
       el.textContent = `${name}:${JSON.stringify(props)}`;
@@ -113,7 +109,7 @@ test("extracts route params from dynamic segments", async () => {
       {
         path: "/users/:id",
         component: () => fakeComponent("User"),
-        props: (route) => ({ userId: route.params.id }),
+        props: route => ({ userId: route.params.id }),
       },
     ],
     target,
@@ -147,7 +143,7 @@ test("same pattern re-uses component instance with updated props", async () => {
       {
         path: "/users/:id",
         component: () => trackedComponent,
-        props: (route) => ({ userId: route.params.id }),
+        props: route => ({ userId: route.params.id }),
       },
     ],
     target,
@@ -171,9 +167,7 @@ test("no matching route clears the outlet", async () => {
 
   const router = createRouter({
     mode: "history",
-    routes: [
-      { path: "/", component: () => fakeComponent("Home") },
-    ],
+    routes: [{ path: "/", component: () => fakeComponent("Home") }],
     target,
   });
   await router.ready;
@@ -218,9 +212,7 @@ test("parses query parameters", async () => {
 
   const router = createRouter({
     mode: "history",
-    routes: [
-      { path: "/search", component: () => fakeComponent("Search") },
-    ],
+    routes: [{ path: "/search", component: () => fakeComponent("Search") }],
     target,
   });
   await router.ready;
@@ -240,9 +232,7 @@ test("wildcard route captures remainder", async () => {
 
   const router = createRouter({
     mode: "history",
-    routes: [
-      { path: "/files/*", component: () => fakeComponent("Files") },
-    ],
+    routes: [{ path: "/files/*", component: () => fakeComponent("Files") }],
     target,
   });
   await router.ready;
@@ -276,7 +266,7 @@ test("route state is observable", async () => {
   });
 
   await router.push("/about");
-  await new Promise((resolve) => queueMicrotask(resolve));
+  await new Promise(resolve => queueMicrotask(resolve));
   expect(notified).toBe(1);
 
   unsub();
@@ -315,9 +305,7 @@ test("destroy cleans up listeners and mounted component", async () => {
 
   const router = createRouter({
     mode: "history",
-    routes: [
-      { path: "/", component: () => fakeComponent("Home") },
-    ],
+    routes: [{ path: "/", component: () => fakeComponent("Home") }],
     target,
   });
   await router.ready;
@@ -342,7 +330,7 @@ test("multiple params in path", async () => {
       {
         path: "/orgs/:orgId/users/:userId",
         component: () => fakeComponent("OrgUser"),
-        props: (route) => ({ org: route.params.orgId, user: route.params.userId }),
+        props: route => ({ org: route.params.orgId, user: route.params.userId }),
       },
     ],
     target,
@@ -388,7 +376,7 @@ test("clicking an internal link navigates via router", async () => {
   link.dispatchEvent(event);
 
   expect(event.defaultPrevented).toBe(true);
-  await new Promise((resolve) => setTimeout(resolve, 10));
+  await new Promise(resolve => setTimeout(resolve, 10));
   expect(target.textContent).toContain("About");
   expect(router.route.path).toBe("/about");
 
@@ -439,9 +427,7 @@ test("clicking an external link is not intercepted", async () => {
 
   const router = createRouter({
     mode: "history",
-    routes: [
-      { path: "/", component: () => fakeComponent("Home") },
-    ],
+    routes: [{ path: "/", component: () => fakeComponent("Home") }],
     target,
   });
   await router.ready;
@@ -604,7 +590,7 @@ test("async beforeEach guard works", async () => {
   await router.ready;
 
   router.beforeEach(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 5));
+    await new Promise(resolve => setTimeout(resolve, 5));
     return false;
   });
 
@@ -829,7 +815,7 @@ test("nested route params are merged", async () => {
           {
             path: "/teams/:teamId",
             component: () => fakeComponent("Team"),
-            props: (route) => ({ org: route.params.orgId, team: route.params.teamId }),
+            props: route => ({ org: route.params.orgId, team: route.params.teamId }),
           },
         ],
       },
@@ -861,9 +847,7 @@ test("navigating away from nested route destroys all levels", async () => {
       {
         path: "/dashboard",
         component: () => fakeComponent("DashLayout"),
-        children: [
-          { path: "/overview", component: () => fakeComponent("Overview") },
-        ],
+        children: [{ path: "/overview", component: () => fakeComponent("Overview") }],
       },
     ],
     target,
@@ -931,7 +915,9 @@ test("scrollBehavior can scroll to element selector", async () => {
   const section = document.createElement("div");
   section.id = "features";
   let scrolledIntoView = false;
-  section.scrollIntoView = () => { scrolledIntoView = true; };
+  section.scrollIntoView = () => {
+    scrolledIntoView = true;
+  };
   document.body.appendChild(section);
 
   const router = createRouter({

@@ -1,5 +1,15 @@
 # Weiv integration friction
 
+## Biome formatting setup encountered stale registry URLs (2026-11-12)
+
+- **Classification:** project toolchain setup friction; no Weiv, Neiv, or Cyna compiler defect is established.
+- **Context:** Weiv `cc9c750` on macOS arm64, Bun `1.2.16`, Node `22.22.1`, npm `10.9.4`. The repository uses Bun and also commits `bun.lock` and `package-lock.json`; CI installs with npm.
+- **Reproduction:** add `@biomejs/biome@2.6.7` to `devDependencies`, then run `bun install` or `bun install --registry https://registry.npmjs.org`. Install Bun and Biome with npm instead. A Biome `files.includes` list beginning with `**` also scans ignored nested build output unless `dist`, `target`, and generated Storybook paths are excluded explicitly.
+- **Expected:** the formatter installs from public npm and the check scans maintained TypeScript, JavaScript, JSON, and CSS only.
+- **Actual:** Bun exits 1 with HTTP 401 responses from `smbuild.jfrog.io` for public packages including `@types/node`, `undici-types`, `lru-cache`, and `@csstools/*`, despite the registry override. The first Biome dry run scanned `libs/parser-backend/target`, `packages/weiv/dist`, .github YAML, and Markdown.
+- **Cause and confidence:** likely stale resolved registry URLs in `bun.lock`; npm succeeds against the same package manifest, which isolates the first divergent install path. The formatting glob behavior is confirmed configuration scope, not a formatter defect.
+- **Workaround and verification:** update `bun.lock` with `bun add --dev --exact --lockfile-only @biomejs/biome@2.6.7 --registry https://registry.npmjs.org`, update `package-lock.json` with npm, and enumerate maintained source roots with explicit exclusions. `npm install`, `npm run format:check`, and the runtime and UI core suites pass. No registry credentials or private values were recorded.
+
 ## Managed-project reactivity warnings in Neiv Lightcept (2026-11-09)
 
 - **Classification:** needs investigation; compiler diagnostics are non-fatal and the managed project emits successfully.

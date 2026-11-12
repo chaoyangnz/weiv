@@ -26,10 +26,7 @@ transpileRuntimeTsToJs(
   resolve(canonicalRuntimeRoot, "binding.ts"),
   resolve(distRoot, "runtime", "binding.js"),
 );
-transpileRuntimeTsToJs(
-  resolve(canonicalRuntimeRoot, "cell.ts"),
-  resolve(distRoot, "runtime", "cell.js"),
-);
+transpileRuntimeTsToJs(resolve(canonicalRuntimeRoot, "cell.ts"), resolve(distRoot, "runtime", "cell.js"));
 transpileRuntimeTsToJs(
   resolve(canonicalRuntimeRoot, "reactive-core.ts"),
   resolve(distRoot, "runtime", "reactive-core.js"),
@@ -38,10 +35,7 @@ transpileRuntimeTsToJs(
   resolve(canonicalRuntimeRoot, "observable.ts"),
   resolve(distRoot, "runtime", "observable.js"),
 );
-transpileRuntimeTsToJs(
-  resolve(canonicalRuntimeRoot, "router.ts"),
-  resolve(distRoot, "runtime", "router.js"),
-);
+transpileRuntimeTsToJs(resolve(canonicalRuntimeRoot, "router.ts"), resolve(distRoot, "runtime", "router.js"));
 
 console.log(`Built dist at ${distRoot}`);
 
@@ -49,9 +43,6 @@ function transpileRuntimeTsToJs(inputPath, outputPath) {
   execFileSync("bun", ["build", inputPath, "--no-bundle", "--outfile", outputPath], {
     stdio: "inherit",
   });
-  const source = readFileSync(outputPath, "utf8").replace(
-    /from\s+"(\.\/[^"\n]+)\.ts"/g,
-    'from "$1.js"',
-  );
+  const source = readFileSync(outputPath, "utf8").replace(/from\s+"(\.\/[^"\n]+)\.ts"/g, 'from "$1.js"');
   writeFileSync(outputPath, source, "utf8");
 }

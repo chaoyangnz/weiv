@@ -1,2 +1,4 @@
 export let count = 0;
-export function incRight() { count++; }
+export function incRight() {
+  count++;
+}

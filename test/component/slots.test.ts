@@ -64,10 +64,14 @@ test("slots and projection patch correctly", async () => {
 
   panelConditionalUsageDirectModule.mount(panelConditionalUsageTarget, {});
   if (!panelConditionalUsageTarget.textContent.includes("Projected panel is closed")) {
-    throw new Error("PanelConditionalUsage direct mount did not render the initial projected conditional branch");
+    throw new Error(
+      "PanelConditionalUsage direct mount did not render the initial projected conditional branch",
+    );
   }
   if (panelConditionalUsageTarget.textContent.includes("Projected panel is open")) {
-    throw new Error("PanelConditionalUsage direct mount incorrectly rendered the alternate projected conditional branch");
+    throw new Error(
+      "PanelConditionalUsage direct mount incorrectly rendered the alternate projected conditional branch",
+    );
   }
   if (panelConditionalUsageTarget.textContent.includes("Fallback")) {
     throw new Error("PanelConditionalUsage direct mount incorrectly left fallback slot content mounted");
@@ -79,7 +83,9 @@ test("slots and projection patch correctly", async () => {
   await new Promise<void>(resolve => queueMicrotask(resolve));
 
   if (panelConditionalUsageTarget.replaceChildrenCalls !== 1) {
-    throw new Error("PanelConditionalUsage direct update rerendered the root instead of patching the projected conditional branch");
+    throw new Error(
+      "PanelConditionalUsage direct update rerendered the root instead of patching the projected conditional branch",
+    );
   }
   if (!panelConditionalUsageTarget.textContent.includes("Projected panel is open")) {
     throw new Error("PanelConditionalUsage direct toggle did not swap the projected conditional branch");
@@ -97,7 +103,7 @@ test("slots and projection patch correctly", async () => {
   assertEqual(
     panelLoopUsageTarget.textContent,
     "Toggle completedImplement template binderTest CSS scoping",
-    "PanelLoopUsage direct mount text"
+    "PanelLoopUsage direct mount text",
   );
   const panelLoopToggleButton = findElement(panelLoopUsageDocument.body, byTag("button"));
   if (!panelLoopToggleButton) throw new Error("PanelLoopUsage direct mount missing button");
@@ -106,7 +112,7 @@ test("slots and projection patch correctly", async () => {
   assertEqual(
     panelLoopUsageTarget.textContent,
     "Toggle completedWrite parser fixtures",
-    "PanelLoopUsage direct toggle text"
+    "PanelLoopUsage direct toggle text",
   );
 
   const panelNestedCardUsageDocument = new FakeDocument();
@@ -115,16 +121,20 @@ test("slots and projection patch correctly", async () => {
   installDocument(panelNestedCardUsageDocument);
 
   panelNestedCardUsageDirectModule.mount(panelNestedCardUsageTarget, {});
-  if (!panelNestedCardUsageTarget.textContent.includes("Nested dashboard") ||
-      !panelNestedCardUsageTarget.textContent.includes("Nested projected body")) {
+  if (
+    !panelNestedCardUsageTarget.textContent.includes("Nested dashboard") ||
+    !panelNestedCardUsageTarget.textContent.includes("Nested projected body")
+  ) {
     throw new Error("PanelNestedCardUsage direct mount missing projected card content");
   }
   const panelNestedCardToggleButton = findElement(panelNestedCardUsageDocument.body, byTag("button"));
   if (!panelNestedCardToggleButton) throw new Error("PanelNestedCardUsage direct mount missing button");
   click(panelNestedCardToggleButton);
   await new Promise<void>(resolve => queueMicrotask(resolve));
-  if (!panelNestedCardUsageTarget.textContent.includes("Nested reports") ||
-      !panelNestedCardUsageTarget.textContent.includes("Nested projected report body")) {
+  if (
+    !panelNestedCardUsageTarget.textContent.includes("Nested reports") ||
+    !panelNestedCardUsageTarget.textContent.includes("Nested projected report body")
+  ) {
     throw new Error("PanelNestedCardUsage direct toggle did not patch nested projected card content");
   }
 
@@ -141,8 +151,10 @@ test("slots and projection patch correctly", async () => {
   if (!panelToggleButton) throw new Error("PanelToggleUsage direct mount missing button");
   click(panelToggleButton);
   await new Promise<void>(resolve => queueMicrotask(resolve));
-  if (!panelToggleUsageTarget.textContent.includes("Projected second") ||
-      panelToggleUsageTarget.textContent.includes("Projected first")) {
+  if (
+    !panelToggleUsageTarget.textContent.includes("Projected second") ||
+    panelToggleUsageTarget.textContent.includes("Projected first")
+  ) {
     throw new Error("PanelToggleUsage direct toggle did not patch projected content");
   }
 
@@ -166,9 +178,11 @@ test("slots and projection patch correctly", async () => {
     eyebrow: "Projected eyebrow",
     body: "Projected body",
   });
-  if (!cardUsageTarget.textContent.includes("Projected title") ||
-      !cardUsageTarget.textContent.includes("Projected eyebrow") ||
-      !cardUsageTarget.textContent.includes("Projected body")) {
+  if (
+    !cardUsageTarget.textContent.includes("Projected title") ||
+    !cardUsageTarget.textContent.includes("Projected eyebrow") ||
+    !cardUsageTarget.textContent.includes("Projected body")
+  ) {
     throw new Error("CardUsage direct mount did not render projected named slot content");
   }
 
@@ -178,17 +192,21 @@ test("slots and projection patch correctly", async () => {
   installDocument(cardToggleDocument);
 
   cardToggleUsageDirectModule.mount(cardToggleTarget, {});
-  if (!cardToggleTarget.textContent.includes("Dashboard") ||
-      !cardToggleTarget.textContent.includes("Projected card body")) {
+  if (
+    !cardToggleTarget.textContent.includes("Dashboard") ||
+    !cardToggleTarget.textContent.includes("Projected card body")
+  ) {
     throw new Error("CardToggleUsage direct mount missing initial named slot content");
   }
   const cardToggleButton = findElement(cardToggleDocument.body, byTag("button"));
   if (!cardToggleButton) throw new Error("CardToggleUsage direct mount missing button");
   click(cardToggleButton);
   await new Promise<void>(resolve => queueMicrotask(resolve));
-  if (!cardToggleTarget.textContent.includes("Reports") ||
-      !cardToggleTarget.textContent.includes("Projected report body") ||
-      cardToggleTarget.textContent.includes("Projected card body")) {
+  if (
+    !cardToggleTarget.textContent.includes("Reports") ||
+    !cardToggleTarget.textContent.includes("Projected report body") ||
+    cardToggleTarget.textContent.includes("Projected card body")
+  ) {
     throw new Error("CardToggleUsage direct toggle did not patch named slot content");
   }
 
@@ -217,8 +235,10 @@ test("slots and projection patch correctly", async () => {
   next.append(imperativeDocument.createTextNode("Imperative slot replacement"));
   replacement.append(next);
   replaceBetweenNodes(start, end, replacement);
-  if (!imperativeTarget.textContent.includes("Imperative slot replacement") ||
-      imperativeTarget.textContent.includes("Imperative slot body")) {
+  if (
+    !imperativeTarget.textContent.includes("Imperative slot replacement") ||
+    imperativeTarget.textContent.includes("Imperative slot body")
+  ) {
     throw new Error("Imperative slot projection did not replace previous content");
   }
 

@@ -27,10 +27,7 @@ function detectPlaceholder(platformTar) {
   run("mkdir", ["-p", inspectDir], repoRoot);
   run("tar", ["-xzf", platformTar, "-C", inspectDir], repoRoot);
   const pkgDir = join(inspectDir, "package");
-  const candidates = [
-    join(pkgDir, "bin", "weiv"),
-    join(pkgDir, "bin", "weiv.exe"),
-  ];
+  const candidates = [join(pkgDir, "bin", "weiv"), join(pkgDir, "bin", "weiv.exe")];
   for (const file of candidates) {
     let content = null;
     try {
@@ -39,11 +36,14 @@ function detectPlaceholder(platformTar) {
       continue;
     }
     const isElf = content.subarray(0, 4).equals(Buffer.from([0x7f, 0x45, 0x4c, 0x46]));
-    const isMachO = content.subarray(0, 4).equals(Buffer.from([0xcf, 0xfa, 0xed, 0xfe])) ||
+    const isMachO =
+      content.subarray(0, 4).equals(Buffer.from([0xcf, 0xfa, 0xed, 0xfe])) ||
       content.subarray(0, 4).equals(Buffer.from([0xfe, 0xed, 0xfa, 0xcf]));
     const isPe = content.subarray(0, 2).toString("ascii") === "MZ";
     if (!isElf && !isMachO && !isPe) {
-      throw new Error(`Placeholder binary detected in ${platformTar}. Replace with real platform binary before publish.`);
+      throw new Error(
+        `Placeholder binary detected in ${platformTar}. Replace with real platform binary before publish.`,
+      );
     }
     return;
   }
@@ -55,8 +55,12 @@ try {
   const version = JSON.parse(readFileSync(join(repoRoot, "packages/weiv/package.json"), "utf8")).version;
   const platformDirs = ["weiv-darwin-arm64"];
   const platformTars = platformDirs
-    .filter((name) => JSON.parse(readFileSync(join(repoRoot, "packages", name, "package.json"), "utf8")).version === version)
-    .map((name) => pack(`./packages/${name}`));
+    .filter(
+      name =>
+        JSON.parse(readFileSync(join(repoRoot, "packages", name, "package.json"), "utf8")).version ===
+        version,
+    )
+    .map(name => pack(`./packages/${name}`));
 
   for (const t of platformTars) detectPlaceholder(t);
 
@@ -64,8 +68,16 @@ try {
   run("mkdir", ["-p", app], repoRoot);
   run("npm", ["init", "-y"], app);
   run("npm", ["install", "--omit=optional", mainTar], app);
-  run("node", ["--input-type=module", "-e", "import('weivjs/vite').then(()=>console.log('vite types/export ok'))"], app);
-  run("node", ["--input-type=module", "-e", "import('weivjs/bun').then(()=>console.log('bun types/export ok'))"], app);
+  run(
+    "node",
+    ["--input-type=module", "-e", "import('weivjs/vite').then(()=>console.log('vite types/export ok'))"],
+    app,
+  );
+  run(
+    "node",
+    ["--input-type=module", "-e", "import('weivjs/bun').then(()=>console.log('bun types/export ok'))"],
+    app,
+  );
 
   console.log("Release check completed (note: platform binaries must be real non-placeholder artifacts).");
 } finally {

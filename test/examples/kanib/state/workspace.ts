@@ -120,7 +120,8 @@ export const issues: WorkspaceIssue[] = observable([
     projectId: "proj-core-runtime",
     title: "Fix router state mismatch after history back",
     summary: "Returning from issue detail occasionally restores stale workspace path metadata.",
-    detail: "Reproduce history back/forward transitions and make route-derived shell state consistent before and after popstate handlers execute.",
+    detail:
+      "Reproduce history back/forward transitions and make route-derived shell state consistent before and after popstate handlers execute.",
     owner: "Avery",
     status: "in-progress",
     priority: "high",
@@ -133,7 +134,8 @@ export const issues: WorkspaceIssue[] = observable([
     projectId: "proj-devx",
     title: "Ship inspect snapshot test harness",
     summary: "Promote invalidation inspect output to a stable CLI contract test suite.",
-    detail: "Add Bun snapshot tests for app-scale inspect output and define update workflow so compiler shape changes are intentionally reviewed.",
+    detail:
+      "Add Bun snapshot tests for app-scale inspect output and define update workflow so compiler shape changes are intentionally reviewed.",
     owner: "Mika",
     status: "review",
     priority: "high",
@@ -146,7 +148,8 @@ export const issues: WorkspaceIssue[] = observable([
     projectId: "proj-devx",
     title: "Tighten diagnostics JSON contract",
     summary: "Editor integration needs a stable machine-readable diagnostics envelope.",
-    detail: "Unify severity fields across parse/bind/emit and add contract tests for lint-style output consumed by editor tooling.",
+    detail:
+      "Unify severity fields across parse/bind/emit and add contract tests for lint-style output consumed by editor tooling.",
     owner: "Noa",
     status: "backlog",
     priority: "medium",
@@ -159,7 +162,8 @@ export const issues: WorkspaceIssue[] = observable([
     projectId: "proj-core-runtime",
     title: "Audit slot usage in flagship app",
     summary: "Ensure layout slots read as product composition, not framework demos.",
-    detail: "Track named/default/fallback slot behavior across routed shell regions and confirm projected content updates under selective invalidation.",
+    detail:
+      "Track named/default/fallback slot behavior across routed shell regions and confirm projected content updates under selective invalidation.",
     owner: "Lina",
     status: "done",
     priority: "low",
@@ -172,7 +176,8 @@ export const issues: WorkspaceIssue[] = observable([
     projectId: "proj-ui-kit",
     title: "Define token-ready shell spacing scale",
     summary: "Current shell spacing values drift between sidebar, panels, and detail surfaces.",
-    detail: "Publish a compact spacing scale and refactor key components to consume shared tokenized spacing variables.",
+    detail:
+      "Publish a compact spacing scale and refactor key components to consume shared tokenized spacing variables.",
     owner: "Sana",
     status: "review",
     priority: "medium",
@@ -185,7 +190,8 @@ export const issues: WorkspaceIssue[] = observable([
     projectId: "proj-theme-engine",
     title: "Theme empty states for light + high-contrast",
     summary: "Fallback states need stronger contrast and hierarchy for accessibility review.",
-    detail: "Add high-contrast compliant token variants for empty state borders, body copy, and action affordances while preserving the default theme.",
+    detail:
+      "Add high-contrast compliant token variants for empty state borders, body copy, and action affordances while preserving the default theme.",
     owner: "Theo",
     status: "in-progress",
     priority: "low",
@@ -198,7 +204,13 @@ const members: WorkspaceMember[] = [
   { id: "mem-1", workspaceId: "compiler-lab", name: "Avery", role: "Staff Engineer", focus: "Runtime" },
   { id: "mem-2", workspaceId: "compiler-lab", name: "Mika", role: "Product Engineer", focus: "App examples" },
   { id: "mem-3", workspaceId: "compiler-lab", name: "Noa", role: "DX Engineer", focus: "Diagnostics" },
-  { id: "mem-4", workspaceId: "design-systems", name: "Sana", role: "Design Engineer", focus: "Shell patterns" },
+  {
+    id: "mem-4",
+    workspaceId: "design-systems",
+    name: "Sana",
+    role: "Design Engineer",
+    focus: "Shell patterns",
+  },
   { id: "mem-5", workspaceId: "design-systems", name: "Theo", role: "Frontend Engineer", focus: "States" },
 ];
 
@@ -291,7 +303,7 @@ let activeRouter: RouterLike | null = null;
 
 function syncNotificationCount() {
   workspaceShared.notifications = notificationItems.filter(
-    (item) => item.workspaceId === workspaceShared.currentWorkspaceId && !item.read
+    item => item.workspaceId === workspaceShared.currentWorkspaceId && !item.read,
   ).length;
 }
 
@@ -306,38 +318,38 @@ export function listMetrics(workspaceId: string) {
 }
 
 export function listProjects(workspaceId: string) {
-  return projects.filter((project) => project.workspaceId === workspaceId);
+  return projects.filter(project => project.workspaceId === workspaceId);
 }
 
 export function listIssues(workspaceId: string, projectId?: string) {
   if (projectId) {
-    return issues.filter((issue) => issue.workspaceId === workspaceId && issue.projectId === projectId);
+    return issues.filter(issue => issue.workspaceId === workspaceId && issue.projectId === projectId);
   }
-  return issues.filter((issue) => issue.workspaceId === workspaceId);
+  return issues.filter(issue => issue.workspaceId === workspaceId);
 }
 
 export function listMembers(workspaceId: string) {
-  return members.filter((member) => member.workspaceId === workspaceId);
+  return members.filter(member => member.workspaceId === workspaceId);
 }
 
 export function listComments(issueId: string) {
-  return comments.filter((comment) => comment.issueId === issueId);
+  return comments.filter(comment => comment.issueId === issueId);
 }
 
 export function listNotifications(workspaceId: string) {
-  return notificationItems.filter((item) => item.workspaceId === workspaceId);
+  return notificationItems.filter(item => item.workspaceId === workspaceId);
 }
 
 export function findWorkspace(workspaceId: string) {
-  return workspaceCatalog.find((workspace) => workspace.id === workspaceId) || workspaceCatalog[0];
+  return workspaceCatalog.find(workspace => workspace.id === workspaceId) || workspaceCatalog[0];
 }
 
 export function findProject(projectId: string) {
-  return projects.find((project) => project.id === projectId) || null;
+  return projects.find(project => project.id === projectId) || null;
 }
 
 export function findIssue(issueId: string) {
-  return issues.find((issue) => issue.id === issueId) || null;
+  return issues.find(issue => issue.id === issueId) || null;
 }
 
 export function setCurrentWorkspaceId(workspaceId: string) {
@@ -406,7 +418,7 @@ export function addComment(issueId: string, author: string, body: string) {
 }
 
 export function markNotificationRead(notificationId: string) {
-  const item = notificationItems.find((entry) => entry.id === notificationId);
+  const item = notificationItems.find(entry => entry.id === notificationId);
   if (!item || item.read) return;
   item.read = true;
   syncNotificationCount();
@@ -428,13 +440,14 @@ export function cycleIssueStatus(issueId: string) {
   const issue = findIssue(issueId);
   if (!issue) return;
 
-  const nextStatus = issue.status === "backlog"
-    ? "in-progress"
-    : issue.status === "in-progress"
-      ? "review"
-      : issue.status === "review"
-        ? "done"
-        : "backlog";
+  const nextStatus =
+    issue.status === "backlog"
+      ? "in-progress"
+      : issue.status === "in-progress"
+        ? "review"
+        : issue.status === "review"
+          ? "done"
+          : "backlog";
 
   issue.status = nextStatus;
   issue.updatedMinutesAgo = 0;
@@ -442,10 +455,7 @@ export function cycleIssueStatus(issueId: string) {
   workspaceShared.saveTick += 1;
 }
 
-export function moveIssueToStatus(
-  issueId: string,
-  status: "backlog" | "in-progress" | "review" | "done",
-) {
+export function moveIssueToStatus(issueId: string, status: "backlog" | "in-progress" | "review" | "done") {
   const issue = findIssue(issueId);
   if (!issue) return;
   if (issue.status === status) return;
@@ -464,7 +474,9 @@ export function syncRouteState(path: string, workspaceId?: string, issueId?: str
   if (workspaceId) {
     workspaceShared.currentWorkspaceId = workspaceId;
     const workspaceProjects = listProjects(workspaceId);
-    const hasSelectedProject = workspaceProjects.some((project) => project.id === workspaceShared.selectedProjectId);
+    const hasSelectedProject = workspaceProjects.some(
+      project => project.id === workspaceShared.selectedProjectId,
+    );
     if (!hasSelectedProject) {
       workspaceShared.selectedProjectId = workspaceProjects[0]?.id ?? "";
     }

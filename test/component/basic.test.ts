@@ -44,9 +44,14 @@ test("basic direct components mount and patch selectively", async () => {
     initialCount: 2,
   });
   if (directTarget.replaceChildrenCalls !== 1) {
-    throw new Error(`BasicCounter direct mount expected 1 root replaceChildren call, found ${directTarget.replaceChildrenCalls}`);
+    throw new Error(
+      `BasicCounter direct mount expected 1 root replaceChildren call, found ${directTarget.replaceChildrenCalls}`,
+    );
   }
-  if (!directTarget.textContent.includes("Current count: 2") || !directTarget.textContent.includes("Doubled: 4")) {
+  if (
+    !directTarget.textContent.includes("Current count: 2") ||
+    !directTarget.textContent.includes("Doubled: 4")
+  ) {
     throw new Error("BasicCounter direct mount initial content mismatch");
   }
 
@@ -58,13 +63,16 @@ test("basic direct components mount and patch selectively", async () => {
   if (directTarget.replaceChildrenCalls !== 1) {
     throw new Error("BasicCounter direct update rerendered the root instead of patching in place");
   }
-  if (!directTarget.textContent.includes("Current count: 3") || !directTarget.textContent.includes("Doubled: 6")) {
+  if (
+    !directTarget.textContent.includes("Current count: 3") ||
+    !directTarget.textContent.includes("Doubled: 6")
+  ) {
     throw new Error("BasicCounter direct click did not patch the updated text");
   }
 
   for (let i = 0; i < 7; i += 1) {
     click(directButton);
-  await new Promise<void>(resolve => queueMicrotask(resolve));
+    await new Promise<void>(resolve => queueMicrotask(resolve));
   }
   if (directButton.disabled !== true) {
     throw new Error("BasicCounter direct update did not patch the disabled property");
@@ -86,7 +94,7 @@ test("basic direct components mount and patch selectively", async () => {
   if (!timerButton) throw new Error("TimerCallback direct mount missing button");
   click(timerButton);
   await new Promise<void>(resolve => queueMicrotask(resolve));
-  await new Promise((resolve) => setTimeout(resolve, 5));
+  await new Promise(resolve => setTimeout(resolve, 5));
   if (timerTarget.replaceChildrenCalls !== 1) {
     throw new Error("TimerCallback direct timer update rerendered the root");
   }
@@ -101,7 +109,9 @@ test("basic direct components mount and patch selectively", async () => {
 
   conditionalToggleDirectModule.mount(conditionalTarget, {});
   if (conditionalTarget.replaceChildrenCalls !== 1) {
-    throw new Error(`ConditionalToggle direct mount expected 1 root replaceChildren call, found ${conditionalTarget.replaceChildrenCalls}`);
+    throw new Error(
+      `ConditionalToggle direct mount expected 1 root replaceChildren call, found ${conditionalTarget.replaceChildrenCalls}`,
+    );
   }
   if (!conditionalTarget.textContent.includes("Panel is closed")) {
     throw new Error("ConditionalToggle direct mount initial branch mismatch");
@@ -113,7 +123,9 @@ test("basic direct components mount and patch selectively", async () => {
   await new Promise<void>(resolve => queueMicrotask(resolve));
 
   if (conditionalTarget.replaceChildrenCalls !== 1) {
-    throw new Error("ConditionalToggle direct update rerendered the root instead of replacing the conditional block");
+    throw new Error(
+      "ConditionalToggle direct update rerendered the root instead of replacing the conditional block",
+    );
   }
   if (!conditionalTarget.textContent.includes("Panel is open")) {
     throw new Error("ConditionalToggle direct toggle did not swap to the open branch");
@@ -133,8 +145,13 @@ test("basic direct components mount and patch selectively", async () => {
   if (!selectClipButton) throw new Error("Framecept reactivity fixture is missing its selection button");
   click(selectClipButton);
   await new Promise<void>(resolve => queueMicrotask(resolve));
-  if (!frameceptTarget.textContent.includes("Selected 7") || frameceptTarget.textContent.includes("No clip selected")) {
-    throw new Error(`Initially-false conditional did not mount after loop selection: ${frameceptTarget.textContent}`);
+  if (
+    !frameceptTarget.textContent.includes("Selected 7") ||
+    frameceptTarget.textContent.includes("No clip selected")
+  ) {
+    throw new Error(
+      `Initially-false conditional did not mount after loop selection: ${frameceptTarget.textContent}`,
+    );
   }
 
   frameceptButtons = findElements(frameceptDocument.body, byTag("button"));
@@ -149,7 +166,9 @@ test("basic direct components mount and patch selectively", async () => {
   await Promise.resolve();
   await Promise.resolve();
   if (thumbnail.attributes.get("src") !== "ready") {
-    throw new Error(`Async list replacement did not refresh the repeated binding: ${thumbnail.attributes.get("src")}`);
+    throw new Error(
+      `Async list replacement did not refresh the repeated binding: ${thumbnail.attributes.get("src")}`,
+    );
   }
 
   const nestedConditionalDocument = new FakeDocument();
@@ -160,11 +179,15 @@ test("basic direct components mount and patch selectively", async () => {
   nestedConditionalListModule.mount(nestedConditionalTarget, {});
   for (const expected of ["First", "Second", "Third", "After strategies"]) {
     if (!nestedConditionalTarget.textContent.includes(expected)) {
-      throw new Error(`Nested conditional list is missing ${expected}: ${nestedConditionalTarget.textContent}`);
+      throw new Error(
+        `Nested conditional list is missing ${expected}: ${nestedConditionalTarget.textContent}`,
+      );
     }
   }
   if ((nestedConditionalTarget.textContent.match(/selected/g) ?? []).length !== 1) {
-    throw new Error(`Nested conditional list selected the wrong number of entries: ${nestedConditionalTarget.textContent}`);
+    throw new Error(
+      `Nested conditional list selected the wrong number of entries: ${nestedConditionalTarget.textContent}`,
+    );
   }
   let nestedConditionalButtons = findElements(nestedConditionalDocument.body, byTag("button"));
   const nestedConditionalButton = nestedConditionalButtons[0];
@@ -178,12 +201,16 @@ test("basic direct components mount and patch selectively", async () => {
   click(firstStrategyButton);
   await new Promise<void>(resolve => queueMicrotask(resolve));
   if (!nestedConditionalTarget.textContent.includes("Firstselected")) {
-    throw new Error(`Argument-bearing loop event did not flush its state update: ${nestedConditionalTarget.textContent}`);
+    throw new Error(
+      `Argument-bearing loop event did not flush its state update: ${nestedConditionalTarget.textContent}`,
+    );
   }
 
   const strategyArticles = findElements(nestedConditionalDocument.body, byTag("article"));
   if (strategyArticles[0]?.attributes.get("style") !== "left: 58%; width: 60px") {
-    throw new Error(`Dynamic style binding did not apply its declaration text: ${strategyArticles[0]?.attributes.get("style")}`);
+    throw new Error(
+      `Dynamic style binding did not apply its declaration text: ${strategyArticles[0]?.attributes.get("style")}`,
+    );
   }
 
   const appendStrategyButton = nestedConditionalButtons[1];
@@ -192,7 +219,9 @@ test("basic direct components mount and patch selectively", async () => {
   await new Promise<void>(resolve => queueMicrotask(resolve));
   nestedConditionalButtons = findElements(nestedConditionalDocument.body, byTag("button"));
   if (!nestedConditionalTarget.textContent.includes("Fourth")) {
-    throw new Error(`Reactive loop append did not render the new entry: ${nestedConditionalTarget.textContent}`);
+    throw new Error(
+      `Reactive loop append did not render the new entry: ${nestedConditionalTarget.textContent}`,
+    );
   }
   for (const title of ["First", "Second", "Third", "Fourth"]) {
     if ((nestedConditionalTarget.textContent.match(new RegExp(title, "g")) ?? []).length !== 1) {
@@ -202,15 +231,19 @@ test("basic direct components mount and patch selectively", async () => {
 
   click(nestedConditionalButton);
   await new Promise<void>(resolve => queueMicrotask(resolve));
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  await new Promise(resolve => setTimeout(resolve, 0));
   if (nestedConditionalButton.className !== "third") {
     throw new Error(`Bind shorthand did not update the class: ${nestedConditionalButton.className}`);
   }
   if (!nestedConditionalTarget.textContent.includes("Thirdselected")) {
-    throw new Error(`Nested conditional list did not update its loop-local condition: ${nestedConditionalTarget.textContent}`);
+    throw new Error(
+      `Nested conditional list did not update its loop-local condition: ${nestedConditionalTarget.textContent}`,
+    );
   }
   if (nestedConditionalTarget.textContent.includes("Secondselected")) {
-    throw new Error(`Nested conditional list left the previous conditional branch mounted: ${nestedConditionalTarget.textContent}`);
+    throw new Error(
+      `Nested conditional list left the previous conditional branch mounted: ${nestedConditionalTarget.textContent}`,
+    );
   }
 
   const classDocument = new FakeDocument();
@@ -232,7 +265,9 @@ test("basic direct components mount and patch selectively", async () => {
   click(classButton);
   await new Promise<void>(resolve => queueMicrotask(resolve));
   if (classButton.className !== "clip") {
-    throw new Error(`Dynamic class binding did not preserve the static class after clearing: ${classButton.className}`);
+    throw new Error(
+      `Dynamic class binding did not preserve the static class after clearing: ${classButton.className}`,
+    );
   }
 
   const todoListDirectDocument = new FakeDocument();
@@ -242,13 +277,17 @@ test("basic direct components mount and patch selectively", async () => {
 
   todoListDirectModule.mount(todoListDirectTarget, { title: "Tasks" });
   if (todoListDirectTarget.replaceChildrenCalls !== 1) {
-    throw new Error(`TodoList direct mount expected 1 root replaceChildren call, found ${todoListDirectTarget.replaceChildrenCalls}`);
+    throw new Error(
+      `TodoList direct mount expected 1 root replaceChildren call, found ${todoListDirectTarget.replaceChildrenCalls}`,
+    );
   }
   if (!todoListDirectTarget.textContent.includes("Showing pending tasks")) {
     throw new Error("TodoList direct mount initial conditional branch mismatch");
   }
-  if (!todoListDirectTarget.textContent.includes("Implement template binder") ||
-      !todoListDirectTarget.textContent.includes("Test CSS scoping")) {
+  if (
+    !todoListDirectTarget.textContent.includes("Implement template binder") ||
+    !todoListDirectTarget.textContent.includes("Test CSS scoping")
+  ) {
     throw new Error("TodoList direct mount initial visible items mismatch");
   }
   if (todoListDirectTarget.textContent.includes("Write parser fixtures")) {
@@ -261,7 +300,9 @@ test("basic direct components mount and patch selectively", async () => {
   await new Promise<void>(resolve => queueMicrotask(resolve));
 
   if (todoListDirectTarget.replaceChildrenCalls !== 1) {
-    throw new Error("TodoList direct toggle rerendered the root instead of replacing only list/conditional blocks");
+    throw new Error(
+      "TodoList direct toggle rerendered the root instead of replacing only list/conditional blocks",
+    );
   }
   if (!todoListDirectTarget.textContent.includes("Showing completed tasks")) {
     throw new Error("TodoList direct toggle did not switch the conditional branch");

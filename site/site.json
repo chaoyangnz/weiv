@@ -43,9 +43,7 @@
     },
     {
       "text": "Packages",
-      "items": [
-        { "text": "NPM Distribution", "link": "/npm-single-package-distribution" }
-      ]
+      "items": [{ "text": "NPM Distribution", "link": "/npm-single-package-distribution" }]
     }
   ],
   "footer": {

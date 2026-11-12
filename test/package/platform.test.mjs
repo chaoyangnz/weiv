@@ -8,7 +8,11 @@ const previousBinary = process.env.WEIV_BINARY_PATH;
 try {
   delete process.env.WEIV_BINARY_PATH;
   const repoRoot = fileURLToPath(new URL("../../", import.meta.url));
-  const expectedBinary = resolve(repoRoot, "cyna-out/bin", process.platform === "win32" ? "weiv.exe" : "weiv");
+  const expectedBinary = resolve(
+    repoRoot,
+    "cyna-out/bin",
+    process.platform === "win32" ? "weiv.exe" : "weiv",
+  );
   assert.equal(resolveWeivBinaryPath(), expectedBinary);
   assert.equal(resolveBuiltBinaryPath(), expectedBinary);
 

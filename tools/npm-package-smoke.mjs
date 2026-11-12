@@ -12,14 +12,14 @@ function run(cmd, args, cwd, env = process.env) {
   execFileSync(cmd, args, {
     cwd,
     env,
-    stdio: "inherit"
+    stdio: "inherit",
   });
 }
 
 function runCapture(cmd, args, cwd) {
   return execFileSync(cmd, args, {
     cwd,
-    encoding: "utf8"
+    encoding: "utf8",
   }).trim();
 }
 
@@ -72,32 +72,49 @@ try {
     const platformUnpackRoot = join(tempRoot, "platform-unpack");
     const platformPkgDir = unpackTarball(platformTar, platformUnpackRoot);
     const platformPkgJson = JSON.parse(
-      runCapture("node", ["-e", `process.stdout.write(JSON.stringify(require('${platformPkgDir.replace(/\\/g, "\\\\")}/package.json')))`], repoRoot)
+      runCapture(
+        "node",
+        [
+          "-e",
+          `process.stdout.write(JSON.stringify(require('${platformPkgDir.replace(/\\/g, "\\\\")}/package.json')))`,
+        ],
+        repoRoot,
+      ),
     );
     const platformName = platformPkgJson.name.split("/")[1];
     cpSync(platformPkgDir, join(scopedNodeModules, platformName), { recursive: true });
   }
 
-  run("node", ["--input-type=module", "-e", "import('weivjs/vite').then(()=>console.log('vite export ok'))"], appRoot);
-  run("node", ["--input-type=module", "-e", "import('weivjs/bun').then(()=>console.log('bun export ok'))"], appRoot);
-
   run(
     "node",
-    [join(nodeModules, "weivjs", "bin", "weiv.mjs"), "--help"],
+    ["--input-type=module", "-e", "import('weivjs/vite').then(()=>console.log('vite export ok'))"],
     appRoot,
-    {
-      ...process.env,
-      WEIV_BINARY_PATH: weivBin,
-    }
+  );
+  run(
+    "node",
+    ["--input-type=module", "-e", "import('weivjs/bun').then(()=>console.log('bun export ok'))"],
+    appRoot,
   );
 
-  const boundaryFixture = join(appRoot, "ExternalCallback.weiv");
-  writeFileSync(boundaryFixture, `<template><p>{{ count }}</p></template>\n<script lang="ts">let count = 0; window.addEventListener("message", () => { count += 1; });</script>\n`);
-  const emitted = execFileSync("node", [join(nodeModules, "weivjs", "bin", "weiv.mjs"), "emit", "js", boundaryFixture], {
-    cwd: appRoot,
-    encoding: "utf8",
-    env: { ...process.env, WEIV_BINARY_PATH: "" },
+  run("node", [join(nodeModules, "weivjs", "bin", "weiv.mjs"), "--help"], appRoot, {
+    ...process.env,
+    WEIV_BINARY_PATH: weivBin,
   });
+
+  const boundaryFixture = join(appRoot, "ExternalCallback.weiv");
+  writeFileSync(
+    boundaryFixture,
+    `<template><p>{{ count }}</p></template>\n<script lang="ts">let count = 0; window.addEventListener("message", () => { count += 1; });</script>\n`,
+  );
+  const emitted = execFileSync(
+    "node",
+    [join(nodeModules, "weivjs", "bin", "weiv.mjs"), "emit", "js", boundaryFixture],
+    {
+      cwd: appRoot,
+      encoding: "utf8",
+      env: { ...process.env, WEIV_BINARY_PATH: "" },
+    },
+  );
   if (!emitted.includes("__weiv_createCellScope") || emitted.includes("const weivUpdate =")) {
     throw new Error("Packed platform binary did not emit managed component state");
   }

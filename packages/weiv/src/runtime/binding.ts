@@ -22,7 +22,10 @@ export function bindingObject(source: any) {
         if (excluded.has(key)) continue;
         if (!Reflect.getOwnPropertyDescriptor(object, key)?.enumerable) continue;
         Reflect.defineProperty(result, key, {
-          value: Reflect.get(object, key), enumerable: true, writable: true, configurable: true,
+          value: Reflect.get(object, key),
+          enumerable: true,
+          writable: true,
+          configurable: true,
         });
       }
       return result;
@@ -41,7 +44,10 @@ export function bindingIterator(source: any) {
     try {
       const result = Reflect.apply(next, iterator, []);
       if (!objectLike(result)) throw new TypeError("Iterator result must be an object");
-      if ((result as any).done) { done = true; return undefined; }
+      if ((result as any).done) {
+        done = true;
+        return undefined;
+      }
       return read ? (result as any).value : undefined;
     } catch (error) {
       // An abrupt IteratorStepValue marks the iterator done. Defaults and nested
@@ -52,14 +58,20 @@ export function bindingIterator(source: any) {
   };
   return {
     step: () => step(true),
-    skip: () => { step(false); },
+    skip: () => {
+      step(false);
+    },
     rest() {
       const result: unknown[] = [];
       while (!done) {
         const value = step(true);
-        if (!done) Reflect.defineProperty(result, String(result.length), {
-          value, enumerable: true, writable: true, configurable: true,
-        });
+        if (!done)
+          Reflect.defineProperty(result, String(result.length), {
+            value,
+            enumerable: true,
+            writable: true,
+            configurable: true,
+          });
       }
       return result;
     },

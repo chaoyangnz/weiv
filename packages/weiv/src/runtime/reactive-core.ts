@@ -7,18 +7,24 @@ function reportErrors(errors: unknown[]) {
   const error = new AggregateError(errors, "Weiv reactive update failed");
   const report = (globalThis as typeof globalThis & { reportError?: (error: unknown) => void }).reportError;
   if (report) report.call(globalThis, error);
-  else queueMicrotask(() => { throw error; });
+  else
+    queueMicrotask(() => {
+      throw error;
+    });
 }
 
-export function createReactiveScheduler(options: {
-  enqueue?: (task: Task) => void;
-  reportErrors?: (errors: unknown[]) => void;
-  maxWaves?: number;
-} = {}) {
+export function createReactiveScheduler(
+  options: {
+    enqueue?: (task: Task) => void;
+    reportErrors?: (errors: unknown[]) => void;
+    maxWaves?: number;
+  } = {},
+) {
   const enqueue = options.enqueue ?? ((task: Task) => queueMicrotask(task));
   const report = options.reportErrors ?? reportErrors;
   const maxWaves = options.maxWaves ?? 100;
-  if (!Number.isInteger(maxWaves) || maxWaves < 1) throw new RangeError("maxWaves must be a positive integer");
+  if (!Number.isInteger(maxWaves) || maxWaves < 1)
+    throw new RangeError("maxWaves must be a positive integer");
   const notifications = new Map<object, PrepareNotification>();
   const jobs = new Map<object, { run: Task }>();
   let scheduled = false;
@@ -46,17 +52,29 @@ export function createReactiveScheduler(options: {
     notifications.clear();
     const deliveries: Task[] = [];
     for (const prepare of preparing) {
-      try { deliveries.push(prepare()); } catch (error) { errors.push(error); }
+      try {
+        deliveries.push(prepare());
+      } catch (error) {
+        errors.push(error);
+      }
     }
     for (const deliver of deliveries) {
-      try { deliver(); } catch (error) { errors.push(error); }
+      try {
+        deliver();
+      } catch (error) {
+        errors.push(error);
+      }
     }
     // Notifications from multiple roots merge into one component job.
     const running = Array.from(jobs);
     for (const [owner, job] of running) {
       if (jobs.get(owner) !== job) continue;
       jobs.delete(owner);
-      try { job.run(); } catch (error) { errors.push(error); }
+      try {
+        job.run();
+      } catch (error) {
+        errors.push(error);
+      }
     }
     scheduled = false;
     if (notifications.size || jobs.size) schedule();
@@ -73,7 +91,9 @@ export function createReactiveScheduler(options: {
       jobs.set(owner, { run: job });
       schedule();
     },
-    cancelJob(owner: object) { jobs.delete(owner); },
+    cancelJob(owner: object) {
+      jobs.delete(owner);
+    },
   };
 }
 
@@ -88,4 +108,6 @@ export function sharedRuntime<T>(name: string, create: () => T): T {
   return value;
 }
 
-export const reactiveScheduler = sharedRuntime("weiv.reactivity.scheduler.v1", () => createReactiveScheduler());
+export const reactiveScheduler = sharedRuntime("weiv.reactivity.scheduler.v1", () =>
+  createReactiveScheduler(),
+);

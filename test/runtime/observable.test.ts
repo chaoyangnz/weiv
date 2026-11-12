@@ -1,5 +1,11 @@
 import { expect, test } from "bun:test";
-import { isObservable, observable, observableBrandSymbol, snapshot, subscribe } from "../../packages/weiv/src/runtime/observable";
+import {
+  isObservable,
+  observable,
+  observableBrandSymbol,
+  snapshot,
+  subscribe,
+} from "../../packages/weiv/src/runtime/observable";
 
 test("observable batches multiple sync writes into one notification", async () => {
   const state = observable({ count: 0, label: "draft" });
@@ -13,7 +19,7 @@ test("observable batches multiple sync writes into one notification", async () =
   state.label = "ready";
 
   expect(calls).toBe(0);
-  await new Promise((resolve) => queueMicrotask(resolve));
+  await new Promise(resolve => queueMicrotask(resolve));
   expect(calls).toBe(1);
 
   unsubscribe();
@@ -38,7 +44,7 @@ test("observable notifies nested and root subscribers for nested mutation", asyn
 
   state.detail.status = "done";
 
-  await new Promise((resolve) => queueMicrotask(resolve));
+  await new Promise(resolve => queueMicrotask(resolve));
   expect(rootCalls).toBe(1);
   expect(nestedCalls).toBe(1);
 });
@@ -47,12 +53,16 @@ test("observable reports batched property paths to root and nested subscribers",
   const state = observable({ detail: { status: "open", label: "draft" }, other: 0 });
   let rootPaths: ReadonlySet<string> | null = null;
   let nestedPaths: ReadonlySet<string> | null = null;
-  subscribe(state, (paths) => { rootPaths = paths; });
-  subscribe(state.detail, (paths) => { nestedPaths = paths; });
+  subscribe(state, paths => {
+    rootPaths = paths;
+  });
+  subscribe(state.detail, paths => {
+    nestedPaths = paths;
+  });
 
   state.detail.status = "done";
   state.other = 1;
-  await new Promise((resolve) => queueMicrotask(resolve));
+  await new Promise(resolve => queueMicrotask(resolve));
 
   expect([...rootPaths!].sort()).toEqual(["detail.status", "other"]);
   expect([...nestedPaths!]).toEqual(["status"]);
@@ -87,17 +97,19 @@ test("array mutations notify subscribers", async () => {
 
   state.items.push("b");
 
-  await new Promise((resolve) => queueMicrotask(resolve));
+  await new Promise(resolve => queueMicrotask(resolve));
   expect(calls).toBe(1);
 });
 
 test("array index writes report length as a dependent path", async () => {
   const state = observable({ items: ["a"] });
   let paths: ReadonlySet<string> | null = null;
-  subscribe(state, (changed) => { paths = changed; });
+  subscribe(state, changed => {
+    paths = changed;
+  });
 
   state.items.push("b");
-  await new Promise((resolve) => queueMicrotask(resolve));
+  await new Promise(resolve => queueMicrotask(resolve));
 
   expect(paths?.has("items.length")).toBe(true);
 });
@@ -128,7 +140,7 @@ test("observable wraps replacement objects on next read", async () => {
 
   state.detail = { label: "rollback" };
 
-  await new Promise((resolve) => queueMicrotask(resolve));
+  await new Promise(resolve => queueMicrotask(resolve));
   expect(calls).toBe(1);
   expect(isObservable(state.detail)).toBe(true);
   expect(state.detail.label).toBe("rollback");
@@ -143,13 +155,13 @@ test("unsubscribe stops future notifications", async () => {
   });
 
   state.count = 1;
-  await new Promise((resolve) => queueMicrotask(resolve));
+  await new Promise(resolve => queueMicrotask(resolve));
   expect(calls).toBe(1);
 
   unsubscribe();
 
   state.count = 2;
-  await new Promise((resolve) => queueMicrotask(resolve));
+  await new Promise(resolve => queueMicrotask(resolve));
   expect(calls).toBe(1);
 });
 
@@ -177,11 +189,11 @@ test("replaced nested object no longer notifies its old parent chain", async () 
   });
 
   state.detail = { label: "rollback" };
-  await new Promise((resolve) => queueMicrotask(resolve));
+  await new Promise(resolve => queueMicrotask(resolve));
   expect(rootCalls).toBe(1);
 
   oldDetail.label = "stale local edit";
-  await new Promise((resolve) => queueMicrotask(resolve));
+  await new Promise(resolve => queueMicrotask(resolve));
 
   expect(rootCalls).toBe(1);
   expect(oldDetailCalls).toBe(1);
@@ -203,12 +215,12 @@ test("delete notifies parent and detaches removed nested object", async () => {
   });
 
   delete state.detail;
-  await new Promise((resolve) => queueMicrotask(resolve));
+  await new Promise(resolve => queueMicrotask(resolve));
   expect(rootCalls).toBe(1);
   expect("detail" in state).toBe(false);
 
   oldDetail.label = "detached";
-  await new Promise((resolve) => queueMicrotask(resolve));
+  await new Promise(resolve => queueMicrotask(resolve));
   expect(rootCalls).toBe(1);
 });
 
@@ -249,7 +261,7 @@ test("array splice notifies root and nested array subscribers once", async () =>
 
   state.items.splice(1, 1, { id: "b2", done: true });
 
-  await new Promise((resolve) => queueMicrotask(resolve));
+  await new Promise(resolve => queueMicrotask(resolve));
   expect(rootCalls).toBe(1);
   expect(arrayCalls).toBe(1);
   expect(state.items[1].id).toBe("b2");
@@ -272,11 +284,11 @@ test("array pop detaches removed object from parent chain", async () => {
   const removed = state.items[1];
   state.items.pop();
 
-  await new Promise((resolve) => queueMicrotask(resolve));
+  await new Promise(resolve => queueMicrotask(resolve));
   expect(rootCalls).toBe(1);
 
   removed.done = true;
-  await new Promise((resolve) => queueMicrotask(resolve));
+  await new Promise(resolve => queueMicrotask(resolve));
   expect(rootCalls).toBe(1);
 });
 
@@ -293,7 +305,7 @@ test("array sort keeps notifying through the same array proxy", async () => {
 
   state.items.sort((a, b) => a - b);
 
-  await new Promise((resolve) => queueMicrotask(resolve));
+  await new Promise(resolve => queueMicrotask(resolve));
   expect(calls).toBe(1);
   expect(state.items).toBe(arrayRef);
   expect(state.items.join(",")).toBe("1,2,3");
@@ -314,7 +326,7 @@ test("multiple subscriptions on the same observable all receive the same flush",
 
   state.count = 1;
 
-  await new Promise((resolve) => queueMicrotask(resolve));
+  await new Promise(resolve => queueMicrotask(resolve));
   expect(callsA).toBe(1);
   expect(callsB).toBe(1);
 });
@@ -334,7 +346,7 @@ test("assigning an already observable nested object preserves its proxy identity
 
   state.detail = other.detail;
 
-  await new Promise((resolve) => queueMicrotask(resolve));
+  await new Promise(resolve => queueMicrotask(resolve));
   expect(state.detail).toBe(other.detail);
   expect(state.detail.label).toBe("shared");
 });

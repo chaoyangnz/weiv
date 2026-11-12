@@ -1,9 +1,5 @@
 import { test } from "bun:test";
-import {
-  emitDirectBrowserModule,
-  installJsdom,
-  loadModules,
-} from "./support";
+import { emitDirectBrowserModule, installJsdom, loadModules } from "./support";
 
 async function clickButton(target: Element, win: any) {
   const button = target.querySelector("button");
@@ -59,7 +55,8 @@ test("external callbacks use the same queued update", async () => {
 
   modules["ExternalCallback.mjs"].mount(target, {});
   const count = target.querySelector(".count");
-  if (count?.textContent?.trim() !== "0") throw new Error("External callback fixture did not render initial state");
+  if (count?.textContent?.trim() !== "0")
+    throw new Error("External callback fixture did not render initial state");
 
   win.dispatchEvent(new win.Event("weiv-unowned"));
   await new Promise<void>(resolve => queueMicrotask(resolve));
@@ -67,7 +64,8 @@ test("external callbacks use the same queued update", async () => {
 
   win.dispatchEvent(new win.Event("weiv-owned"));
   await new Promise<void>(resolve => queueMicrotask(resolve));
-  if (count.textContent?.trim() !== "2") throw new Error(`Explicit update boundary did not flush local state: ${count.textContent}`);
+  if (count.textContent?.trim() !== "2")
+    throw new Error(`Explicit update boundary did not flush local state: ${count.textContent}`);
 });
 
 test("conditional toggle works with jsdom real DOM", async () => {
@@ -120,7 +118,9 @@ test("dynamic loops, call handlers, and style bindings work with jsdom real DOM"
 
   const firstArticle = target.querySelector("article") as HTMLElement | null;
   if (firstArticle?.style.left !== "58%" || firstArticle.style.width !== "60px") {
-    throw new Error(`Dynamic style binding did not populate CSSStyleDeclaration: ${firstArticle?.style.cssText}`);
+    throw new Error(
+      `Dynamic style binding did not populate CSSStyleDeclaration: ${firstArticle?.style.cssText}`,
+    );
   }
 
   const appendButton = buttons[1];
@@ -188,7 +188,7 @@ test("timer callback works with jsdom real DOM", async () => {
   }
 
   await clickButton(target, win);
-  await new Promise((resolve) => setTimeout(resolve, 10));
+  await new Promise(resolve => setTimeout(resolve, 10));
 
   if (!target.textContent?.includes("1")) {
     throw new Error(`After timer callback mismatch: ${target.textContent}`);

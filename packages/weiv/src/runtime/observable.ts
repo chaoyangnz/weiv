@@ -29,12 +29,25 @@ function isObject(value: unknown): value is object {
 }
 
 function validateObservableValue(value: unknown, seen = new WeakSet<object>()) {
-  if (!isObject(value) || snapshots.has(value) || seen.has(value) || rawToNode.has(value) || proxyToNode.has(value)) return;
+  if (
+    !isObject(value) ||
+    snapshots.has(value) ||
+    seen.has(value) ||
+    rawToNode.has(value) ||
+    proxyToNode.has(value)
+  )
+    return;
   getObservableNode(value); // Reject incompatible metadata before mutating a graph.
   seen.add(value);
   const prototype = Object.getPrototypeOf(value);
-  if (prototype !== Object.prototype && prototype !== null && !(Array.isArray(value) && prototype === Array.prototype)) {
-    throw new TypeError("Weiv observable state supports only plain objects and arrays; adapt native or class values into plain data");
+  if (
+    prototype !== Object.prototype &&
+    prototype !== null &&
+    !(Array.isArray(value) && prototype === Array.prototype)
+  ) {
+    throw new TypeError(
+      "Weiv observable state supports only plain objects and arrays; adapt native or class values into plain data",
+    );
   }
   if (!Object.isExtensible(value)) {
     throw new TypeError("Weiv observable state requires extensible objects and arrays");
@@ -42,7 +55,9 @@ function validateObservableValue(value: unknown, seen = new WeakSet<object>()) {
   for (const key of Reflect.ownKeys(value)) {
     const descriptor = Reflect.getOwnPropertyDescriptor(value, key)!;
     if (!("value" in descriptor) || !descriptor.writable) {
-      throw new TypeError("Weiv observable state requires writable data properties; accessors and read-only properties are unsupported");
+      throw new TypeError(
+        "Weiv observable state requires writable data properties; accessors and read-only properties are unsupported",
+      );
     }
     validateObservableValue(descriptor.value, seen);
   }
@@ -62,7 +77,9 @@ function getObservableNode(value: unknown): NodeState | undefined {
   const direct = proxyToNode.get(value) ?? rawToNode.get(value);
   if (direct) return direct;
   if (Reflect.get(value, WEIV_OBSERVABLE) != null) {
-    throw new TypeError("Incompatible Weiv observable runtime or realm; use one compatible runtime or snapshot() to transfer read-only data");
+    throw new TypeError(
+      "Incompatible Weiv observable runtime or realm; use one compatible runtime or snapshot() to transfer read-only data",
+    );
   }
   return undefined;
 }
@@ -76,7 +93,9 @@ function unwrapValue<T>(value: T): T {
 function scheduleFlush(root: RootState) {
   reactiveScheduler.notify(root, () => {
     const notifying = Array.from(root.pending, ([node, paths]) => ({
-      node, paths, listeners: Array.from(node.listeners),
+      node,
+      paths,
+      listeners: Array.from(node.listeners),
     }));
     root.pending.clear();
     return () => {
@@ -84,7 +103,11 @@ function scheduleFlush(root: RootState) {
       for (const { node, paths, listeners } of notifying) {
         for (const listener of listeners) {
           if (!node.listeners.has(listener)) continue;
-          try { listener(paths); } catch (error) { errors.push(error); }
+          try {
+            listener(paths);
+          } catch (error) {
+            errors.push(error);
+          }
         }
       }
       if (errors.length) throw new AggregateError(errors, "Weiv observable subscribers failed");
@@ -155,7 +178,8 @@ function markChanged(node: NodeState, key: PropertyKey) {
       for (const parentKey of keys) {
         queue.push({
           node: parent,
-          path: current.path === null || typeof parentKey === "symbol" ? null : `${parentKey}.${current.path}`,
+          path:
+            current.path === null || typeof parentKey === "symbol" ? null : `${parentKey}.${current.path}`,
           ancestors: new Set([...current.ancestors, parent]),
         });
       }
@@ -165,7 +189,12 @@ function markChanged(node: NodeState, key: PropertyKey) {
   for (const root of touchedRoots) scheduleFlush(root);
 }
 
-function ensureObservableNode(target: object, root: RootState, parent: NodeState | null, key?: PropertyKey): NodeState {
+function ensureObservableNode(
+  target: object,
+  root: RootState,
+  parent: NodeState | null,
+  key?: PropertyKey,
+): NodeState {
   const existing = rawToNode.get(target) ?? proxyToNode.get(target);
   if (existing) {
     if (parent && key !== undefined) linkParent(existing, parent, key);
@@ -199,7 +228,12 @@ function ensureObservableNode(target: object, root: RootState, parent: NodeState
 
     getOwnPropertyDescriptor(currentTarget, prop) {
       const descriptor = Reflect.getOwnPropertyDescriptor(currentTarget, prop);
-      if (descriptor && prop !== WEIV_OBSERVABLE && isObject(descriptor.value) && !snapshots.has(descriptor.value)) {
+      if (
+        descriptor &&
+        prop !== WEIV_OBSERVABLE &&
+        isObject(descriptor.value) &&
+        !snapshots.has(descriptor.value)
+      ) {
         descriptor.value = ensureObservableNode(descriptor.value, root, node, prop).proxy;
       }
       return descriptor;
@@ -207,8 +241,14 @@ function ensureObservableNode(target: object, root: RootState, parent: NodeState
 
     defineProperty(currentTarget, prop, descriptor) {
       const previous = Reflect.getOwnPropertyDescriptor(currentTarget, prop);
-      if ("get" in descriptor || "set" in descriptor || !(descriptor.writable ?? previous?.writable ?? false)) {
-        throw new TypeError("Weiv observable state requires writable data properties; use snapshot() for immutable views");
+      if (
+        "get" in descriptor ||
+        "set" in descriptor ||
+        !(descriptor.writable ?? previous?.writable ?? false)
+      ) {
+        throw new TypeError(
+          "Weiv observable state requires writable data properties; use snapshot() for immutable views",
+        );
       }
       const normalized = { ...descriptor };
       if ("value" in descriptor) {
@@ -230,10 +270,16 @@ function ensureObservableNode(target: object, root: RootState, parent: NodeState
       // Length reduction can remove many child edges, including non-enumerable
       // indices. A failed reduction may still delete a suffix before hitting a
       // non-configurable index, so inspect the actual result in finally.
-      const truncating = oldLength !== undefined && prop === "length" && "value" in descriptor &&
+      const truncating =
+        oldLength !== undefined &&
+        prop === "length" &&
+        "value" in descriptor &&
         !(typeof normalized.value === "number" && normalized.value >= oldLength);
-      const indices = truncating ? Reflect.ownKeys(currentTarget).filter(isArrayIndex).map(key =>
-        [key, Reflect.getOwnPropertyDescriptor(currentTarget, key)!.value] as const) : [];
+      const indices = truncating
+        ? Reflect.ownKeys(currentTarget)
+            .filter(isArrayIndex)
+            .map(key => [key, Reflect.getOwnPropertyDescriptor(currentTarget, key)!.value] as const)
+        : [];
       try {
         return Reflect.defineProperty(currentTarget, prop, normalized);
       } finally {
@@ -241,16 +287,22 @@ function ensureObservableNode(target: object, root: RootState, parent: NodeState
         const next = actual?.value;
         unlinkRemovedChildren(previous?.value, next, node, prop);
         if (isObject(next) && !snapshots.has(next)) ensureObservableNode(next, root, node, prop);
-        const changed = previous === undefined ? actual !== undefined : actual === undefined ||
-          !Object.is(unwrapValue(previous.value), unwrapValue(next)) || previous.enumerable !== actual.enumerable ||
-          previous.configurable !== actual.configurable || previous.writable !== actual.writable;
+        const changed =
+          previous === undefined
+            ? actual !== undefined
+            : actual === undefined ||
+              !Object.is(unwrapValue(previous.value), unwrapValue(next)) ||
+              previous.enumerable !== actual.enumerable ||
+              previous.configurable !== actual.configurable ||
+              previous.writable !== actual.writable;
         if (changed) markChanged(node, prop);
         for (const [key, child] of indices) {
           if (Reflect.getOwnPropertyDescriptor(currentTarget, key)) continue;
           unlinkRemovedChildren(child, undefined, node, key);
           markChanged(node, key);
         }
-        if (Array.isArray(currentTarget) && currentTarget.length !== oldLength && prop !== "length") markChanged(node, "length");
+        if (Array.isArray(currentTarget) && currentTarget.length !== oldLength && prop !== "length")
+          markChanged(node, "length");
       }
     },
 
@@ -266,7 +318,11 @@ function ensureObservableNode(target: object, root: RootState, parent: NodeState
     },
 
     setPrototypeOf(currentTarget, prototype) {
-      if (prototype !== null && prototype !== Object.prototype && !(Array.isArray(currentTarget) && prototype === Array.prototype)) {
+      if (
+        prototype !== null &&
+        prototype !== Object.prototype &&
+        !(Array.isArray(currentTarget) && prototype === Array.prototype)
+      ) {
         throw new TypeError("Weiv observable state supports only plain object and array prototypes");
       }
       if (Reflect.getPrototypeOf(currentTarget) === prototype) return true;
@@ -276,7 +332,9 @@ function ensureObservableNode(target: object, root: RootState, parent: NodeState
     },
 
     preventExtensions() {
-      throw new TypeError("Weiv observable state must remain extensible; use snapshot() for an immutable view");
+      throw new TypeError(
+        "Weiv observable state must remain extensible; use snapshot() for an immutable view",
+      );
     },
   });
 
@@ -302,7 +360,10 @@ function isArrayIndex(key: PropertyKey): key is string {
 }
 
 export function observable<T extends object>(value: T): T {
-  if (isObject(value) && snapshots.has(value)) throw new TypeError("observable() cannot make an explicit snapshot mutable; store it as a read-only cell value instead");
+  if (isObject(value) && snapshots.has(value))
+    throw new TypeError(
+      "observable() cannot make an explicit snapshot mutable; store it as a read-only cell value instead",
+    );
   if (!isObject(value)) throw new TypeError("observable() expects a plain object or array");
   const existing = getObservableNode(value);
   if (existing) {
@@ -347,14 +408,20 @@ export function snapshot<T>(value: T): T {
     if (existing) return existing;
 
     const out: Record<string | symbol, unknown> | unknown[] = Array.isArray(source)
-      ? new Array(source.length) : Object.create(Object.getPrototypeOf(source) === null ? null : Object.prototype);
+      ? new Array(source.length)
+      : Object.create(Object.getPrototypeOf(source) === null ? null : Object.prototype);
     seen.set(source, out);
 
     for (const key of Reflect.ownKeys(source)) {
       if (key === WEIV_OBSERVABLE) continue;
       const descriptor = Reflect.getOwnPropertyDescriptor(source, key);
       if (!descriptor || !descriptor.enumerable) continue;
-      Object.defineProperty(out, key, { value: clone(Reflect.get(source, key)), enumerable: true, writable: true, configurable: true });
+      Object.defineProperty(out, key, {
+        value: clone(Reflect.get(source, key)),
+        enumerable: true,
+        writable: true,
+        configurable: true,
+      });
     }
 
     snapshots.add(out);

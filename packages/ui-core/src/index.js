@@ -28,7 +28,7 @@ export function createControllableState(initialValue) {
       listeners.add(listener);
       listener(value);
       return () => listeners.delete(listener);
-    }
+    },
   };
 }
 
@@ -38,7 +38,7 @@ export function createDialogController({
   closeOnOutsidePointer = true,
   restoreFocus = true,
   modal = true,
-  role = "dialog"
+  role = "dialog",
 } = {}) {
   const state = createControllableState(Boolean(initialOpen));
   const labelId = createId("wv-dialog-label");
@@ -152,7 +152,7 @@ export function createDialogController({
     },
     subscribe(listener) {
       return state.subscribe(listener);
-    }
+    },
   };
 }
 
@@ -190,7 +190,7 @@ export function createDisclosureController({ initialExpanded = false } = {}) {
     },
     subscribe(listener) {
       return state.subscribe(listener);
-    }
+    },
   };
 }
 
@@ -198,13 +198,13 @@ export function createTabsController({
   tabs = [],
   initialValue,
   activationMode = "automatic",
-  orientation = "horizontal"
+  orientation = "horizontal",
 } = {}) {
-  const normalizedTabs = tabs.map((tab) =>
-    typeof tab === "string" ? { value: tab, disabled: false } : { disabled: false, ...tab }
+  const normalizedTabs = tabs.map(tab =>
+    typeof tab === "string" ? { value: tab, disabled: false } : { disabled: false, ...tab },
   );
 
-  const firstEnabled = normalizedTabs.find((tab) => !tab.disabled)?.value ?? null;
+  const firstEnabled = normalizedTabs.find(tab => !tab.disabled)?.value ?? null;
   const initialSelected = initialValue ?? firstEnabled;
 
   const selectedState = createControllableState(initialSelected);
@@ -212,15 +212,15 @@ export function createTabsController({
   const tablistId = createId("wv-tabs-list");
 
   function values() {
-    return normalizedTabs.map((tab) => tab.value);
+    return normalizedTabs.map(tab => tab.value);
   }
 
   function isDisabled(value) {
-    return normalizedTabs.find((tab) => tab.value === value)?.disabled ?? true;
+    return normalizedTabs.find(tab => tab.value === value)?.disabled ?? true;
   }
 
   function moveFocus(direction) {
-    const candidates = values().filter((value) => !isDisabled(value));
+    const candidates = values().filter(value => !isDisabled(value));
     if (candidates.length === 0) return;
 
     const current = focusedState.value;
@@ -273,7 +273,7 @@ export function createTabsController({
 
       if (key === "Home") {
         event.preventDefault?.();
-        const first = normalizedTabs.find((tab) => !tab.disabled)?.value;
+        const first = normalizedTabs.find(tab => !tab.disabled)?.value;
         if (first != null) {
           focusedState.set(first);
           if (activationMode === "automatic") selectedState.set(first);
@@ -283,7 +283,7 @@ export function createTabsController({
 
       if (key === "End") {
         event.preventDefault?.();
-        const enabled = normalizedTabs.filter((tab) => !tab.disabled);
+        const enabled = normalizedTabs.filter(tab => !tab.disabled);
         const last = enabled[enabled.length - 1]?.value;
         if (last != null) {
           focusedState.set(last);
@@ -342,6 +342,6 @@ export function createTabsController({
       return () => {
         for (const unsub of unsubs) unsub();
       };
-    }
+    },
   };
 }

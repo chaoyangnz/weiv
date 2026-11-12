@@ -8,9 +8,7 @@ describe("TodoMVC direct bundle", () => {
   }
 
   function toggleTodo(label, checked) {
-    const toggle = cy.contains(".todo-list li label", label)
-      .parents("li")
-      .find(".toggle");
+    const toggle = cy.contains(".todo-list li label", label).parents("li").find(".toggle");
     if (checked) {
       toggle.check({ force: true });
     } else {
@@ -26,7 +24,9 @@ describe("TodoMVC direct bundle", () => {
       .check({ force: true });
 
     cy.contains(".filters button", "Completed").click();
-    cy.contains(".todo-list li label", "Verify root-owned state updates across nested components").should("exist");
+    cy.contains(".todo-list li label", "Verify root-owned state updates across nested components").should(
+      "exist",
+    );
   });
 
   it("keeps checkboxes clickable after All -> Completed -> All", () => {
@@ -47,14 +47,20 @@ describe("TodoMVC direct bundle", () => {
   it("toggles correctly inside the Active and Completed filters", () => {
     clickFilter("Active");
     toggleTodo("Verify root-owned state updates across nested components", true);
-    cy.contains(".todo-list li label", "Verify root-owned state updates across nested components").should("not.exist");
+    cy.contains(".todo-list li label", "Verify root-owned state updates across nested components").should(
+      "not.exist",
+    );
 
     clickFilter("Completed");
     toggleTodo("Verify root-owned state updates across nested components", false);
-    cy.contains(".todo-list li label", "Verify root-owned state updates across nested components").should("not.exist");
+    cy.contains(".todo-list li label", "Verify root-owned state updates across nested components").should(
+      "not.exist",
+    );
 
     clickFilter("Active");
-    cy.contains(".todo-list li label", "Verify root-owned state updates across nested components").should("exist");
+    cy.contains(".todo-list li label", "Verify root-owned state updates across nested components").should(
+      "exist",
+    );
   });
 
   it("survives repeated filter switching and on/off toggles", () => {
@@ -84,9 +90,7 @@ describe("TodoMVC direct bundle", () => {
     cy.contains(".todo-list li label", label).should("exist");
 
     clickFilter("All");
-    cy.contains(".todo-list li label", label)
-      .parents("li")
-      .should("not.have.class", "completed");
+    cy.contains(".todo-list li label", label).parents("li").should("not.have.class", "completed");
   });
 
   it("creates, filters, edits, toggles, and clears todos", () => {
@@ -117,7 +121,7 @@ describe("TodoMVC direct bundle", () => {
 
   it("toggles all items on and off", () => {
     cy.get(".toggle-all").check({ force: true });
-    cy.get(".todo-list li").each(($item) => {
+    cy.get(".todo-list li").each($item => {
       cy.wrap($item).should("have.class", "completed");
     });
     cy.contains(".todo-count strong", "0").should("exist");
@@ -127,7 +131,7 @@ describe("TodoMVC direct bundle", () => {
 
     clickFilter("All");
     cy.get(".toggle-all").uncheck({ force: true });
-    cy.get(".todo-list li").each(($item) => {
+    cy.get(".todo-list li").each($item => {
       cy.wrap($item).should("not.have.class", "completed");
     });
     cy.contains(".todo-count strong", "5").should("exist");
@@ -137,10 +141,7 @@ describe("TodoMVC direct bundle", () => {
     const original = "Exercise edit, filter, and clear-completed flows";
 
     cy.contains(".todo-list label", original).dblclick();
-    cy.get(".edit")
-      .should("have.value", original)
-      .clear()
-      .type("Escape should not save{esc}");
+    cy.get(".edit").should("have.value", original).clear().type("Escape should not save{esc}");
 
     cy.get(".edit").should("not.exist");
     cy.contains(".todo-list label", original).should("exist");
@@ -149,10 +150,7 @@ describe("TodoMVC direct bundle", () => {
 
   it("saves edit on blur", () => {
     cy.contains(".todo-list label", "Keep scoped CSS realistic under a larger tree").dblclick();
-    cy.get(".edit")
-      .clear()
-      .type("Blur saved todo")
-      .blur();
+    cy.get(".edit").clear().type("Blur saved todo").blur();
 
     cy.get(".edit").should("not.exist");
     cy.contains(".todo-list label", "Blur saved todo").should("exist");
