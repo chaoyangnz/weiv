@@ -199,3 +199,9 @@ This package ships optional typing support for:
 - `weiv:router`
 
 Use these when needed in your app or generated code.
+
+## Documentation
+
+- [Core Architecture](https://weiv.dev/core-architecture)
+- [API Guide](https://weiv.dev/api-guide)
+- [Runtime API](https://weiv.dev/runtime-api)

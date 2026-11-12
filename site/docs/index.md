@@ -15,7 +15,7 @@ hero:
       link: /getting-started
     - theme: alt
       text: Read the Docs
-      link: /architecture
+      link: /core-architecture
 
 features:
   - title: Compiler-First
@@ -36,5 +36,6 @@ surface while pushing more precision into compile time.
 Start with [Getting Started](./getting-started.md) for installation and CLI
 usage, then move on to [Simple Component](./simple-component.md),
 [Shared State](./shared-state.md), [VS Code Extension](./vscode-extension.md),
-[Router Example](./router-example.md), [Architecture](./architecture.md), and
+[Router Example](./router-example.md), [Core Architecture](./core-architecture.md),
+[API Guide](./api-guide.md), [Architecture](./architecture.md), and
 [Runtime API](./runtime-api.md) as you go deeper.

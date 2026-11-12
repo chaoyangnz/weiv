@@ -7,8 +7,8 @@
   "docs": "docs",
   "nav": [
     { "text": "Guide", "link": "/getting-started" },
-    { "text": "Docs", "link": "/architecture" },
-    { "text": "Runtime API", "link": "/runtime-api" },
+    { "text": "Docs", "link": "/core-architecture" },
+    { "text": "API Guide", "link": "/api-guide" },
     { "text": "GitHub", "link": "https://github.com/neucine/weiv" }
   ],
   "sidebar": [
@@ -35,6 +35,8 @@
     {
       "text": "Reference",
       "items": [
+        { "text": "Core Architecture", "link": "/core-architecture" },
+        { "text": "API Guide", "link": "/api-guide" },
         { "text": "Architecture", "link": "/architecture" },
         { "text": "Runtime Scheduling", "link": "/runtime-scheduling" },
         { "text": "Runtime API", "link": "/runtime-api" },

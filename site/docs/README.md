@@ -7,7 +7,9 @@ Public docs kept here:
 - [Site Home](./index.md)
 - [Getting Started](./getting-started.md)
 - [Framework Vision](./framework-vision.md)
+- [Core Architecture](./core-architecture.md)
 - [Architecture](./architecture.md)
+- [API Guide](./api-guide.md)
 - [Reactivity](./reactivity.md)
 - [Shared State](./shared-state.md)
 - [Bundling](./bundling.md)
@@ -19,9 +21,10 @@ Public docs kept here:
 - [UI Library Direction](./ui-library-direction.md)
 - [UI Library Spec](./ui-library-spec.md)
 
-Internal design, planning, testing, and execution docs live in the sibling
-`../weiv-arch` repo. Framework implementation lives in the sibling `../weiv`
-repo, but public docs are maintained here directly.
+Compiler internals are described in
+[`docs/compiler/ARCHITECTURE.md`](../../docs/compiler/ARCHITECTURE.md). Neucine
+maintains design and planning records in its central documentation repository.
+The public API contract and user guides live here.
 
 Current publish flow:
 

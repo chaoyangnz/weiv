@@ -151,6 +151,8 @@ VS Code support is maintained in [packages/vscode-extension](packages/vscode-ext
 
 - [Docs Index](https://weiv.dev/)
 - [Framework Vision](https://weiv.dev/framework-vision)
+- [Core Architecture](https://weiv.dev/core-architecture)
+- [API Guide](https://weiv.dev/api-guide)
 - [Current Architecture](https://weiv.dev/architecture)
 - [Current Status](https://weiv.dev/status)
 - [NPM Single-Package Distribution](https://weiv.dev/npm-single-package-distribution)
