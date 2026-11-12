@@ -180,14 +180,22 @@ fn lower_mode(
             .body
             .iter()
             .filter_map(|statement| match statement {
-                Statement::ImportDeclaration(import) if !import.source.value.ends_with(".weiv") => {
+                Statement::ImportDeclaration(import)
+                    if import.import_kind != ImportOrExportKind::Type
+                        && !import.source.value.ends_with(".weiv") =>
+                {
                     import.specifiers.as_ref()
                 }
                 _ => None,
             })
             .flat_map(|specifiers| specifiers.iter())
             .filter_map(|specifier| match specifier {
-                ImportDeclarationSpecifier::ImportSpecifier(s) => s.local.symbol_id.get(),
+                ImportDeclarationSpecifier::ImportSpecifier(s)
+                    if s.import_kind != ImportOrExportKind::Type =>
+                {
+                    s.local.symbol_id.get()
+                }
+                ImportDeclarationSpecifier::ImportSpecifier(_) => None,
                 ImportDeclarationSpecifier::ImportDefaultSpecifier(s) => s.local.symbol_id.get(),
                 ImportDeclarationSpecifier::ImportNamespaceSpecifier(s) => s.local.symbol_id.get(),
             })
@@ -643,6 +651,17 @@ mod tests {
         assert!(code.contains("return count;"));
         assert!(code.contains("return Child;"));
         assert!(!code.contains("__weiv_import_Child"));
+    }
+
+    #[test]
+    fn inline_type_imports_are_erased_from_runtime_references() {
+        let code = lower(
+            "import { localHttp, type LocalHttpEvent } from 'neiv/http'; function onEvent(event: LocalHttpEvent) { return localHttp.request('/'); }",
+            "App.ts",
+            &[],
+        ).unwrap();
+        assert!(code.contains("__weiv_import_localHttp"));
+        assert!(!code.contains("__weiv_import_LocalHttpEvent"));
     }
     #[test]
     fn lexical_shadowing_and_expression_writes() {

@@ -7,6 +7,25 @@ import { execFileSync } from "node:child_process";
 import { installJsdom, loadModules } from "./support";
 
 const tick = () => new Promise<void>(resolve => queueMicrotask(resolve));
+
+test("inline type-only named import from neiv/http has no runtime reference", () => {
+  const dir = mkdtempSync(join(tmpdir(), "weiv-neiv-type-import-"));
+  const path = join(dir, "App.weiv");
+  try {
+    writeFileSync(path, `<template><p>Ready</p></template><script lang="ts">
+      import { localHttp, type LocalHttpEvent } from 'neiv/http';
+      function onEvent(event: LocalHttpEvent) { return localHttp.request('/'); }
+    </script>`);
+    const result = emit(path);
+    expect(result.exitCode).toBe(0);
+    const code = new TextDecoder().decode(result.stdout);
+    expect(code).toContain("__weiv_import_localHttp");
+    expect(code).not.toContain("__weiv_import_LocalHttpEvent");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}, 30000);
+
 function emit(path: string) {
   return Bun.spawnSync(["cyna-out/bin/weiv", "emit", "js", path], { stdout: "pipe", stderr: "pipe" });
 }
