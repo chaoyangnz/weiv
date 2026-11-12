@@ -912,6 +912,34 @@ test("standalone cells select helper/alias state and leave unrelated native decl
   }
 }, 30000);
 
+test("helper-backed disclosure responds to local state changes", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "weiv-disclosure-helper-"));
+  const path = join(dir, "Disclosure.weiv");
+  writeFileSync(
+    path,
+    `<template><details :open="processOpen('a')"><summary @click="toggle">Process</summary><p>Details</p></details></template><script lang="ts">
+    let activeWorkId='b'; let processOverrides: Record<string,boolean>={};
+    function processOpen(id:string){return processOverrides[id] ?? id===activeWorkId}
+    function toggle(event:Event){event.preventDefault();processOverrides={...processOverrides,a:!processOpen('a')}}
+  </script>`,
+  );
+  let f: Awaited<ReturnType<typeof fixture>> | undefined;
+  try {
+    f = await fixture(path);
+    const view = f.mount();
+    const details = view.target.querySelector("details")!;
+    expect(details.open).toBe(false);
+    view.target
+      .querySelector("summary")!
+      .dispatchEvent(new f.window.MouseEvent("click", { bubbles: true, cancelable: true }));
+    await tick();
+    expect(details.open).toBe(true);
+  } finally {
+    f?.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+}, 30000);
+
 test("snapshot callables subscribe to the local state their bodies read", async () => {
   const dir = mkdtempSync(join(tmpdir(), "weiv-snapshot-callable-"));
   const path = join(dir, "Callable.weiv");

@@ -1,5 +1,26 @@
 # Weiv integration friction
 
+## Disclosure state did not update from a helper binding (2026-11-11)
+
+- **Classification:** confirmed integration friction; compiler dependency tracking and event state behavior need investigation.
+- **Context:** Harngine Coding Desktop `apps/coding/desktop/web/App.weiv`, Weiv checkout `20c2f04`, Neiv `0.1.3`, macOS arm64 WebKit. A completed tool record used `<details :open="processOpen(row.workId)">` and a summary click handler that reassigned a `processOverrides` object.
+- **Reproduction:** build the desktop app, open a completed session with a tool call, and click its collapsed process summary. The handler calls `preventDefault()` and changes `processOverrides[id]`. The generated `App.mjs` refresh condition for the timeline included `processOpen` but omitted `processOverrides` and `activeWorkId`. Replacing the binding with a direct `processOverrides[...] ?? ...` expression caused those dependencies to appear in the generated refresh condition, but the native app still left the summary collapsed after clicking.
+- **Expected:** the summary expands and reveals the tool details when clicked.
+- **Actual:** accessibility state remained `summary 1 tool call, Value: off` after clicking. No compile or runtime error was shown.
+- **Workaround:** remove the custom click handler and let `<summary>` perform its native disclosure action; bind `:open` only to whether the work is active. In the rebuilt app, clicking changed the accessibility state to `summary 1 tool call, Value: on` and exposed `Read file`, `README.md`, and its result disclosure.
+- **Current source check (2026-11-11):** `bun test test/component/compiler-cells.test.ts --test-name-pattern 'helper-backed disclosure'` passes (1 pass, 0 fail) using a minimal `<details :open="processOpen('a')">` component with the same `preventDefault()` and object reassignment pattern. Emitted JavaScript subscribes `processOpen` to both `processOverrides` and `activeWorkId`, and the mounted click sets `details.open` to true. The reported Harngine failure is therefore not reproducible in the current standalone compiler/runtime; a Neiv packaged WebKit reproduction would need the exact bundle and event trace before changing compiler behavior.
+
+## Neiv frontend helper killed during Harngine desktop rebuild (2026-11-11)
+
+- **Classification:** tooling/environment problem in the Neiv build path; no Weiv compiler defect established.
+- **Context:** rebuilding Harngine Coding Desktop's Weiv UI on macOS arm64 (16 GB RAM), Weiv checkout `20c2f04`, Neiv `0.1.3`, Node `22.22.1`, Bun `1.2.16`, TypeScript `5.9.3`.
+- **Reproduction:** from `/Users/chao.yang/Private/harngine`, run `bun run agent:desktop --repo /Users/chao.yang/Private/harngine`. The failing stage is `node "$repo/scripts/build-frontend.mjs"` in Neiv's `packages/neiv/app-build.sh`; it invokes Node to compile Neiv's frontend runtime with TypeScript. Retrying with `NODE_OPTIONS=--max-old-space-size=512` produces the same result.
+- **Expected:** the frontend helper compiles and the desktop bundle build continues.
+- **Actual:** `/Users/chao.yang/Private/neiv/packages/neiv/app-build.sh: line 11: 69280 Killed: 9 node "$repo/scripts/build-frontend.mjs"`; the outer command exits 137. The retry also exits 137 (`69927 Killed: 9`). Memory pressure was high when observed. These are the complete error lines from the failing helper; no TypeScript diagnostic was emitted.
+- **Workaround:** run the same TypeScript compiler arguments under Bun, then run Neiv's app build with only that already completed helper skipped. The app build completes and includes the current Weiv output. This workaround did not change Neiv source.
+- **Mitigation (2026-11-11):** Neiv's source build now uses a dedicated TypeScript project with `types: []` so caller workspace types cannot leak in, and skips recompilation when all six runtime outputs are newer than the three sources, project config, and lockfile. `node scripts/build-frontend.mjs` succeeds and a second run completes in about 0.02 seconds. The original macOS `Killed: 9` event depended on system memory pressure and has not been reproduced deterministically.
+- **Verification (2026-11-12):** TypeScript 5.9.3 completed `--project packages/neiv/tsconfig.frontend.json --noEmit` from the Harngine workspace, and the Neiv helper exited 0 from its package directory. The documented Harngine root build also exited 0 after selecting the current Weiv package. The original exit 137 remains an observed memory-pressure failure rather than a repeatable compiler error.
+
 ## Biome formatting setup encountered stale registry URLs (2026-11-12)
 
 - **Classification:** project toolchain setup friction; no Weiv, Neiv, or Cyna compiler defect is established.
@@ -3177,3 +3198,13 @@ referenced by:
 - **Cause (2026-11-12):** The Oxc analysis marks the inline specifier `type_only`, and Cyna's import emitter omits it. Rust `cells.rs` still included every named import in its runtime reference rewrite set. Its lowered script therefore referred to `__weiv_import_LocalHttpEvent` even though the emitter deliberately provided no such import. This is the first divergent layer; a value import alongside the type import is the passing control.
 - **Fix:** Rust lowering now excludes declaration-level and inline type-only specifiers from the runtime import set. A Rust unit test and a component regression compile the exact mixed `neiv/http` import pattern and assert that only `localHttp` receives a runtime reference. Harngine has restored the real named type import. Verified against the current checkout's source build; the pinned published `weivjs` 0.1.2 remains a separate older contract.
 - **Integration check:** Neiv now accepts `WEIV_PACKAGE_ROOT` to select one package's CLI and runtime together. Harngine's root build passes this variable explicitly to its child process; mutating `process.env` inside its Bun script did not propagate to the nested Neiv build on this environment. Before that change, the build exited 0 but emitted the old `weivUpdate` code and undefined type reference. After it, the generated module contains managed cells and no `weivUpdate` or `__weiv_import_LocalHttpEvent`. A mounted DOM smoke run of that exact generated bundle displayed a model delta and counters, then retained the preview and counters after a completed snapshot. Full checks: 50 Rust tests, 407 Cyna tests, 172 component/inspect/runtime/UI tests, Neiv M1 clean builds, and the documented Harngine root build all passed on macOS arm64.
+
+## Hosted quick CI requires a generated Weiv binary (2026-11-11)
+
+- **Classification:** test setup/tooling gap, confirmed; no compiler defect established.
+- **Context:** public `neucine/weiv` at commit `3a7d2a1`, GitHub Actions Ubuntu hosted runner, Bun 1.4.4, Node 24, `npm ci --ignore-scripts --no-audit --no-fund`.
+- **Reproduction:** in a fresh checkout without `cyna-out/bin/weiv`, run `bun test test/component` or `bun test test/inspect`. The component support helper invokes `Bun.spawnSync({ cmd: ["cyna-out/bin/weiv", ...args] })`; inspect invokes the same binary directly.
+- **Expected:** the tests run after the CI workflow installs their declared dependencies, or the test setup documents and builds the required binary.
+- **Actual:** component tests fail with `ENOENT: no such file or directory, posix_spawn 'cyna-out/bin/weiv'` at `test/component/support.ts:365`; the first hosted run reported 0 pass and 66 fail. The inspect tests use the same absent path.
+- **Cause and control:** the first divergent layer is the test harness's undeclared generated binary. A local checkout with that binary passes 171 component, inspect, runtime, and UI core tests. The fresh hosted checkout does not contain it. On the same checkout, `bun test test/runtime test/ui-core` passes 102 tests and does not invoke the binary.
+- **Workaround:** hosted quick CI runs runtime and UI core tests. A separate full component CI path needs a reproducible Cyna toolchain install and Weiv binary build before those suites run. Confirmed for the hosted run; a clean local Linux reproduction is the next check for that full path.
