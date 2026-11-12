@@ -14,7 +14,8 @@
       "!apps/storybook/storybook-static/**",
       "!**/dist/**",
       "!**/target/**",
-      "!**/node_modules/**"
+      "!**/node_modules/**",
+      "!packages/vscode-extension/**"
     ]
   },
   "formatter": {

@@ -22,3 +22,18 @@ jobs:
           bun test test/runtime
           bun test test/ui-core
 
+  vscode-extension:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/vscode-extension
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install extension dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Build and test extension
+        run: npm test
+

@@ -1,0 +1,84 @@
+{
+  "name": "weiv-vscode",
+  "displayName": "Weiv",
+  "description": "Syntax highlighting and navigation for Weiv single-file components (.weiv)",
+  "version": "0.1.0",
+  "publisher": "weiv",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/neucine/weiv.git"
+  },
+  "bugs": {
+    "url": "https://github.com/neucine/weiv/issues"
+  },
+  "homepage": "https://github.com/neucine/weiv/tree/main/packages/vscode-extension#readme",
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:weiv"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/*.test.cjs",
+    "watch": "tsc -watch -p tsconfig.json",
+    "package": "vsce package",
+    "publish:vsce": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "@types/vscode": "^1.75.0",
+    "@vscode/vsce": "^3.6.2",
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "weiv",
+    "vscode",
+    "extension",
+    "sfc",
+    "typescript"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "weiv",
+        "aliases": [
+          "Weiv",
+          "weiv"
+        ],
+        "extensions": [
+          ".weiv"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/weiv.png",
+          "dark": "./icons/weiv.png"
+        }
+      }
+    ],
+    "iconThemes": [
+      {
+        "id": "weiv-icons",
+        "label": "Weiv File Icons",
+        "path": "./icons/icon-theme.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "weiv",
+        "scopeName": "source.weiv",
+        "path": "./syntaxes/weiv.tmLanguage.json",
+        "embeddedLanguages": {
+          "text.html.basic": "html",
+          "source.ts": "typescript",
+          "source.css": "css"
+        }
+      }
+    ]
+  }
+}

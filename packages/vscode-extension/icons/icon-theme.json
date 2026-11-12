@@ -1,0 +1,11 @@
+{
+  "hidesExplorerArrows": false,
+  "iconDefinitions": {
+    "_weiv": {
+      "iconPath": "./weiv.png"
+    }
+  },
+  "fileExtensions": {
+    "weiv": "_weiv"
+  }
+}

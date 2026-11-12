@@ -4,9 +4,7 @@ Weiv has a dedicated VS Code extension for `.weiv` files.
 
 ![Weiv VS Code extension preview](./assets/weiv-vscode-preview.png)
 
-Repo:
-
-- [`weiv-vscode`](https://github.com/neucine/weiv-vscode)
+Source: [`packages/vscode-extension`](https://github.com/neucine/weiv/tree/main/packages/vscode-extension).
 
 ## What It Adds
 
@@ -20,12 +18,12 @@ Repo:
 
 If the extension is published in the Marketplace, install `Weiv` there.
 
-For local development from the standalone repo:
+For a local build from the Weiv repository:
 
 ```bash
-git clone https://github.com/weivjs/weiv-vscode.git
-cd weiv-vscode
-npm install
+git clone https://github.com/neucine/weiv.git
+cd weiv/packages/vscode-extension
+npm ci
 npm run package
 code --install-extension weiv-vscode-0.1.0.vsix
 ```

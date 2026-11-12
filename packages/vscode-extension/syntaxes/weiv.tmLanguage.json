@@ -1,0 +1,229 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Weiv",
+  "scopeName": "source.weiv",
+  "patterns": [
+    { "include": "#template-section" },
+    { "include": "#script-section" },
+    { "include": "#style-section" },
+    { "include": "#comments" }
+  ],
+  "repository": {
+    "comments": {
+      "begin": "<!--",
+      "end": "-->",
+      "name": "comment.block.html.weiv"
+    },
+    "template-section": {
+      "begin": "(<)(template)(>)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.html.weiv" },
+        "2": { "name": "entity.name.tag.section.weiv" },
+        "3": { "name": "punctuation.definition.tag.end.html.weiv" }
+      },
+      "end": "(</)(template)(>)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.html.weiv" },
+        "2": { "name": "entity.name.tag.section.weiv" },
+        "3": { "name": "punctuation.definition.tag.end.html.weiv" }
+      },
+      "contentName": "text.html.basic",
+      "patterns": [
+        { "include": "#template-content" }
+      ]
+    },
+    "template-content": {
+      "patterns": [
+        { "include": "#template-interpolation" },
+        { "include": "#template-component-tag" },
+        { "include": "#template-html-tag" },
+        { "include": "#template-comment" }
+      ]
+    },
+    "template-comment": {
+      "begin": "<!--",
+      "end": "-->",
+      "name": "comment.block.html.weiv"
+    },
+    "template-interpolation": {
+      "begin": "\\{\\{",
+      "end": "\\}\\}",
+      "beginCaptures": {
+        "0": { "name": "punctuation.definition.interpolation.begin.weiv" }
+      },
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.interpolation.end.weiv" }
+      },
+      "name": "meta.interpolation.weiv",
+      "contentName": "source.ts",
+      "patterns": [
+        { "include": "source.ts" }
+      ]
+    },
+    "template-component-tag": {
+      "begin": "(</?)(([A-Z][a-zA-Z0-9]*))",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.html.weiv" },
+        "2": { "name": "entity.name.tag.component.weiv support.class.component.weiv" }
+      },
+      "end": "(/?>)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.end.html.weiv" }
+      },
+      "patterns": [
+        { "include": "#tag-attributes" }
+      ]
+    },
+    "template-html-tag": {
+      "begin": "(</?)(([a-z][a-z0-9-]*))",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.html.weiv" },
+        "2": { "name": "entity.name.tag.html.weiv" }
+      },
+      "end": "(/?>)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.end.html.weiv" }
+      },
+      "patterns": [
+        { "include": "#tag-attributes" }
+      ]
+    },
+    "tag-attributes": {
+      "patterns": [
+        { "include": "#attribute-directive-bind-full" },
+        { "include": "#attribute-directive-on" },
+        { "include": "#attribute-directive-control" },
+        { "include": "#attribute-directive-slot" },
+        { "include": "#attribute-standard" }
+      ]
+    },
+    "attribute-directive-bind-full": {
+      "begin": "(:)([a-zA-Z0-9-]+)(=)(\")",
+      "beginCaptures": {
+        "1": { "name": "punctuation.separator.directive.weiv" },
+        "2": { "name": "entity.other.attribute-name.binding.weiv" },
+        "3": { "name": "punctuation.separator.key-value.html" },
+        "4": { "name": "punctuation.definition.string.begin.html" }
+      },
+      "end": "\"",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.string.end.html" }
+      },
+      "contentName": "source.ts",
+      "patterns": [
+        { "include": "source.ts" }
+      ]
+    },
+    "attribute-directive-on": {
+      "begin": "(@)([a-zA-Z0-9-]+)(=)(\")",
+      "beginCaptures": {
+        "1": { "name": "punctuation.separator.directive.weiv" },
+        "2": { "name": "entity.other.attribute-name.event.weiv" },
+        "3": { "name": "punctuation.separator.key-value.html" },
+        "4": { "name": "punctuation.definition.string.begin.html" }
+      },
+      "end": "\"",
+      "endCaptures": {
+        "0": { "name": "punctuation.definition.string.end.html" }
+      },
+      "contentName": "source.ts",
+      "patterns": [
+        { "include": "source.ts" }
+      ]
+    },
+    "attribute-directive-control": {
+      "patterns": [
+        {
+          "begin": "(#(?:if|for))(=)(\")",
+          "beginCaptures": {
+            "1": { "name": "keyword.control.weiv" },
+            "2": { "name": "punctuation.separator.key-value.html" },
+            "3": { "name": "punctuation.definition.string.begin.html" }
+          },
+          "end": "\"",
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.string.end.html" }
+          },
+          "contentName": "source.ts",
+          "patterns": [
+            { "include": "source.ts" }
+          ]
+        },
+        {
+          "match": "(#else)\\b",
+          "name": "keyword.control.weiv"
+        }
+      ]
+    },
+    "attribute-directive-slot": {
+      "patterns": [
+        {
+          "match": "(slot)(:)([a-zA-Z0-9-]+)",
+          "captures": {
+            "1": { "name": "entity.other.attribute-name.directive.weiv keyword.other.slot.weiv" },
+            "2": { "name": "punctuation.separator.directive.weiv" },
+            "3": { "name": "entity.other.attribute-name.binding.weiv" }
+          }
+        }
+      ]
+    },
+    "attribute-standard": {
+      "patterns": [
+        {
+          "begin": "([a-zA-Z-]+)(=)(\")",
+          "beginCaptures": {
+            "1": { "name": "entity.other.attribute-name.html" },
+            "2": { "name": "punctuation.separator.key-value.html" },
+            "3": { "name": "punctuation.definition.string.begin.html" }
+          },
+          "end": "\"",
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.string.end.html" }
+          },
+          "contentName": "string.quoted.double.html"
+        },
+        {
+          "match": "([a-zA-Z-]+)",
+          "name": "entity.other.attribute-name.html"
+        }
+      ]
+    },
+    "script-section": {
+      "begin": "(<)(script)\\s+(lang=\"ts\")(>)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.html.weiv" },
+        "2": { "name": "entity.name.tag.section.weiv" },
+        "3": { "name": "entity.other.attribute-name.html.weiv" },
+        "4": { "name": "punctuation.definition.tag.end.html.weiv" }
+      },
+      "end": "(</)(script)(>)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.html.weiv" },
+        "2": { "name": "entity.name.tag.section.weiv" },
+        "3": { "name": "punctuation.definition.tag.end.html.weiv" }
+      },
+      "contentName": "source.ts",
+      "patterns": [
+        { "include": "source.ts" }
+      ]
+    },
+    "style-section": {
+      "begin": "(<)(style)(>)",
+      "beginCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.html.weiv" },
+        "2": { "name": "entity.name.tag.section.weiv" },
+        "3": { "name": "punctuation.definition.tag.end.html.weiv" }
+      },
+      "end": "(</)(style)(>)",
+      "endCaptures": {
+        "1": { "name": "punctuation.definition.tag.begin.html.weiv" },
+        "2": { "name": "entity.name.tag.section.weiv" },
+        "3": { "name": "punctuation.definition.tag.end.html.weiv" }
+      },
+      "contentName": "source.css",
+      "patterns": [
+        { "include": "source.css" }
+      ]
+    }
+  }
+}

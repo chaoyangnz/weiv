@@ -1,7 +1,7 @@
 # Weiv releasing
 
 The canonical release contract is in daydream `shared/decisions/0001-canonical-release-process.md`.
-The version entry points are `packages/weiv/package.json`, the platform package manifest, the main package's optional dependency, and `site/site.json`. The macOS ARM64 binary under `packages/weiv-darwin-arm64/bin` is committed release input; verification checks its format and packs that exact binary. The VS Code extension has a separate repository and release flow.
+The version entry points are `packages/weiv/package.json`, the platform package manifest, the main package's optional dependency, and `site/site.json`. The macOS ARM64 binary under `packages/weiv-darwin-arm64/bin` is committed release input; verification checks its format and packs that exact binary. The VS Code extension lives in `packages/vscode-extension` and has its own Marketplace release flow.
 
 Run `node tools/release.mjs plan --preflight-only` before expensive gates. For an offline rehearsal on a release candidate commit, run `node tools/release.mjs rehearse`; local experimentation on a dirty tree or existing version may use `--allow-dirty`. The rehearsal runs the component/runtime suite against the committed binary, checks the Vite plugin, packs npm tarballs, installs the main tarball in a local consumer, copies the verified tarballs into the local sink, checks their hashes, and renders `state/record.md`. It creates no tag or remote publication. The local component/runtime suite passed 170 tests and the Cyna suite passed 407 tests on 2026-11-10.
 

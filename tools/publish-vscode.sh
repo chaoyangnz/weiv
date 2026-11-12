@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-EXT_DIR="$ROOT_DIR/../weiv-vscode"
+EXT_DIR="$ROOT_DIR/packages/vscode-extension"
 
 DRY_RUN=0
 DO_PUBLISH=0
@@ -38,22 +38,13 @@ EOF
   esac
 done
 
-if [[ ! -d "$EXT_DIR" ]]; then
-  echo "Expected standalone VS Code extension repo at: $EXT_DIR" >&2
-  echo "Clone it first, for example:" >&2
-  echo "  git clone https://github.com/neucine/weiv-vscode.git \"$EXT_DIR\"" >&2
-  exit 1
-fi
-
 cd "$EXT_DIR"
 
 echo "==> Installing extension dependencies"
-if [[ "$DRY_RUN" -eq 1 ]]; then
-  echo "dry-run mode: skipping dependency install"
-elif [[ -d node_modules ]]; then
+if [[ -d node_modules ]]; then
   echo "node_modules already present; skipping install"
 else
-  npm install --no-audit --no-fund
+  npm ci --ignore-scripts --no-audit --no-fund
 fi
 
 echo "==> Building extension"

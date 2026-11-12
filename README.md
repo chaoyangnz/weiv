@@ -146,6 +146,8 @@ npx weiv emit lir path/to/App.weiv App.lir.txt
 
 Public docs live at [weiv.dev](https://weiv.dev).
 
+VS Code support is maintained in [packages/vscode-extension](packages/vscode-extension/README.md).
+
 - [Docs Index](https://weiv.dev/)
 - [Framework Vision](https://weiv.dev/framework-vision)
 - [Current Architecture](https://weiv.dev/architecture)
