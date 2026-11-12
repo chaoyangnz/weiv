@@ -14,6 +14,7 @@ direct DOM updates, and a shared reactive runtime.
 - explicit observable or subscription boundaries for external mutable state
 - direct DOM updates instead of a framework-wide VDOM layer
 - runtime-level routing integrated with emitted component lifecycle
+- VS Code extension with Weiv syntax support and editor navigation
 
 ## Status
 
