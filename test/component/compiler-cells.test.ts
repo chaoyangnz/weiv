@@ -12,10 +12,13 @@ test("inline type-only named import from neiv/http has no runtime reference", ()
   const dir = mkdtempSync(join(tmpdir(), "weiv-neiv-type-import-"));
   const path = join(dir, "App.weiv");
   try {
-    writeFileSync(path, `<template><p>Ready</p></template><script lang="ts">
+    writeFileSync(
+      path,
+      `<template><p>Ready</p></template><script lang="ts">
       import { localHttp, type LocalHttpEvent } from 'neiv/http';
       function onEvent(event: LocalHttpEvent) { return localHttp.request('/'); }
-    </script>`);
+    </script>`,
+    );
     const result = emit(path);
     expect(result.exitCode).toBe(0);
     const code = new TextDecoder().decode(result.stdout);
