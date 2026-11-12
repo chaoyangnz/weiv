@@ -37,6 +37,9 @@ before it should be treated as production-ready.
 
 Install the published package:
 
+The current compiler binary supports macOS arm64. Other platforms require a
+compatible binary supplied through `WEIV_BINARY_PATH`.
+
 ```bash
 npm i -D weivjs
 ```

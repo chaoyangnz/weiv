@@ -33,10 +33,10 @@ publish packages.
 npx weiv dev src/App.weiv
 
 # Emit browser app bundle
-npx weiv compile emit app src/App.weiv ./dist
+npx weiv compile src/App.weiv ./dist
 
 # Emit JS for a component
-npx weiv compile emit js src/App.weiv
+npx weiv emit js src/App.weiv
 ```
 
 ## Writing `.weiv` SFCs
