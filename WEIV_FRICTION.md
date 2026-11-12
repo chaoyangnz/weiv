@@ -3208,3 +3208,13 @@ referenced by:
 - **Actual:** component tests fail with `ENOENT: no such file or directory, posix_spawn 'cyna-out/bin/weiv'` at `test/component/support.ts:365`; the first hosted run reported 0 pass and 66 fail. The inspect tests use the same absent path.
 - **Cause and control:** the first divergent layer is the test harness's undeclared generated binary. A local checkout with that binary passes 171 component, inspect, runtime, and UI core tests. The fresh hosted checkout does not contain it. On the same checkout, `bun test test/runtime test/ui-core` passes 102 tests and does not invoke the binary.
 - **Workaround:** hosted quick CI runs runtime and UI core tests. A separate full component CI path needs a reproducible Cyna toolchain install and Weiv binary build before those suites run. Confirmed for the hosted run; a clean local Linux reproduction is the next check for that full path.
+
+## Neiv packaged a native-slot import without its JavaScript extension (2026-11-13)
+
+- **Classification:** confirmed Neiv packaging/integration defect. This report does not establish a Weiv compiler defect.
+- **Context/environment:** Lightcept macOS arm64 app built through `ui/neiv/build.sh`; Weiv `788a61647446dec232fe82ba596f2f1acf3adae9`, `weivjs` `0.1.2`, Neiv source `db64001c00f51b477553ea1a4f646aae89d16ff2`, Neiv `0.1.3`, Cyna `0.5.0`, Node.js `22.22.1`, macOS `26.6.2`.
+- **Reproduction:** run `ui/neiv/build.sh` from the Lightcept root, open `ui/neiv/build/NeivApp.app`, and inspect `Contents/Resources/web/App.mjs`. The generated import is `import { attachNativeSlot } from "/__weiv_packages/neiv/slots";`, while the app bundle contains `__weiv_packages/neiv/slots.js`.
+- **Expected:** the packaged module requests the concrete JavaScript asset and the editor mounts.
+- **Actual:** Neiv and Cyna both report a successful build. The app opens with only the WebView background, and no build diagnostic identifies the failed module request.
+- **Control and diagnosis:** changing only the emitted import to `/__weiv_packages/neiv/slots.js` makes the same bundle render the editor. The first divergent layer is Neiv's `install-frontend.mjs`: it rewrote scoped package imports but omitted the bare package form emitted by Weiv's package import mapping.
+- **Fix and verification:** Neiv now rewrites `sdk`, `slots`, and `http` imports under both `/__weiv_packages/@neucine/neiv/` and `/__weiv_packages/neiv/`, and Biome accepts the change. A normal Neiv rebuild emitted the import with `.js`; the packaged editor rendered, switched develop tabs, opened the native file dialog, and handled cancellation. The check does not cover every package alias a future Weiv compiler may emit.
