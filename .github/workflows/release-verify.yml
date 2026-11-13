@@ -43,7 +43,7 @@ jobs:
   verify:
     needs: preflight
     if: inputs.mode == 'verify'
-    runs-on: ${{ inputs.platform == 'linux-x64' && 'ubuntu-24.04' || inputs.platform == 'windows-x64' && 'windows-2025' || 'macos-26' }}
+    runs-on: ${{ fromJSON(inputs.platform == 'linux-x64' && '["self-hosted","Linux","X64","eq12-linux-x64"]' || inputs.platform == 'windows-x64' && '["self-hosted","Windows","X64","cyna-windows-parity"]' || '["self-hosted","macOS","ARM64","macbook-arm64"]') }}
     defaults:
       run:
         shell: bash

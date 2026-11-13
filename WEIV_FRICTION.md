@@ -1,5 +1,16 @@
 # Weiv integration friction
 
+## Module identity tests depended on the checkout path (2026-11-13)
+
+- **Classification:** confirmed release-test portability defect; no compiler defect established.
+- **Context:** Weiv 0.1.3 source at the platform release gate on macOS arm64. The Cyna test suite is run from more than one checkout path during release preparation.
+- **Reproduction:** run `cyna test .` from two checkout paths and inspect the managed-project assertions in `test/cyna/project_graph.test.cy`. Before `61e5f40`, the tests compared generated module filenames with hard-coded hashes such as `d7bc2dff1e87035e.mjs` and `6818c0815a1abf41.mjs`.
+- **Expected:** the test suite verifies stable module identity rules from any valid checkout path.
+- **Actual:** the module names are derived from canonical source paths, so moving the checkout changed the hashes and made unchanged source fail only because of where it was cloned.
+- **Cause and fix:** the test treated a path-dependent generated value as a universal golden. Commit `61e5f40` checks the directory and extension, uniqueness between modules, and the relative import between a helper and its dependency while leaving absolute checkout location out of the contract.
+- **Verification:** the full 0.1.3 macOS release gate passed 407/407 Cyna tests from the relocated release checkout after the fix.
+- **Workaround for older revisions:** run the test from the path used to produce the hard-coded hashes. This does not establish portable module identity coverage.
+
 ## Published 0.1.2 lacks Linux and macOS Intel binaries (2026-11-13)
 
 - **Classification:** confirmed packaging and release tooling gap; compiler behavior on Linux remains unverified.
