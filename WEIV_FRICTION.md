@@ -1,5 +1,16 @@
 # Weiv integration friction
 
+## Published 0.1.2 lacks Linux and macOS Intel binaries (2026-11-13)
+
+- **Classification:** confirmed packaging and release tooling gap; compiler behavior on Linux remains unverified.
+- **Context:** Harngine `test:demo:quest` on GitHub Actions Ubuntu 24.04 x64, Bun 1.2.16, Node 22.23.4, `weivjs@0.1.0`. The same platform package references remain in published `weivjs@0.1.2`.
+- **Reproduction:** run `npm view weivjs@0.1.2 optionalDependencies --json`, then `npm view @weivjs/weiv-linux-x64-gnu@0.1.0 version` and `npm view @weivjs/weiv-darwin-x64@0.1.0 version`. Both platform lookups return `E404`. Installing the published main package on Ubuntu and invoking `weiv compile emit js` fails with `Could not resolve weiv binary for linux-x64`, `Expected optional dependency: @weivjs/weiv-linux-x64-gnu`, and `Cannot find module '@weivjs/weiv-linux-x64-gnu/package.json'`.
+- **Expected:** each platform named by the published package has a matching installable binary, or unsupported platforms are omitted with a clear support contract.
+- **Actual:** `weivjs@0.1.2` is published, but its Linux x64, Linux ARM64, and macOS x64 package names return 404. The macOS ARM64 and Windows x64 packages at 0.1.2 are available. The current source checkout at `7bc78f7` declares only macOS ARM64, `tools/build-cyna-release.mjs` copies only that binary into a platform package, and `.github/workflows/release-verify.yml` offers only `macos-arm64`.
+- **Attribution:** confirmed release packaging gap. Registry metadata first diverges from the platform packages available for installation; no evidence establishes a compiler defect. The Linux build itself needs verification on a Linux host. Published npm versions are immutable, so correcting the main package's platform references requires a new `weivjs` version.
+- **Workaround:** use the checked in generated UI on Linux CI and compile on macOS ARM64, or set `WEIV_BINARY_PATH` to a separately verified Linux executable. Neither workaround supplies a published Linux npm package.
+
+
 ## Disclosure state did not update from a helper binding (2026-11-11)
 
 - **Classification:** confirmed integration friction; compiler dependency tracking and event state behavior need investigation.
