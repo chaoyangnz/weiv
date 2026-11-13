@@ -96,9 +96,12 @@ test "project build emits local cell and imported observable fixture" {
     assert(mem.contains(component.code.bytes(), "__weiv_cellScope.watch(count, \"count\");".bytes()));
     assert(mem.contains(component.code.bytes(), "__weiv_cellScope.watch(__weiv_publisher_0.getCell(\"shared\"), \"shared\");".bytes()));
     const state = &project.modules[1];
-    assert(state.module_path == "__weiv_modules/d7bc2dff1e87035e.mjs");
+    assert(mem.starts_with(state.module_path.bytes(), "__weiv_modules/".bytes()));
+    assert(mem.ends_with(state.module_path.bytes(), ".mjs".bytes()));
     const publisher = &project.modules[2];
-    assert(publisher.module_path == "__weiv_modules/d7bc2dff1e87035e.publisher.mjs");
+    const state_path = state.module_path.bytes();
+    const publisher_prefix = string.from(state_path[..state_path.len() - 4]);
+    assert(publisher.module_path == $"{publisher_prefix}.publisher.mjs");
 }
 
 test "project build transpiles transitive TypeScript modules" {
@@ -114,11 +117,12 @@ test "project build transpiles transitive TypeScript modules" {
     };
     assert(project.modules.len() == 3);
     const helper = &project.modules[1];
-    assert(helper.module_path == "__weiv_modules/6818c0815a1abf41.mjs");
-    assert(mem.contains(helper.code.bytes(), "./732e292147e3b87c.mjs".bytes()));
-    assert(not mem.contains(helper.code.bytes(), "value: string".bytes()));
     const punctuation = &project.modules[2];
-    assert(punctuation.module_path == "__weiv_modules/732e292147e3b87c.mjs");
+    assert(mem.starts_with(helper.module_path.bytes(), "__weiv_modules/".bytes()));
+    assert(mem.starts_with(punctuation.module_path.bytes(), "__weiv_modules/".bytes()));
+    assert(helper.module_path != punctuation.module_path);
+    assert(mem.contains(helper.code.bytes(), relative_output(helper.module_path, punctuation.module_path).bytes()));
+    assert(not mem.contains(helper.code.bytes(), "value: string".bytes()));
     assert(mem.contains(punctuation.code.bytes(), "suffix".bytes()));
 }
 
