@@ -17,11 +17,32 @@ import { join, resolve } from "node:path";
 const root = resolve(import.meta.dirname, "..");
 const project = existsSync(join(root, "packages/weiv/package.json")) ? "weiv" : "neiv";
 const weivPlatform = {
-  "darwin-arm64": { directory: "weiv-darwin-arm64", format: /Mach-O 64-bit (?:executable )?arm64/ },
-  "linux-x64": { directory: "weiv-linux-x64-gnu", format: /ELF 64-bit.*x86-64/ },
-  "win32-x64": { directory: "weiv-win32-x64-msvc", format: /PE32\+ executable.*x86-64|PE32\+ executable.*x86_64/i },
+  "darwin-arm64": { directory: "weiv-darwin-arm64" },
+  "linux-x64": { directory: "weiv-linux-x64-gnu" },
+  "win32-x64": { directory: "weiv-win32-x64-msvc" },
 }[`${process.platform}-${process.arch}`];
 const weivBinaryName = process.platform === "win32" ? "weiv.exe" : "weiv";
+function assertPlatformBinary(path) {
+  const data = readFileSync(path);
+  let valid = false;
+  if (process.platform === "darwin") {
+    valid = data.length >= 8 && data.readUInt32LE(0) === 0xfeedfacf && data.readUInt32LE(4) === 0x0100000c;
+  } else if (process.platform === "linux") {
+    valid =
+      data.length >= 20 &&
+      data.subarray(0, 4).equals(Buffer.from([0x7f, 0x45, 0x4c, 0x46])) &&
+      data[4] === 2 &&
+      data.readUInt16LE(18) === 0x3e;
+  } else if (process.platform === "win32") {
+    const pe = data.length >= 0x40 ? data.readUInt32LE(0x3c) : data.length;
+    valid =
+      data.subarray(0, 2).toString("ascii") === "MZ" &&
+      pe + 6 <= data.length &&
+      data.subarray(pe, pe + 4).toString("ascii") === "PE\0\0" &&
+      data.readUInt16LE(pe + 4) === 0x8664;
+  }
+  if (!valid) throw Error(`Unexpected platform binary format: ${path}`);
+}
 let state = join(root, "dist/release/state");
 let artifacts = join(root, "dist/release/artifacts");
 let sink = join(root, "dist/release/sink");
@@ -76,8 +97,7 @@ function preflight() {
     const binary = `packages/${weivPlatform.directory}/bin/${weivBinaryName}`;
     if (!preflightOnly) {
       if (!existsSync(join(root, binary))) throw Error(`Missing platform binary: ${binary}`);
-      const kind = run("file", [binary]);
-      if (!weivPlatform.format.test(kind)) throw Error(`Unexpected platform binary format: ${kind}`);
+      assertPlatformBinary(join(root, binary));
     }
   } else {
     if (!preflightOnly) run("which", ["cyna"]);
@@ -174,7 +194,10 @@ function verify() {
       run("npm", ["run", "pkg:smoke"], { stdio: "inherit" });
       run("node", ["test/package/vite-plugin.test.mjs"], {
         stdio: "inherit",
-        env: { ...process.env, WEIV_BINARY_PATH: join(root, `packages/${weivPlatform.directory}/bin/${weivBinaryName}`) },
+        env: {
+          ...process.env,
+          WEIV_BINARY_PATH: join(root, `packages/${weivPlatform.directory}/bin/${weivBinaryName}`),
+        },
       });
     } finally {
       rmSync(legacy, { force: true });
@@ -229,7 +252,10 @@ function verify() {
     }
     run("node", [join(unpack, "package/bin/weiv.mjs"), "--help"], {
       stdio: "inherit",
-      env: { ...process.env, WEIV_BINARY_PATH: join(root, `packages/${weivPlatform.directory}/bin/${weivBinaryName}`) },
+      env: {
+        ...process.env,
+        WEIV_BINARY_PATH: join(root, `packages/${weivPlatform.directory}/bin/${weivBinaryName}`),
+      },
     });
   } else {
     run("node", [
