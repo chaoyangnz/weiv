@@ -28,6 +28,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - name: Use lockfile npm version
+        run: npm install --global npm@10.9.4
       - uses: oven-sh/setup-bun@v2
       - name: Source preflight
         env:
@@ -44,6 +46,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - name: Use lockfile npm version
+        run: npm install --global npm@10.9.4
       - uses: oven-sh/setup-bun@v2
       - name: Runner architecture preflight
         run: |
