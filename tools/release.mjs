@@ -19,7 +19,9 @@ const project = existsSync(join(root, "packages/weiv/package.json")) ? "weiv" : 
 const weivPlatform = {
   "darwin-arm64": { directory: "weiv-darwin-arm64", format: /Mach-O 64-bit (?:executable )?arm64/ },
   "linux-x64": { directory: "weiv-linux-x64-gnu", format: /ELF 64-bit.*x86-64/ },
+  "win32-x64": { directory: "weiv-win32-x64-msvc", format: /PE32\+ executable.*x86-64|PE32\+ executable.*x86_64/i },
 }[`${process.platform}-${process.arch}`];
+const weivBinaryName = process.platform === "win32" ? "weiv.exe" : "weiv";
 let state = join(root, "dist/release/state");
 let artifacts = join(root, "dist/release/artifacts");
 let sink = join(root, "dist/release/sink");
@@ -67,11 +69,11 @@ function preflight() {
       }
     }
     const p = JSON.parse(readFileSync(join(root, files[0])));
-    for (const directory of ["weiv-darwin-arm64", "weiv-linux-x64-gnu"]) {
+    for (const directory of ["weiv-darwin-arm64", "weiv-linux-x64-gnu", "weiv-win32-x64-msvc"]) {
       versions.push(JSON.parse(readFileSync(join(root, `packages/${directory}/package.json`))).version);
       versions.push(p.optionalDependencies[`@weivjs/${directory}`]);
     }
-    const binary = `packages/${weivPlatform.directory}/bin/weiv`;
+    const binary = `packages/${weivPlatform.directory}/bin/${weivBinaryName}`;
     if (!preflightOnly) {
       if (!existsSync(join(root, binary))) throw Error(`Missing platform binary: ${binary}`);
       const kind = run("file", [binary]);
@@ -152,14 +154,14 @@ function verify() {
     project === "weiv" ? [`packages/${weivPlatform.directory}`, "packages/weiv"] : ["packages/neiv"];
   const outputs = [];
   if (project === "weiv") {
-    const legacy = join(root, "cyna-out/bin/weiv"),
-      backup = join(root, "cyna-out/bin/weiv.release-backup");
+    const legacy = join(root, "cyna-out/bin", weivBinaryName),
+      backup = join(root, "cyna-out/bin", `${weivBinaryName}.release-backup`);
     mkdirSync(join(root, "cyna-out/bin"), { recursive: true });
     if (existsSync(backup)) throw Error("Previous binary backup exists: " + backup);
     const hadLegacy = existsSync(legacy);
     if (hadLegacy) renameSync(legacy, backup);
     try {
-      copyFileSync(join(root, `packages/${weivPlatform.directory}/bin/weiv`), legacy);
+      copyFileSync(join(root, `packages/${weivPlatform.directory}/bin/${weivBinaryName}`), legacy);
       run("bun", ["test", "test/component", "test/runtime", "test/ui-core", "test/inspect"], {
         stdio: "inherit",
       });
@@ -168,7 +170,7 @@ function verify() {
       run("npm", ["run", "pkg:smoke"], { stdio: "inherit" });
       run("node", ["test/package/vite-plugin.test.mjs"], {
         stdio: "inherit",
-        env: { ...process.env, WEIV_BINARY_PATH: join(root, `packages/${weivPlatform.directory}/bin/weiv`) },
+        env: { ...process.env, WEIV_BINARY_PATH: join(root, `packages/${weivPlatform.directory}/bin/${weivBinaryName}`) },
       });
     } finally {
       rmSync(legacy, { force: true });
@@ -224,7 +226,7 @@ function verify() {
     }
     run("node", [join(unpack, "package/bin/weiv.mjs"), "--help"], {
       stdio: "inherit",
-      env: { ...process.env, WEIV_BINARY_PATH: join(root, `packages/${weivPlatform.directory}/bin/weiv`) },
+      env: { ...process.env, WEIV_BINARY_PATH: join(root, `packages/${weivPlatform.directory}/bin/${weivBinaryName}`) },
     });
   } else {
     run("node", [
