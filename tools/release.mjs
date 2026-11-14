@@ -152,6 +152,7 @@ function verify() {
     project === "weiv" ? [`packages/${weivPlatform.directory}`, "packages/weiv"] : ["packages/neiv"];
   const outputs = [];
   if (project === "weiv") {
+    run("node", ["packages/weiv/scripts/build.mjs"], { stdio: "inherit" });
     const legacy = join(root, "cyna-out/bin/weiv"),
       backup = join(root, "cyna-out/bin/weiv.release-backup");
     mkdirSync(join(root, "cyna-out/bin"), { recursive: true });
@@ -178,7 +179,6 @@ function verify() {
   for (const pkg of packages) {
     if (project === "neiv") run("sh", ["packages/neiv/scripts/ensure-cyna-package.sh"], { stdio: "inherit" });
     if (project === "weiv" && pkg === "packages/weiv") {
-      run("node", ["packages/weiv/scripts/build.mjs"], { stdio: "inherit" });
       run("node", ["packages/weiv/scripts/generate-types.mjs"], { stdio: "inherit" });
     }
     if (project === "neiv") run("node", ["packages/neiv/scripts/build-frontend.mjs"], { stdio: "inherit" });
