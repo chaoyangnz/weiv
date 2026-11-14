@@ -1,7 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-export PATH="$HOME/.nvm/versions/node/v22.22.1/bin:/opt/homebrew/bin:$HOME/.bun/bin:$HOME/.cyna/current/bin:$PATH"
+export PATH="$HOME/.cargo/bin:/opt/homebrew/bin:$HOME/.bun/bin:$HOME/.cyna/current/bin:$PATH"
+for node_bin in "$HOME"/.nvm/versions/node/v22*/bin /opt/neucine-release-tools/node*/bin; do
+  if [ -x "$node_bin/npm" ]; then
+    export PATH="$node_bin:$PATH"
+    break
+  fi
+done
+for tool in node npm bun cyna cargo; do
+  command -v "$tool" >/dev/null || { echo "Missing $tool on $HOSTNAME" >&2; exit 1; }
+done
 platform="${1:?expected macos or linux}"
 case "$platform:$(uname -s):$(uname -m)" in
   macos:Darwin:arm64|linux:Linux:x86_64) ;;

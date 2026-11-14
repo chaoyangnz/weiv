@@ -18,7 +18,7 @@ steps:
     if: build.tag == null && build.branch =~ /^release\/v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.]+)?$/
     command: scripts/buildkite/release-candidate.sh linux
     agents:
-      queue: linux-local
+      queue: linux-local-gpu
 
   # Publication is deliberately gated until all supported platform artifacts
   # can be verified and consumed from one immutable release manifest.
