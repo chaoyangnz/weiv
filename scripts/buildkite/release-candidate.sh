@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-export PATH="/opt/homebrew/bin:$HOME/.bun/bin:$HOME/.cyna/current/bin:$PATH"
+export PATH="$HOME/.nvm/versions/node/v22.22.1/bin:/opt/homebrew/bin:$HOME/.bun/bin:$HOME/.cyna/current/bin:$PATH"
 platform="${1:?expected macos or linux}"
 case "$platform:$(uname -s):$(uname -m)" in
   macos:Darwin:arm64|linux:Linux:x86_64) ;;
