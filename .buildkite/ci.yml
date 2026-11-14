@@ -1,0 +1,92 @@
+steps:
+  - label: ":mag: Release prerequisites"
+    key: release-prerequisites
+    if: build.tag == null && build.branch =~ /^release\/v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.]+)?$/
+    command: scripts/buildkite/release-prerequisites.sh
+    agents:
+      queue: macos-local
+
+  - wait: ~
+
+  - label: ":mac: Fast checks"
+    key: fast
+    if: build.tag == null && build.branch !~ /^release\/v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.]+)?$/
+    command: scripts/buildkite/fast-checks.sh
+    agents:
+      queue: macos-local
+
+  - label: ":mac: macOS release candidate"
+    key: candidate-macos
+    if: build.tag == null && build.branch =~ /^release\/v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.]+)?$/
+    command: scripts/buildkite/release-candidate.sh macos
+    agents:
+      queue: macos-local
+
+  - label: ":linux: Linux release candidate"
+    key: candidate-linux
+    if: build.tag == null && build.branch =~ /^release\/v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.]+)?$/
+    command: scripts/buildkite/release-candidate.sh linux
+    agents:
+      queue: linux-local-gpu
+
+  - label: ":windows: Windows release candidate"
+    key: candidate-windows
+    if: build.tag == null && build.branch =~ /^release\/v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.]+)?$/
+    command: pwsh -File scripts/buildkite/release-candidate-windows.ps1
+    agents:
+      queue: windows-local
+
+  - wait: ~
+
+  - label: ":package: Collect and compare release artifacts"
+    key: collect-release
+    if: build.tag == null && build.branch =~ /^release\/v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.]+)?$/
+    command: scripts/buildkite/collect-release.sh macos linux windows
+    agents:
+      queue: macos-local
+
+  - wait: ~
+
+  - label: ":npm: Publish verified packages"
+    key: publish-release
+    if: build.tag == null && build.branch =~ /^release\/v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.]+)?$/ && build.env("RELEASE_PUBLISH") == "1"
+    command: scripts/buildkite/publish-release.sh
+    secrets:
+      - NPM_TOKEN
+      - GH_TOKEN
+    agents:
+      queue: macos-local
+
+  - wait: ~
+
+  - label: ":mac: Check published macOS package"
+    key: published-macos
+    if: build.tag == null && build.branch =~ /^release\/v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.]+)?$/ && build.env("RELEASE_PUBLISH") == "1"
+    command: scripts/buildkite/published-smoke.sh macos
+    agents:
+      queue: macos-local
+
+  - label: ":linux: Check published Linux package"
+    key: published-linux
+    if: build.tag == null && build.branch =~ /^release\/v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.]+)?$/ && build.env("RELEASE_PUBLISH") == "1"
+    command: scripts/buildkite/published-smoke.sh linux
+    agents:
+      queue: linux-local-gpu
+
+  - label: ":windows: Check published Windows package"
+    key: published-windows
+    if: build.tag == null && build.branch =~ /^release\/v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.]+)?$/ && build.env("RELEASE_PUBLISH") == "1"
+    command: pwsh -File scripts/buildkite/published-smoke-windows.ps1
+    agents:
+      queue: windows-local
+
+  - wait: ~
+
+  - label: ":github: Record GitHub release"
+    key: finalize-release
+    if: build.tag == null && build.branch =~ /^release\/v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.]+)?$/ && build.env("RELEASE_PUBLISH") == "1"
+    command: scripts/buildkite/finalize-release.sh
+    secrets:
+      - GH_TOKEN
+    agents:
+      queue: macos-local

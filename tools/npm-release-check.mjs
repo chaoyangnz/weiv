@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
@@ -24,7 +24,7 @@ function pack(dir) {
 
 function detectPlaceholder(platformTar) {
   const inspectDir = join(tmp, "inspect");
-  run("mkdir", ["-p", inspectDir], repoRoot);
+  mkdirSync(inspectDir, { recursive: true });
   run("tar", ["-xzf", platformTar, "-C", inspectDir], repoRoot);
   const pkgDir = join(inspectDir, "package");
   const candidates = [join(pkgDir, "bin", "weiv"), join(pkgDir, "bin", "weiv.exe")];
@@ -53,11 +53,12 @@ function detectPlaceholder(platformTar) {
 try {
   const mainTar = pack("./packages/weiv");
   const version = JSON.parse(readFileSync(join(repoRoot, "packages/weiv/package.json"), "utf8")).version;
-  const platformDirs = ["weiv-darwin-arm64", "weiv-linux-x64-gnu"];
+  const platformDirs = ["weiv-darwin-arm64", "weiv-linux-x64-gnu", "weiv-win32-x64-msvc"];
   const platformTars = platformDirs
     .filter(
       name =>
         (name !== "weiv-linux-x64-gnu" || process.platform === "linux") &&
+        (name !== "weiv-win32-x64-msvc" || process.platform === "win32") &&
         JSON.parse(readFileSync(join(repoRoot, "packages", name, "package.json"), "utf8")).version ===
           version,
     )
@@ -66,7 +67,7 @@ try {
   for (const t of platformTars) detectPlaceholder(t);
 
   const app = join(tmp, "app");
-  run("mkdir", ["-p", app], repoRoot);
+  mkdirSync(app, { recursive: true });
   run("npm", ["init", "-y"], app);
   run("npm", ["install", "--omit=optional", mainTar], app);
   run(

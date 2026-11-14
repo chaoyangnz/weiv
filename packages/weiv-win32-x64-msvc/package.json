@@ -1,0 +1,22 @@
+{
+  "name": "@weivjs/weiv-win32-x64-msvc",
+  "version": "0.1.3",
+  "os": [
+    "win32"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "files": [
+    "bin/weiv.exe"
+  ],
+  "description": "Weiv native binary for Windows x64",
+  "license": "MPL-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/neucine/weiv.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
