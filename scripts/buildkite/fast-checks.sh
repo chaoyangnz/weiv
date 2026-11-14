@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/../.."
+export PATH="/opt/homebrew/bin:$HOME/.bun/bin:$HOME/.cyna/current/bin:$PATH"
 test "$(uname -s)" = Darwin
 npm ci --ignore-scripts --no-audit --no-fund
 npm run format:check
