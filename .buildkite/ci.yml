@@ -1,0 +1,35 @@
+steps:
+  - label: ":mac: Fast checks"
+    key: fast
+    if: build.tag == null && build.branch !~ /^release\/v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.]+)?$/
+    command: scripts/buildkite/fast-checks.sh
+    agents:
+      queue: macos-local
+
+  - label: ":mac: macOS release candidate"
+    key: candidate-macos
+    if: build.tag == null && build.branch =~ /^release\/v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.]+)?$/
+    command: scripts/buildkite/release-candidate.sh macos
+    agents:
+      queue: macos-local
+
+  - label: ":linux: Linux release candidate"
+    key: candidate-linux
+    if: build.tag == null && build.branch =~ /^release\/v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.]+)?$/
+    command: scripts/buildkite/release-candidate.sh linux
+    agents:
+      queue: linux-local
+
+  # Publication is deliberately gated until all supported platform artifacts
+  # can be verified and consumed from one immutable release manifest.
+  - block: ":lock: Approve release publication"
+    key: approve-publication
+    if: build.tag =~ /^v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.]+)?$/
+    prompt: "Confirm the candidate artifacts, hashes, and supported platforms before publication."
+
+  - label: ":package: Check publication inputs"
+    key: publication-inputs
+    if: build.tag =~ /^v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.]+)?$/
+    command: scripts/buildkite/publication-inputs.sh
+    agents:
+      queue: macos-local
