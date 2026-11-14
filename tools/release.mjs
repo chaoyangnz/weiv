@@ -153,6 +153,9 @@ function verify() {
   const outputs = [];
   if (project === "weiv") {
     run("node", ["packages/weiv/scripts/build.mjs"], { stdio: "inherit" });
+    run("cargo", ["build", "--release", "--locked", "--manifest-path", "libs/parser-backend/Cargo.toml"], {
+      stdio: "inherit",
+    });
     const legacy = join(root, "cyna-out/bin/weiv"),
       backup = join(root, "cyna-out/bin/weiv.release-backup");
     mkdirSync(join(root, "cyna-out/bin"), { recursive: true });
