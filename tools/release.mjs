@@ -71,15 +71,16 @@ const files =
     ? ["packages/weiv/package.json", `packages/${weivPlatform?.directory || "unsupported"}/package.json`]
     : ["packages/neiv/package.json"];
 function preflight() {
-  for (const tool of ["git", "node", "npm", "tar"]) run("which", [tool]);
+  const findTool = tool => run(process.platform === "win32" ? "where.exe" : "which", [tool]);
+  for (const tool of ["git", "node", "npm", "tar"]) findTool(tool);
   const versions = files.map(f => JSON.parse(readFileSync(join(root, f))).version);
   if (project === "weiv") {
     if (!weivPlatform) throw Error(`Unsupported release platform: ${process.platform}-${process.arch}`);
     versions.push(JSON.parse(readFileSync(join(root, "site/site.json"))).version);
-    run("which", ["bun"]);
+    findTool("bun");
     if (!preflightOnly) {
       try {
-        run("which", ["cyna"]);
+        findTool("cyna");
       } catch {
         throw Error("Missing Cyna toolchain: install the pinned release before verify");
       }
@@ -100,7 +101,7 @@ function preflight() {
       assertPlatformBinary(join(root, binary));
     }
   } else {
-    if (!preflightOnly) run("which", ["cyna"]);
+    if (!preflightOnly) findTool("cyna");
     const manifest = readFileSync(join(root, "cyna.toml"), "utf8").match(/^version = "([^"]+)"/m)?.[1];
     versions.push(manifest);
     const script = readFileSync(join(root, "packages/neiv/scripts/ensure-cyna-package.sh"), "utf8");

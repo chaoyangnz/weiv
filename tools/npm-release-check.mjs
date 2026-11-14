@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
@@ -24,7 +24,7 @@ function pack(dir) {
 
 function detectPlaceholder(platformTar) {
   const inspectDir = join(tmp, "inspect");
-  run("mkdir", ["-p", inspectDir], repoRoot);
+  mkdirSync(inspectDir, { recursive: true });
   run("tar", ["-xzf", platformTar, "-C", inspectDir], repoRoot);
   const pkgDir = join(inspectDir, "package");
   const candidates = [join(pkgDir, "bin", "weiv"), join(pkgDir, "bin", "weiv.exe")];
@@ -67,7 +67,7 @@ try {
   for (const t of platformTars) detectPlaceholder(t);
 
   const app = join(tmp, "app");
-  run("mkdir", ["-p", app], repoRoot);
+  mkdirSync(app, { recursive: true });
   run("npm", ["init", "-y"], app);
   run("npm", ["install", "--omit=optional", mainTar], app);
   run(

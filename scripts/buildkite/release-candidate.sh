@@ -8,7 +8,7 @@ for node_bin in "$HOME"/.nvm/versions/node/v22*/bin /opt/neucine-release-tools/n
     break
   fi
 done
-for tool in node npm bun cyna cargo; do
+for tool in node npm bun cargo; do
   command -v "$tool" >/dev/null || { echo "Missing $tool on $HOSTNAME" >&2; exit 1; }
 done
 platform="${1:?expected macos or linux}"
@@ -22,19 +22,21 @@ branch="${BUILDKITE_BRANCH:?Buildkite branch required}"
 }
 version="${BASH_REMATCH[1]}"
 test "$(git rev-parse HEAD)" = "${BUILDKITE_COMMIT:?Buildkite commit required}"
+cyna_version="${CYNA_VERSION:-0.5.1}"
+case "$platform" in
+  macos) cyna_host="aarch64-apple-darwin" ;;
+  linux) cyna_host="x86_64-unknown-linux-gnu" ;;
+esac
+curl --fail --location --retry 3 --silent --show-error https://cyna.dev/install.sh | \
+  sh -s -- "$cyna_version" "$cyna_host"
+cyna version
 npm ci --ignore-scripts --no-audit --no-fund
 npm run format:check
 npm ci --prefix packages/vscode-extension --ignore-scripts --no-audit --no-fund
 npm test --prefix packages/vscode-extension
 node tools/release.mjs plan --version="$version" --preflight-only
 if [ "$platform" = linux ]; then
-  llvm_root="$HOME/.cyna/current/llvm"
-  test -f "$llvm_root/lib/libLLVM.so"
-  if [ ! -e "$llvm_root/lib/libLLVM.so.22.1" ]; then
-    ln -s libLLVM.so "$llvm_root/lib/libLLVM.so.22.1"
-  fi
-  export LD_LIBRARY_PATH="$llvm_root/lib:${LD_LIBRARY_PATH:-}"
-  "$llvm_root/bin/clang" --version
+  "$HOME/.cyna/current/llvm/bin/clang" --version
   cyna check cyna.release.linux.toml
   npm run build:cyna
 fi
