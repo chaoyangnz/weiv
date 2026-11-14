@@ -2,6 +2,8 @@
   <img src="https://weiv.dev/assets/weiv.png" alt="weiv" width="120" />
 </p>
 
+[简体中文](README.zh-CN.md)
+
 Frontend, with room to breathe.
 
 `weiv` is a compiler-first frontend framework for single-file components,

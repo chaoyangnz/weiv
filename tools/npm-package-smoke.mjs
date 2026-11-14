@@ -52,6 +52,9 @@ function currentPlatformPackageDir() {
   if (process.platform === "darwin" && process.arch === "arm64") {
     return "./packages/weiv-darwin-arm64";
   }
+  if (process.platform === "linux" && process.arch === "x64") {
+    return "./packages/weiv-linux-x64-gnu";
+  }
   return null;
 }
 

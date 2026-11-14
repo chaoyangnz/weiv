@@ -53,8 +53,10 @@ declare module "weiv:router" {
     base?: string;
     routes: RouteDefinition[];
     target: Element;
-    scrollBehavior?: (ctx: NavigationContext, savedPosition: { x: number; y: number } | null) =>
-      { x?: number; y?: number; el?: string } | void;
+    scrollBehavior?: (
+      ctx: NavigationContext,
+      savedPosition: { x: number; y: number } | null,
+    ) => { x?: number; y?: number; el?: string } | void;
   };
 
   export type Router = {

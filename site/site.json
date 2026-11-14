@@ -2,7 +2,7 @@
   "name": "weiv",
   "title": "Weiv",
   "description": "Compiler-first frontend framework docs for single-file components, direct DOM updates, and a shared reactive runtime.",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "repo": "https://github.com/neucine/weiv",
   "docs": "docs",
   "nav": [

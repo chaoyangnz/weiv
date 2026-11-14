@@ -5,13 +5,17 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const compiler = process.env.CYNA || "cyna";
-const manifest = resolve(repoRoot, "cyna.release.toml");
+const manifest = resolve(
+  repoRoot,
+  process.platform === "linux" ? "cyna.release.linux.toml" : "cyna.release.toml",
+);
 const output = resolve(repoRoot, "cyna-out", "bin", process.platform === "win32" ? "weiv.exe" : "weiv");
 const env = { ...process.env };
-const platformPackage =
-  process.platform === "darwin" && process.arch === "arm64"
-    ? resolve(repoRoot, "packages", "weiv-darwin-arm64", "bin", "weiv")
-    : null;
+const platformName = {
+  "darwin-arm64": "weiv-darwin-arm64",
+  "linux-x64": "weiv-linux-x64-gnu",
+}[`${process.platform}-${process.arch}`];
+const platformPackage = platformName ? resolve(repoRoot, "packages", platformName, "bin", "weiv") : null;
 
 if (process.platform === "darwin" && !env.SDKROOT) {
   env.SDKROOT = execFileSync("xcrun", ["--show-sdk-path"], { encoding: "utf8" }).trim();
@@ -38,7 +42,10 @@ execFileSync(compiler, ["build", manifest, "--output", output], {
   env,
   stdio: "inherit",
 });
-if (platformPackage) copyFileSync(output, platformPackage);
+if (platformPackage) {
+  mkdirSync(dirname(platformPackage), { recursive: true });
+  copyFileSync(output, platformPackage);
+}
 
 console.log(`Built Cyna release binary at ${output}`);
 if (platformPackage) console.log(`Updated platform package binary at ${platformPackage}`);

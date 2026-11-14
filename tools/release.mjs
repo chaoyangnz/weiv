@@ -15,7 +15,11 @@ import {
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 const root = resolve(import.meta.dirname, "..");
-const project = root.endsWith("/weiv") ? "weiv" : "neiv";
+const project = existsSync(join(root, "packages/weiv/package.json")) ? "weiv" : "neiv";
+const weivPlatform = {
+  "darwin-arm64": { directory: "weiv-darwin-arm64", format: /Mach-O 64-bit (?:executable )?arm64/ },
+  "linux-x64": { directory: "weiv-linux-x64-gnu", format: /ELF 64-bit.*x86-64/ },
+}[`${process.platform}-${process.arch}`];
 let state = join(root, "dist/release/state");
 let artifacts = join(root, "dist/release/artifacts");
 let sink = join(root, "dist/release/sink");
@@ -41,12 +45,13 @@ const write = (name, value) => {
 const sha = p => createHash("sha256").update(readFileSync(p)).digest("hex");
 const files =
   project === "weiv"
-    ? ["packages/weiv/package.json", "packages/weiv-darwin-arm64/package.json"]
+    ? ["packages/weiv/package.json", `packages/${weivPlatform?.directory || "unsupported"}/package.json`]
     : ["packages/neiv/package.json"];
 function preflight() {
   for (const tool of ["git", "node", "npm", "tar"]) run("which", [tool]);
   const versions = files.map(f => JSON.parse(readFileSync(join(root, f))).version);
   if (project === "weiv") {
+    if (!weivPlatform) throw Error(`Unsupported release platform: ${process.platform}-${process.arch}`);
     versions.push(JSON.parse(readFileSync(join(root, "site/site.json"))).version);
     run("which", ["bun"]);
     if (!preflightOnly) {
@@ -62,12 +67,16 @@ function preflight() {
       }
     }
     const p = JSON.parse(readFileSync(join(root, files[0])));
-    versions.push(p.optionalDependencies["@weivjs/weiv-darwin-arm64"]);
-    if (!existsSync(join(root, "packages/weiv-darwin-arm64/bin/weiv")))
-      throw Error("Missing committed platform binary: packages/weiv-darwin-arm64/bin/weiv");
-    const kind = run("file", ["packages/weiv-darwin-arm64/bin/weiv"]);
-    if (!/Mach-O 64-bit (?:executable )?arm64/.test(kind))
-      throw Error("Committed platform binary is not Mach-O arm64");
+    for (const directory of ["weiv-darwin-arm64", "weiv-linux-x64-gnu"]) {
+      versions.push(JSON.parse(readFileSync(join(root, `packages/${directory}/package.json`))).version);
+      versions.push(p.optionalDependencies[`@weivjs/${directory}`]);
+    }
+    const binary = `packages/${weivPlatform.directory}/bin/weiv`;
+    if (!preflightOnly) {
+      if (!existsSync(join(root, binary))) throw Error(`Missing platform binary: ${binary}`);
+      const kind = run("file", [binary]);
+      if (!weivPlatform.format.test(kind)) throw Error(`Unexpected platform binary format: ${kind}`);
+    }
   } else {
     if (!preflightOnly) run("which", ["cyna"]);
     const manifest = readFileSync(join(root, "cyna.toml"), "utf8").match(/^version = "([^"]+)"/m)?.[1];
@@ -139,7 +148,8 @@ function verify() {
   const p = assertPlan();
   for (const name of ["verify", "publish", "published"]) rmSync(join(state, name + ".json"), { force: true });
   mkdirSync(artifacts, { recursive: true });
-  const packages = project === "weiv" ? ["packages/weiv-darwin-arm64", "packages/weiv"] : ["packages/neiv"];
+  const packages =
+    project === "weiv" ? [`packages/${weivPlatform.directory}`, "packages/weiv"] : ["packages/neiv"];
   const outputs = [];
   if (project === "weiv") {
     const legacy = join(root, "cyna-out/bin/weiv"),
@@ -149,7 +159,7 @@ function verify() {
     const hadLegacy = existsSync(legacy);
     if (hadLegacy) renameSync(legacy, backup);
     try {
-      copyFileSync(join(root, "packages/weiv-darwin-arm64/bin/weiv"), legacy);
+      copyFileSync(join(root, `packages/${weivPlatform.directory}/bin/weiv`), legacy);
       run("bun", ["test", "test/component", "test/runtime", "test/ui-core", "test/inspect"], {
         stdio: "inherit",
       });
@@ -158,7 +168,7 @@ function verify() {
       run("npm", ["run", "pkg:smoke"], { stdio: "inherit" });
       run("node", ["test/package/vite-plugin.test.mjs"], {
         stdio: "inherit",
-        env: { ...process.env, WEIV_BINARY_PATH: join(root, "packages/weiv-darwin-arm64/bin/weiv") },
+        env: { ...process.env, WEIV_BINARY_PATH: join(root, `packages/${weivPlatform.directory}/bin/weiv`) },
       });
     } finally {
       rmSync(legacy, { force: true });
@@ -214,7 +224,7 @@ function verify() {
     }
     run("node", [join(unpack, "package/bin/weiv.mjs"), "--help"], {
       stdio: "inherit",
-      env: { ...process.env, WEIV_BINARY_PATH: join(root, "packages/weiv-darwin-arm64/bin/weiv") },
+      env: { ...process.env, WEIV_BINARY_PATH: join(root, `packages/${weivPlatform.directory}/bin/weiv`) },
     });
   } else {
     run("node", [

@@ -7,6 +7,7 @@ const require = createRequire(import.meta.url);
 
 const PLATFORM_PACKAGES = {
   "darwin-arm64": "@weivjs/weiv-darwin-arm64",
+  "linux-x64": "@weivjs/weiv-linux-x64-gnu",
 };
 
 export function resolveWeivBinaryPath() {

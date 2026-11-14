@@ -10,3 +10,4 @@ cyna-out
 libs/parser-backend/target
 cypress/screenshots
 cypress/videos
+packages/weiv-linux-x64-gnu/bin/
