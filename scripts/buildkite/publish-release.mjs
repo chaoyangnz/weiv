@@ -26,11 +26,16 @@ const config = join(configRoot, "npmrc");
 writeFileSync(config, `registry=https://registry.npmjs.org/\n//registry.npmjs.org/:_authToken=${token}\n`, { mode: 0o600 });
 const env = { ...process.env, NPM_CONFIG_USERCONFIG: config, npm_config_offline: "false" };
 try {
+  run("npm", ["whoami"], { env });
+  run("gh", ["api", "repos/neucine/weiv", "--jq", ".full_name"], { env });
   const existingTag = run("git", ["tag", "--list", manifest.tag]);
+  const remoteTag = run("git", ["ls-remote", "origin", `refs/tags/${manifest.tag}^{}`]);
+  if (remoteTag && remoteTag.split(/\s+/)[0] !== manifest.commit)
+    throw Error("Remote release tag points to another commit");
   if (existingTag) {
     if (run("git", ["rev-list", "-n", "1", manifest.tag]) !== manifest.commit)
       throw Error("Release tag points to another commit");
-  } else {
+  } else if (!remoteTag) {
     run("git", ["tag", "-a", manifest.tag, "-m", manifest.tag, manifest.commit]);
     run("git", ["-c", "credential.helper=!gh auth git-credential", "push", "origin", `refs/tags/${manifest.tag}`], { stdio: "inherit", env });
   }
