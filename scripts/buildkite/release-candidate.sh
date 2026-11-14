@@ -28,6 +28,13 @@ npm ci --prefix packages/vscode-extension --ignore-scripts --no-audit --no-fund
 npm test --prefix packages/vscode-extension
 node tools/release.mjs plan --version="$version" --preflight-only
 if [ "$platform" = linux ]; then
+  llvm_root="$HOME/.cyna/current/llvm"
+  test -f "$llvm_root/lib/libLLVM.so"
+  if [ ! -e "$llvm_root/lib/libLLVM.so.22.1" ]; then
+    ln -s libLLVM.so "$llvm_root/lib/libLLVM.so.22.1"
+  fi
+  export LD_LIBRARY_PATH="$llvm_root/lib:${LD_LIBRARY_PATH:-}"
+  "$llvm_root/bin/clang" --version
   cyna check cyna.release.linux.toml
   npm run build:cyna
 fi

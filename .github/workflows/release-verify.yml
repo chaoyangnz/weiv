@@ -65,6 +65,14 @@ jobs:
       - name: Build Linux platform binary
         if: inputs.platform == 'linux-x64'
         run: |
+          llvm_root="$HOME/.cyna/current/llvm"
+          test -f "$llvm_root/lib/libLLVM.so"
+          if [ ! -e "$llvm_root/lib/libLLVM.so.22.1" ]; then
+            ln -s libLLVM.so "$llvm_root/lib/libLLVM.so.22.1"
+          fi
+          echo "LD_LIBRARY_PATH=$llvm_root/lib" >> "$GITHUB_ENV"
+          export LD_LIBRARY_PATH="$llvm_root/lib:${LD_LIBRARY_PATH:-}"
+          "$llvm_root/bin/clang" --version
           cyna version
           lscpu | sed -n '1,18p'
           cyna check cyna.release.linux.toml
