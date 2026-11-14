@@ -62,7 +62,7 @@ jobs:
         env:
           CYNA_INSTALL_ROOT: ${{ runner.temp }}/cyna
         run: |
-          curl -fsSL https://cyna.dev/install.sh | sh -s -- 0.5.0 aarch64-apple-darwin
+          curl -fsSL https://cyna.dev/install.sh | sh -s -- 0.5.1
           echo "$CYNA_INSTALL_ROOT/current/bin" >> "$GITHUB_PATH"
       - name: Build Linux platform binary
         if: inputs.platform == 'linux-x64'
